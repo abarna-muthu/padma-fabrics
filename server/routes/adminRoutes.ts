@@ -29,7 +29,7 @@ router.get("/dashboard", getDashboardStats);
 // Products catalog management
 router.get("/products", (req, res) => {
   // Admin sees all products (including inactive)
-  req.query.active_only = "false";
+  req.query["active_only"] = "false";
   return getProducts(req, res);
 });
 router.post("/products", createProduct);

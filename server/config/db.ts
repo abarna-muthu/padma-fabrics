@@ -402,13 +402,13 @@ let isConnectedToMySQL = false;
 const memoryDb = new MemoryDatabase();
 
 export async function initDatabase(): Promise<DatabaseAdapter> {
-  const host = process.env.DB_HOST || process.env.TIDB_HOST;
-  const user = process.env.DB_USER || process.env.TIDB_USER;
-  const password = process.env.DB_PASSWORD || process.env.TIDB_PASSWORD;
-  const database = process.env.DB_NAME || process.env.TIDB_DATABASE || "padma_fabrics";
-  const port = Number(process.env.DB_PORT || process.env.TIDB_PORT) || 4000;
+  const host = process.env["DB_HOST"] || process.env["TIDB_HOST"];
+  const user = process.env["DB_USER"] || process.env["TIDB_USER"];
+  const password = process.env["DB_PASSWORD"] || process.env["TIDB_PASSWORD"];
+  const database = process.env["DB_NAME"] || process.env["TIDB_DATABASE"] || "padma_fabrics";
+  const port = Number(process.env["DB_PORT"] || process.env["TIDB_PORT"]) || 4000;
   const ssl =
-    process.env.DB_SSL === "true" || process.env.TIDB_SSL === "true"
+    process.env["DB_SSL"] === "true" || process.env["TIDB_SSL"] === "true"
       ? { minVersion: "TLSv1.2", rejectUnauthorized: true }
       : undefined;
 

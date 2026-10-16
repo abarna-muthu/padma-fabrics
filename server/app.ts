@@ -14,7 +14,7 @@ export function createApp() {
   // Basic CORS & parser setup
   app.use(
     cors({
-      origin: process.env.CORS_ORIGIN || true,
+      origin: process.env["CORS_ORIGIN"] || true,
       credentials: true,
       methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
       allowedHeaders: ["Content-Type", "Authorization"],
@@ -25,7 +25,7 @@ export function createApp() {
   app.use(express.urlencoded({ extended: true, limit: "5mb" }));
 
   // Request logger in dev
-  if (process.env.NODE_ENV !== "test") {
+  if (process.env["NODE_ENV"] !== "test") {
     app.use((req, res, next) => {
       const start = Date.now();
       res.on("finish", () => {

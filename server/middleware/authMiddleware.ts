@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
 
-const JWT_SECRET = process.env.JWT_SECRET || "padma_fabrics_super_secret_jwt_key_2026";
+const JWT_SECRET = process.env["JWT_SECRET"] || "padma_fabrics_super_secret_jwt_key_2026";
 
 export interface AuthRequest extends Request {
   user?: {
@@ -39,12 +39,12 @@ export function authenticate(req: AuthRequest, res: Response, next: NextFunction
     });
   }
 
-  const token = authHeader.split(" ")[1];
+  const token = authHeader.split(" ")[1] || "";
 
   try {
     const decoded = verifyToken(token);
     req.user = decoded;
-    next();
+    return next();
   } catch (err: any) {
     if (req.headers["x-admin-fallback"] === "true") {
       req.user = { id: "admin-local", email: "admin@gmail.com", name: "Padmanabha Administrator", role: "admin" };
@@ -70,5 +70,5 @@ export function requireAdmin(req: AuthRequest, res: Response, next: NextFunction
       error: "Administrative permissions required to access this resource.",
     });
   }
-  next();
+  return next();
 }
