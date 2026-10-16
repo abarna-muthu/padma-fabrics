@@ -49,7 +49,12 @@ export async function apiRequest<T = any>(
     headers["Authorization"] = `Bearer ${token}`;
   }
 
-  const url = endpoint.startsWith("http") ? endpoint : endpoint;
+  const apiBase = ((import.meta as any).env?.VITE_API_URL || "").replace(/\/$/, "");
+  const url = endpoint.startsWith("http")
+    ? endpoint
+    : apiBase
+      ? `${apiBase}${endpoint.startsWith("/") ? "" : "/"}${endpoint}`
+      : endpoint;
 
   try {
     const res = await fetch(url, {
