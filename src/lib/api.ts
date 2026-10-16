@@ -227,6 +227,14 @@ export const orderApi = {
     paymentMethod?: "cod" | "online";
     items: { productId: string; quantity: number; size?: string }[];
   }) {
+    const body = {
+      ...payload,
+      customer_name: payload.customerName,
+      customer_email: payload.customerEmail,
+      customer_phone: payload.customerPhone,
+      shipping_address: payload.shippingAddress,
+      payment_method: payload.paymentMethod?.toUpperCase() || "ONLINE",
+    };
     return apiRequest<{
       orderId: string;
       orderNumber: string;
@@ -234,7 +242,7 @@ export const orderApi = {
       status: string;
     }>("/api/orders/checkout", {
       method: "POST",
-      body: JSON.stringify(payload),
+      body: JSON.stringify(body),
     });
   },
 

@@ -3,15 +3,13 @@ import { getDb } from "../config/db";
 
 export async function createCheckoutOrder(req: Request, res: Response) {
   try {
-    const {
-      customer_name,
-      customer_email,
-      customer_phone,
-      shipping_address,
-      items,
-      payment_method = "COD",
-      notes = "",
-    } = req.body;
+    const customer_name = req.body.customer_name || req.body.customerName;
+    const customer_email = req.body.customer_email || req.body.customerEmail;
+    const customer_phone = req.body.customer_phone || req.body.customerPhone;
+    const shipping_address = req.body.shipping_address || req.body.shippingAddress;
+    const payment_method = req.body.payment_method || req.body.paymentMethod || "COD";
+    const items = req.body.items;
+    const notes = req.body.notes || "";
 
     if (!customer_name || !customer_email || !customer_phone || !shipping_address) {
       return res.status(400).json({

@@ -33,6 +33,8 @@ interface StoreContextType {
   toggleFavorite: (id: string) => void;
   openProduct: (p: Product) => void;
   addToBag: () => void;
+  buyNow: (customProduct?: Product, customQty?: number) => void;
+  setBag: React.Dispatch<React.SetStateAction<BagItem[]>>;
   updateQuantity: (id: string, delta: number) => void;
   removeFromBag: (id: string) => void;
   clearBag: () => void;
@@ -258,6 +260,16 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     );
     setSelected(null);
     setPanel("bag");
+  };
+
+  const buyNow = (customProduct?: Product, customQty?: number) => {
+    const targetProduct = customProduct || selected;
+    const targetQty = customQty || quantity;
+    if (!targetProduct) return;
+
+    setBag([{ id: targetProduct.id, quantity: Math.max(1, targetQty) }]);
+    setSelected(null);
+    setPanel(null);
   };
 
   const updateQuantity = (id: string, delta: number) => {
@@ -501,6 +513,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         toggleFavorite,
         openProduct,
         addToBag,
+        buyNow,
+        setBag,
         updateQuantity,
         removeFromBag,
         clearBag,

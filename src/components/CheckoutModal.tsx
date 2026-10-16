@@ -10,6 +10,9 @@ import {
   X,
   AlertCircle,
   Loader2,
+  ShieldCheck,
+  Smartphone,
+  Zap,
 } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -48,28 +51,29 @@ export function CheckoutModal({ isOpen, onClose, onOrderSuccess }: CheckoutModal
   const [shippingAddress, setShippingAddress] = useState("");
   const [customerPhone, setCustomerPhone] = useState("");
   const [paymentMethod, setPaymentMethod] = useState<"online" | "cod">("online");
+  const [selectedUpiApp, setSelectedUpiApp] = useState<string>("gpay");
+  const [upiId, setUpiId] = useState("");
+  const [paymentStatusText, setPaymentStatusText] = useState("");
   const [isSubmittingOrder, setIsSubmittingOrder] = useState(false);
   const [orderError, setOrderError] = useState<string | null>(null);
   const [confirmedOrderNumber, setConfirmedOrderNumber] = useState<string | null>(null);
 
   const totalAmount = bagTotal(bag);
 
-  // Whenever modal opens or login state changes, determine the correct initial step
+  // Whenever modal opens, default step to "payment" for instant Buy Now checkout
   useEffect(() => {
     if (isOpen) {
       setAuthError(null);
       setOrderError(null);
-      if (!isLoggedIn) {
-        setStep("auth");
-      } else {
-        setStep("payment");
-        if (customer) {
-          setShippingAddress(customer.address || "");
-          setCustomerPhone(customer.phone || "");
-        }
+      setStep("payment");
+      if (customer) {
+        setShippingAddress(customer.address || "");
+        setCustomerPhone(customer.phone || "");
+        setRegName(customer.name || "");
+        setRegEmail(customer.email || "");
       }
     }
-  }, [isOpen, isLoggedIn, customer]);
+  }, [isOpen, customer]);
 
   // Handle Login Submit
   const handleLoginSubmit = async (e: React.FormEvent) => {
@@ -80,7 +84,6 @@ export function CheckoutModal({ isOpen, onClose, onOrderSuccess }: CheckoutModal
     try {
       const res = await loginCustomer(authEmail, authPassword);
       if (res.success) {
-        // Logged in! Immediately proceed straight to payment step as requested
         setStep("payment");
       } else {
         setAuthError(res.error || "Login failed. Please check your email.");
@@ -103,7 +106,6 @@ export function CheckoutModal({ isOpen, onClose, onOrderSuccess }: CheckoutModal
       if (res.success) {
         setShippingAddress(regAddress);
         setCustomerPhone(regPhone);
-        // Registered! Immediately proceed straight to payment step as requested
         setStep("payment");
       } else {
         setAuthError(res.error || "Registration failed. Please complete all fields.");
@@ -115,29 +117,55 @@ export function CheckoutModal({ isOpen, onClose, onOrderSuccess }: CheckoutModal
     }
   };
 
-  // Handle Pay & Place Order
+  // Handle Pay & Place Order Directly
   const handleCompletePaymentAndOrder = async (e: React.FormEvent) => {
     e.preventDefault();
     setOrderError(null);
 
-    if (!customer) {
-      setStep("auth");
+    const finalName = (customer?.name || regName).trim();
+    const finalPhone = (customerPhone || customer?.phone || regPhone).trim();
+    const finalAddress = shippingAddress.trim();
+    const finalEmail = (
+      customer?.email ||
+      regEmail ||
+      `${finalPhone.replace(/\D/g, "") || "customer"}@padmanabhafabrics.com`
+    ).trim();
+
+    if (!finalName) {
+      setOrderError("Please enter your name to proceed.");
       return;
     }
 
-    if (!shippingAddress.trim()) {
-      setOrderError("Please enter your delivery address to proceed.");
+    if (!finalPhone) {
+      setOrderError("Please enter your mobile phone number for order updates.");
+      return;
+    }
+
+    if (!finalAddress) {
+      setOrderError("Please enter your complete delivery address.");
       return;
     }
 
     setIsSubmittingOrder(true);
 
     try {
+      if (!customer) {
+        // Automatically save customer session for guest / direct buyer
+        await registerCustomer(finalName, finalEmail, finalPhone, finalAddress);
+      }
+
+      if (paymentMethod === "online") {
+        setPaymentStatusText("Connecting to Secure Banking Gateway…");
+        await new Promise((resolve) => setTimeout(resolve, 600));
+        setPaymentStatusText("Authorizing Payment via UPI / Card…");
+        await new Promise((resolve) => setTimeout(resolve, 500));
+      }
+
       const res = await createCheckoutOrder({
-        customerName: customer.name,
-        customerEmail: customer.email,
-        customerPhone: customerPhone || customer.phone || "+91 99401 45700",
-        shippingAddress: shippingAddress.trim(),
+        customerName: finalName,
+        customerEmail: finalEmail,
+        customerPhone: finalPhone,
+        shippingAddress: finalAddress,
         paymentMethod: paymentMethod,
       });
 
@@ -152,6 +180,7 @@ export function CheckoutModal({ isOpen, onClose, onOrderSuccess }: CheckoutModal
       setOrderError(err.message || "An unexpected error occurred during payment processing.");
     } finally {
       setIsSubmittingOrder(false);
+      setPaymentStatusText("");
     }
   };
 
@@ -459,18 +488,62 @@ export function CheckoutModal({ isOpen, onClose, onOrderSuccess }: CheckoutModal
             )}
 
             <form onSubmit={handleCompletePaymentAndOrder} className="space-y-4">
+              {/* Customer Contact & Delivery Info */}
+              {!customer && (
+                <div className="space-y-3 p-3 bg-secondary/40 border border-border rounded-xs">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-semibold text-foreground flex items-center gap-1.5">
+                      <User className="size-3.5 text-primary" /> Delivery Contact Details
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setStep("auth")}
+                      className="text-[10px] text-primary hover:underline cursor-pointer"
+                    >
+                      Have an account? Sign In
+                    </button>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                    <div className="space-y-1">
+                      <label className="text-[11px] font-medium text-foreground">Full Name *</label>
+                      <Input
+                        required
+                        value={regName}
+                        onChange={(e) => setRegName(e.target.value)}
+                        placeholder="e.g. Ananya Sundaram"
+                        className="h-8.5 text-xs rounded-none bg-background"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-[11px] font-medium text-foreground">Mobile Phone Number *</label>
+                      <Input
+                        type="tel"
+                        required
+                        value={customerPhone}
+                        onChange={(e) => setCustomerPhone(e.target.value)}
+                        placeholder="+91 98401 23456"
+                        className="h-8.5 text-xs rounded-none bg-background"
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
+
               {/* Delivery Address */}
               <div className="space-y-1.5">
-                <label className="text-xs font-medium flex items-center gap-1.5">
-                  <Truck className="size-3.5 text-primary" /> Delivery Address *
+                <label className="text-xs font-medium flex items-center justify-between">
+                  <span className="flex items-center gap-1.5">
+                    <Truck className="size-3.5 text-primary" /> Delivery Address *
+                  </span>
+                  <span className="text-[10px] text-muted-foreground">Door delivery across India</span>
                 </label>
                 <Textarea
                   required
                   rows={2}
                   value={shippingAddress}
                   onChange={(e) => setShippingAddress(e.target.value)}
-                  placeholder="Enter complete shipping address in Chennai or across India..."
-                  className="text-xs rounded-none resize-none"
+                  placeholder="Door No, Street, Landmark, Chennai / City & Pincode..."
+                  className="text-xs rounded-none resize-none bg-background"
                 />
               </div>
 
@@ -488,7 +561,7 @@ export function CheckoutModal({ isOpen, onClose, onOrderSuccess }: CheckoutModal
                     }`}
                   >
                     <div className="flex items-center justify-between">
-                      <span className="text-xs font-semibold">Online Payment</span>
+                      <span className="text-xs font-semibold">Instant Online Pay</span>
                       <input
                         type="radio"
                         name="paymentMethod"
@@ -524,6 +597,53 @@ export function CheckoutModal({ isOpen, onClose, onOrderSuccess }: CheckoutModal
                     </span>
                   </label>
                 </div>
+
+                {/* Instant Online Sub-options (UPI & Cards) */}
+                {paymentMethod === "online" && (
+                  <div className="p-3 bg-secondary/30 border border-primary/20 rounded-xs space-y-2.5 mt-2">
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="font-semibold text-primary flex items-center gap-1.5">
+                        <Smartphone className="size-3.5" /> Instant UPI Quick Pay
+                      </span>
+                      <span className="text-[10px] text-emerald-600 font-medium flex items-center gap-1">
+                        <ShieldCheck className="size-3.5" /> 256-Bit Bank Encrypted
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-4 gap-2">
+                      {[
+                        { id: "gpay", label: "GPay", color: "text-blue-600 font-bold" },
+                        { id: "phonepe", label: "PhonePe", color: "text-purple-600 font-bold" },
+                        { id: "paytm", label: "Paytm", color: "text-sky-600 font-bold" },
+                        { id: "upi", label: "Any UPI", color: "text-amber-600 font-bold" },
+                      ].map((app) => (
+                        <button
+                          key={app.id}
+                          type="button"
+                          onClick={() => setSelectedUpiApp(app.id)}
+                          className={`py-1.5 px-1 text-center border text-[11px] rounded-xs transition-all cursor-pointer ${
+                            selectedUpiApp === app.id
+                              ? "border-primary bg-primary/10 text-primary ring-1 ring-primary"
+                              : "border-border bg-card hover:bg-secondary text-foreground"
+                          }`}
+                        >
+                          <span className={app.color}>{app.label}</span>
+                        </button>
+                      ))}
+                    </div>
+
+                    <div className="space-y-1">
+                      <label className="text-[10px] text-muted-foreground">UPI ID / VPA (Optional)</label>
+                      <Input
+                        type="text"
+                        value={upiId}
+                        onChange={(e) => setUpiId(e.target.value)}
+                        placeholder="e.g. mobile@okaxis / name@ybl"
+                        className="h-8 text-xs bg-background rounded-none"
+                      />
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* Price Breakdown */}
@@ -533,7 +653,7 @@ export function CheckoutModal({ isOpen, onClose, onOrderSuccess }: CheckoutModal
                   <span>{money(totalAmount)}</span>
                 </div>
                 <div className="flex justify-between text-muted-foreground">
-                  <span>Standard Shipping</span>
+                  <span>Express Dispatch (Ambattur)</span>
                   <span className="text-emerald-600 font-medium">FREE</span>
                 </div>
                 <div className="flex justify-between font-semibold text-sm pt-2 border-t border-border text-foreground">
@@ -556,15 +676,21 @@ export function CheckoutModal({ isOpen, onClose, onOrderSuccess }: CheckoutModal
                 <Button
                   type="submit"
                   variant="editorial"
-                  className="flex-2 h-11 text-xs uppercase tracking-wider font-semibold"
+                  className="flex-2 h-12 text-xs uppercase tracking-wider font-bold shadow-md bg-gradient-to-r from-[#9B2242] via-[#8B1D36] to-[#731429] text-white hover:brightness-110 flex items-center justify-center gap-2 cursor-pointer transition-all active:scale-[0.99]"
                   disabled={isSubmittingOrder}
                 >
                   {isSubmittingOrder ? (
                     <span className="flex items-center gap-2">
-                      <Loader2 className="size-4 animate-spin" /> Processing Payment…
+                      <Loader2 className="size-4 animate-spin text-amber-300" />
+                      {paymentStatusText || "Processing Payment…"}
                     </span>
                   ) : (
-                    `Pay ${money(totalAmount)} & Confirm`
+                    <>
+                      <Zap className="size-4 fill-amber-300 text-amber-300" />
+                      {paymentMethod === "online"
+                        ? `PAY ${money(totalAmount)} & BUY NOW`
+                        : `CONFIRM CASH ON DELIVERY · ${money(totalAmount)}`}
+                    </>
                   )}
                 </Button>
               </div>

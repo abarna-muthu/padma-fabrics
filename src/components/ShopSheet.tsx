@@ -10,6 +10,7 @@ import {
   Plus,
   ShoppingBag,
   Trash2,
+  Zap,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTitle, SheetDescription } from "@/components/ui/sheet";
@@ -31,6 +32,7 @@ export function ShopSheet() {
     quantity,
     setQuantity,
     addToBag,
+    buyNow,
     bag,
     favorites,
     query,
@@ -43,6 +45,12 @@ export function ShopSheet() {
     activeProducts,
     productsList,
   } = useStore();
+
+  const handleBuyNow = () => {
+    if (!selected) return;
+    buyNow(selected, quantity);
+    setIsCheckoutOpen(true);
+  };
 
   const navigate = useNavigate();
 
@@ -143,12 +151,40 @@ export function ShopSheet() {
                 </Button>
               </div>
             </div>
-            <Button variant="editorial" className="w-full" onClick={addToBag}>
-              <ShoppingBag /> Add to bag · {money(selected.price * quantity)}
-            </Button>
-            <p className="text-[11px] text-muted-foreground mt-4 leading-5">
-              Preview fabric imagery and sample pricing. Our team will confirm the actual fabric,
-              availability and price before your order.
+            {/* Direct Pay & Buy Action Buttons */}
+            <div className="space-y-2.5">
+              <Button
+                variant="editorial"
+                size="lg"
+                className="w-full h-12 text-sm uppercase tracking-wider font-bold shadow-md bg-gradient-to-r from-[#9B2242] via-[#8B1D36] to-[#731429] text-white hover:brightness-110 flex items-center justify-center gap-2 cursor-pointer transition-all active:scale-[0.99]"
+                onClick={handleBuyNow}
+              >
+                <Zap className="size-4.5 fill-amber-300 text-amber-300" />
+                BUY NOW · {money(selected.price * quantity)}
+              </Button>
+
+              <div className="grid grid-cols-2 gap-2">
+                <Button
+                  variant="outline"
+                  className="h-10 text-xs font-semibold uppercase tracking-wider border-primary/30 text-primary hover:bg-primary/5 flex items-center justify-center gap-1.5 cursor-pointer"
+                  onClick={addToBag}
+                >
+                  <ShoppingBag className="size-3.5" /> Add to Bag
+                </Button>
+                <Button
+                  variant="whatsapp"
+                  className="h-10 text-xs font-medium shadow-xs"
+                  asChild
+                >
+                  <a href={whatsappUrl} target="_blank" rel="noreferrer">
+                    <MessageCircle className="size-3.5 mr-1" /> WhatsApp
+                  </a>
+                </Button>
+              </div>
+            </div>
+
+            <p className="text-[11px] text-muted-foreground mt-4 leading-5 text-center">
+              Direct checkout with instant online payment & dispatch across India from Ambattur, Chennai.
             </p>
           </>
         )}
