@@ -36,4 +36,14 @@ describe("App routing", () => {
     const matches = router.matchRoutes("/admin/login");
     expect(matches.at(-1)?.routeId).toBe("/admin/login");
   });
+
+  it("matches policy route /terms", () => {
+    const matches = router.matchRoutes("/terms");
+    expect(matches.at(-1)?.routeId).toBe("/terms");
+  });
+
+  it("matches policy route /refund-policy", () => {
+    const matches = router.matchRoutes("/refund-policy");
+    expect(matches.at(-1)?.routeId).toBe("/refund-policy");
+  });
 });

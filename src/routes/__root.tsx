@@ -141,6 +141,7 @@ function RootComponent() {
   const { queryClient } = Route.useRouteContext();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const isAdmin = pathname.startsWith("/admin");
+  const isPolicyPage = pathname === "/terms" || pathname === "/refund-policy";
 
   return (
     <QueryClientProvider client={queryClient}>
@@ -152,7 +153,7 @@ function RootComponent() {
                 <Outlet />
               ) : (
                 <div className="min-h-screen flex flex-col bg-background text-foreground">
-                  <Header />
+                  {!isPolicyPage && <Header />}
                   <div className="flex-1">
                     <Outlet />
                   </div>

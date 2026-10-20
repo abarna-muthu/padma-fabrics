@@ -121,15 +121,14 @@ function ContactPage() {
                     <span>
                       {content.contact.showroomAddress}
                     </span>
-                    <div className="mt-2">
-                      <a
-                        href={content.contact.mapsUrl || "https://maps.app.goo.gl/D3SYeK37eivDbbiA8"}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="text-link text-[11px]"
-                      >
-                        Open in Google Maps <ArrowUpRight className="size-3" />
-                      </a>
+                    <div className="mt-4 rounded-xs border border-border overflow-hidden shadow-xs">
+                      <iframe
+                        title="Padmanabha Fabrics Location Map"
+                        src="https://maps.google.com/maps?q=Padmanabha%20Fabrics%2C%20No.%203%2C%20Ground%20floor%2C%207th%20Street%2C%20Indira%20Nagar%2C%20Menambedu%2C%20Ambattur%2C%20Chennai%20600053&t=&z=15&ie=UTF8&iwloc=&output=embed"
+                        className="w-full h-44 border-0"
+                        loading="lazy"
+                        referrerPolicy="no-referrer-when-downgrade"
+                      />
                     </div>
                   </div>
                 </div>

@@ -528,8 +528,20 @@ html {
 }
 .footer-grid {
   display: grid;
-  grid-template-columns: 1.3fr 1fr 1.2fr;
-  gap: 60px;
+  grid-template-columns: 1.3fr 0.9fr 1fr 1.3fr;
+  gap: 40px;
+}
+@media (max-width: 992px) {
+  .footer-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 36px;
+  }
+}
+@media (max-width: 640px) {
+  .footer-grid {
+    grid-template-columns: 1fr;
+    gap: 28px;
+  }
 }
 .footer-heading {
   font-family: var(--font-display);
