@@ -34,6 +34,8 @@ interface StoreContextType {
   openProduct: (p: Product) => void;
   addToBag: () => void;
   buyNow: (customProduct?: Product, customQty?: number) => void;
+  isCheckoutOpen: boolean;
+  setIsCheckoutOpen: (open: boolean) => void;
   setBag: React.Dispatch<React.SetStateAction<BagItem[]>>;
   updateQuantity: (id: string, delta: number) => void;
   removeFromBag: (id: string) => void;
@@ -82,6 +84,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const [bag, setBag] = useState<BagItem[]>([]);
   const [favorites, setFavorites] = useState<string[]>([]);
   const [query, setQuery] = useState("");
+  const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
 
   // Catalog products (shared with public storefront)
   const [productsList, setProductsList] = useState<Product[]>(staticProducts as Product[]);
@@ -270,6 +273,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     setBag([{ id: targetProduct.id, quantity: Math.max(1, targetQty) }]);
     setSelected(null);
     setPanel(null);
+    setIsCheckoutOpen(true);
   };
 
   const updateQuantity = (id: string, delta: number) => {
@@ -514,6 +518,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         openProduct,
         addToBag,
         buyNow,
+        isCheckoutOpen,
+        setIsCheckoutOpen,
         setBag,
         updateQuantity,
         removeFromBag,

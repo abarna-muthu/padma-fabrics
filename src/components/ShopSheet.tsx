@@ -17,10 +17,8 @@ import { Sheet, SheetContent, SheetTitle, SheetDescription } from "@/components/
 import { ALL, categories, products, money, bagTotal } from "@/lib/catalog";
 import { useStore } from "@/context/StoreContext";
 import { ProductCard } from "@/components/ProductCard";
-import { CheckoutModal } from "@/components/CheckoutModal";
 
 export function ShopSheet() {
-  const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
   const {
     selected,
     setSelected,
@@ -33,6 +31,8 @@ export function ShopSheet() {
     setQuantity,
     addToBag,
     buyNow,
+    isCheckoutOpen,
+    setIsCheckoutOpen,
     bag,
     favorites,
     query,
@@ -49,7 +49,6 @@ export function ShopSheet() {
   const handleBuyNow = () => {
     if (!selected) return;
     buyNow(selected, quantity);
-    setIsCheckoutOpen(true);
   };
 
   const navigate = useNavigate();
@@ -383,7 +382,10 @@ export function ShopSheet() {
                   <Button
                     variant="editorial"
                     className="w-full h-11 text-xs uppercase tracking-wider font-semibold shadow-xs"
-                    onClick={() => setIsCheckoutOpen(true)}
+                    onClick={() => {
+                      setPanel(null);
+                      setIsCheckoutOpen(true);
+                    }}
                   >
                     <CreditCard className="size-4 mr-1.5" /> Proceed to Pay · {money(bagTotal(bag))}
                   </Button>
@@ -403,14 +405,6 @@ export function ShopSheet() {
           </>
         )}
       </SheetContent>
-
-      <CheckoutModal
-        isOpen={isCheckoutOpen}
-        onClose={() => setIsCheckoutOpen(false)}
-        onOrderSuccess={() => {
-          // Modal handles success view and closes cleanly
-        }}
-      />
     </Sheet>
   );
 }

@@ -244,9 +244,11 @@ function HomePage() {
             <h2 className="section-title">{content.home.inspirationTitle}</h2>
             <p className="text-xs text-muted-foreground mt-2 max-w-xl">{content.home.inspirationDesc}</p>
           </div>
-          <Link to="/shop" className="text-link" onClick={() => setFilter(ALL)}>
-            Explore all fabrics <ArrowRight className="size-3" />
-          </Link>
+          <Button variant="outline" size="sm" className="rounded-xs text-xs font-semibold gap-1.5" asChild>
+            <Link to="/shop" onClick={() => setFilter(ALL)}>
+              Explore all fabrics <ArrowRight className="size-3.5" />
+            </Link>
+          </Button>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           {[
@@ -277,27 +279,38 @@ function HomePage() {
           ].map((item) => (
             <div
               key={item.title}
-              className="group relative overflow-hidden border border-border bg-card"
+              className="group relative overflow-hidden border border-border bg-card flex flex-col justify-between"
             >
-              <div className="overflow-hidden aspect-[3/4]">
-                <img
-                  src={item.image}
-                  alt={item.title}
-                  width={768}
-                  height={1024}
-                  loading="lazy"
-                  className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-                />
+              <div>
+                <div className="overflow-hidden aspect-[3/4]">
+                  <img
+                    src={item.image}
+                    alt={item.title}
+                    width={768}
+                    height={1024}
+                    loading="lazy"
+                    className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                  />
+                </div>
+                <div className="p-5 pb-3">
+                  <span className="text-[9px] uppercase tracking-wider text-gold font-medium block mb-1">
+                    {item.category}
+                  </span>
+                  <h3 className="font-display text-xl font-medium mb-1.5">{item.title}</h3>
+                  <p className="text-xs text-muted-foreground leading-relaxed">{item.desc}</p>
+                </div>
               </div>
-              <div className="p-5">
-                <span className="text-[9px] uppercase tracking-wider text-gold font-medium block mb-1">
-                  {item.category}
-                </span>
-                <h3 className="font-display text-xl font-medium mb-1.5">{item.title}</h3>
-                <p className="text-xs text-muted-foreground leading-relaxed mb-4">{item.desc}</p>
-                <Link to="/shop" className="text-link" onClick={() => setFilter(item.category)}>
-                  Shop {item.category} <ArrowUpRight className="size-3" />
-                </Link>
+              <div className="p-5 pt-0 mt-3">
+                <Button
+                  size="sm"
+                  variant="editorial"
+                  className="w-full h-9 text-xs uppercase tracking-wider font-semibold rounded-xs shadow-sm bg-gradient-to-r from-[#9B2242] to-[#7B162E] hover:from-[#851933] hover:to-[#681125] text-white flex items-center justify-center gap-1.5 transition-all cursor-pointer"
+                  asChild
+                >
+                  <Link to="/shop" onClick={() => setFilter(item.category)}>
+                    Shop {item.category} <ArrowUpRight className="size-3.5" />
+                  </Link>
+                </Button>
               </div>
             </div>
           ))}
@@ -326,18 +339,31 @@ function HomePage() {
             <p>
               {content.about.storyParagraph2}
             </p>
-            <div className="flex flex-wrap gap-4 items-center">
-              <Link to="/about" className="text-link">
-                Read our story <ArrowRight className="size-3" />
-              </Link>
-              <a
-                className="text-link"
-                href={content.contact.mapsUrl || "https://maps.app.goo.gl/D3SYeK37eivDbbiA8"}
-                target="_blank"
-                rel="noreferrer"
+            <div className="flex flex-wrap gap-3.5 items-center pt-2">
+              <Button
+                variant="editorial"
+                size="default"
+                className="h-11 px-6 rounded-xs font-semibold text-xs uppercase tracking-wider shadow-md hover:shadow-lg transition-all"
+                asChild
               >
-                Visit us in Chennai <ArrowUpRight className="size-3" />
-              </a>
+                <Link to="/about">
+                  Read our story <ArrowRight className="size-4 ml-1.5" />
+                </Link>
+              </Button>
+              <Button
+                variant="outline"
+                size="default"
+                className="h-11 px-6 rounded-xs font-semibold text-xs uppercase tracking-wider border-2 border-[#9B2242] text-[#9B2242] hover:bg-[#9B2242] hover:text-white transition-all shadow-xs"
+                asChild
+              >
+                <a
+                  href={content.contact.mapsUrl || "https://maps.app.goo.gl/D3SYeK37eivDbbiA8"}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  Visit us in Chennai <ArrowUpRight className="size-4 ml-1.5" />
+                </a>
+              </Button>
             </div>
           </div>
         </div>

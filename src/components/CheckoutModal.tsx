@@ -60,20 +60,22 @@ export function CheckoutModal({ isOpen, onClose, onOrderSuccess }: CheckoutModal
 
   const totalAmount = bagTotal(bag);
 
-  // Whenever modal opens, default step to "payment" for instant Buy Now checkout
+  // Whenever modal opens, require customer authentication if not logged in
   useEffect(() => {
     if (isOpen) {
       setAuthError(null);
       setOrderError(null);
-      setStep("payment");
-      if (customer) {
+      if (isLoggedIn && customer) {
+        setStep("payment");
         setShippingAddress(customer.address || "");
         setCustomerPhone(customer.phone || "");
         setRegName(customer.name || "");
         setRegEmail(customer.email || "");
+      } else {
+        setStep("auth");
       }
     }
-  }, [isOpen, customer]);
+  }, [isOpen, isLoggedIn, customer]);
 
   // Handle Login Submit
   const handleLoginSubmit = async (e: React.FormEvent) => {
@@ -201,15 +203,40 @@ export function CheckoutModal({ isOpen, onClose, onOrderSuccess }: CheckoutModal
             <DialogHeader className="text-left space-y-2">
               <div className="flex items-center gap-2 text-primary text-xs font-semibold uppercase tracking-wider">
                 <Lock className="size-3.5" />
-                <span>Customer Checkout</span>
+                <span>Customer Checkout · Login Required</span>
               </div>
               <DialogTitle className="font-display text-2xl font-semibold">
-                Sign in to proceed to Payment
+                Sign in to Complete Purchase
               </DialogTitle>
               <DialogDescription className="text-xs text-muted-foreground leading-relaxed">
-                Please sign in to your account or register your delivery details. Once signed in, you will proceed directly to complete your purchase.
+                Please sign in to your account or register your delivery details to purchase this fabric. You will proceed directly to payment once signed in.
               </DialogDescription>
             </DialogHeader>
+
+            {/* Selected Fabric Item Preview */}
+            {bag.length > 0 && productsList.find((p) => p.id === bag[0]?.id) && (
+              <div className="p-3 bg-secondary/60 border border-border rounded-sm flex items-center gap-3">
+                <img
+                  src={productsList.find((p) => p.id === bag[0]?.id)?.image || "/assets/burgundy-silk.jpg"}
+                  alt={productsList.find((p) => p.id === bag[0]?.id)?.name}
+                  className="size-12 object-cover rounded-xs border border-border shrink-0"
+                  onError={(e) => {
+                    (e.currentTarget as HTMLImageElement).src = "/assets/burgundy-silk.jpg";
+                  }}
+                />
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs font-semibold truncate text-foreground">
+                    {productsList.find((p) => p.id === bag[0]?.id)?.name}
+                  </p>
+                  <p className="text-[11px] text-muted-foreground flex items-center justify-between mt-0.5">
+                    <span>
+                      Qty: {bag[0]?.quantity || 1} {productsList.find((p) => p.id === bag[0]?.id)?.unit || "mtr"}
+                    </span>
+                    <span className="font-bold text-primary">{money(totalAmount)}</span>
+                  </p>
+                </div>
+              </div>
+            )}
 
             {/* Toggle Login / Register */}
             <div className="grid grid-cols-2 p-1 bg-secondary rounded-sm text-xs font-medium">

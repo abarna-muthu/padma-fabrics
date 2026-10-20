@@ -77,7 +77,7 @@ function AdminLoginPage() {
             <span>Private Admin Portal</span>
           </div>
           <h1 className="font-display text-3xl font-medium mt-4 text-foreground">
-            Administrator Sign In
+            Sign In
           </h1>
           <p className="text-xs text-muted-foreground mt-1.5">
             Authorized store administration and inventory management
@@ -148,7 +148,7 @@ function AdminLoginPage() {
               disabled={isSubmitting}
             >
               <Lock className="size-4 mr-2" />
-              {isSubmitting ? "Authenticating..." : "Sign In to Portal"}
+              {isSubmitting ? "Authenticating..." : "Sign In"}
               <ArrowRight className="size-4 ml-2" />
             </Button>
           </form>

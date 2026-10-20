@@ -13,13 +13,14 @@ import { useEffect, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
-import { StoreProvider } from "../context/StoreContext";
+import { StoreProvider, useStore } from "../context/StoreContext";
 import { AdminAuthProvider } from "../context/AdminAuthContext";
 import { SiteContentProvider } from "../context/SiteContentContext";
 import { CustomerAuthProvider } from "../context/CustomerAuthContext";
 import { Header } from "../components/Header";
 import { Footer } from "../components/Footer";
 import { ShopSheet } from "../components/ShopSheet";
+import { CheckoutModal } from "../components/CheckoutModal";
 
 function NotFoundComponent() {
   return (
@@ -125,6 +126,17 @@ function RootShell({ children }: { children: ReactNode }) {
   );
 }
 
+function GlobalCheckoutModal() {
+  const { isCheckoutOpen, setIsCheckoutOpen } = useStore();
+  return (
+    <CheckoutModal
+      isOpen={isCheckoutOpen}
+      onClose={() => setIsCheckoutOpen(false)}
+      onOrderSuccess={() => {}}
+    />
+  );
+}
+
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
@@ -146,6 +158,7 @@ function RootComponent() {
                   </div>
                   <Footer />
                   <ShopSheet />
+                  <GlobalCheckoutModal />
                 </div>
               )}
             </CustomerAuthProvider>
