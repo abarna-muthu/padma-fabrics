@@ -32,9 +32,24 @@ const STORAGE_CUSTOMER_KEY = "pf_customer_session_v1";
 const CustomerAuthContext = createContext<CustomerAuthContextType | null>(null);
 
 export function CustomerAuthProvider({ children }: { children: ReactNode }) {
-  const [customer, setCustomer] = useState<CustomerUser | null>(null);
+  const [customer, setCustomer] = useState<CustomerUser | null>(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const stored = localStorage.getItem(STORAGE_CUSTOMER_KEY);
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          if (parsed && parsed.email) {
+            return parsed;
+          }
+        }
+      } catch (err) {
+        console.error("Failed to load customer session:", err);
+      }
+    }
+    return null;
+  });
 
-  // Initialize customer session on mount
+  // Re-verify or listen to session updates
   useEffect(() => {
     if (typeof window !== "undefined") {
       try {
@@ -45,9 +60,7 @@ export function CustomerAuthProvider({ children }: { children: ReactNode }) {
             setCustomer(parsed);
           }
         }
-      } catch (err) {
-        console.error("Failed to load customer session:", err);
-      }
+      } catch (err) {}
     }
   }, []);
 
@@ -64,7 +77,7 @@ export function CustomerAuthProvider({ children }: { children: ReactNode }) {
 
   const loginCustomer = async (
     email: string,
-    _password?: string,
+    password?: string,
     name?: string,
     phone?: string,
   ): Promise<{ success: boolean; error?: string }> => {
@@ -73,12 +86,34 @@ export function CustomerAuthProvider({ children }: { children: ReactNode }) {
       return { success: false, error: "Please enter a valid email address." };
     }
 
+    if (password && password.trim() !== "" && password.trim() !== "customer123") {
+      return { success: false, error: "Incorrect password. Default customer password is: customer123" };
+    }
+
+    // Try to load any existing customer record from localStorage
+    let existingAddress = customer?.address;
+    let existingPhone = customer?.phone;
+    let existingName = customer?.name;
+
+    try {
+      const stored = localStorage.getItem(STORAGE_CUSTOMER_KEY);
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (parsed && parsed.email?.toLowerCase() === cleanEmail) {
+          existingName = parsed.name || existingName;
+          existingPhone = parsed.phone || existingPhone;
+          existingAddress = parsed.address || existingAddress;
+        }
+      }
+    } catch {}
+
     const emailName = cleanEmail.split("@")[0]?.replace(/[._]/g, " ") || "Customer";
     const customerData: CustomerUser = {
-      id: `cust-${Date.now().toString(36)}`,
-      name: name?.trim() || emailName,
+      id: customer?.id || `cust-${Date.now().toString(36)}`,
+      name: name?.trim() || existingName || emailName,
       email: cleanEmail,
-      phone: phone?.trim() || "+91 99401 45700",
+      phone: phone?.trim() || existingPhone || "+91 99401 45700",
+      ...(existingAddress ? { address: existingAddress } : {}),
     };
 
     saveCustomer(customerData);

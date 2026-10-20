@@ -36,6 +36,12 @@ interface StoreContextType {
   buyNow: (customProduct?: Product, customQty?: number) => void;
   isCheckoutOpen: boolean;
   setIsCheckoutOpen: (open: boolean) => void;
+  isCustomerPortalOpen: boolean;
+  setIsCustomerPortalOpen: (open: boolean) => void;
+  customerPortalTab: "orders" | "wishlist" | "profile";
+  setCustomerPortalTab: (tab: "orders" | "wishlist" | "profile") => void;
+  openCustomerOrders: () => void;
+  openCustomerWishlist: () => void;
   setBag: React.Dispatch<React.SetStateAction<BagItem[]>>;
   updateQuantity: (id: string, delta: number) => void;
   removeFromBag: (id: string) => void;
@@ -85,6 +91,18 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const [favorites, setFavorites] = useState<string[]>([]);
   const [query, setQuery] = useState("");
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
+  const [isCustomerPortalOpen, setIsCustomerPortalOpen] = useState(false);
+  const [customerPortalTab, setCustomerPortalTab] = useState<"orders" | "wishlist" | "profile">("orders");
+
+  const openCustomerOrders = () => {
+    setCustomerPortalTab("orders");
+    setIsCustomerPortalOpen(true);
+  };
+
+  const openCustomerWishlist = () => {
+    setCustomerPortalTab("wishlist");
+    setIsCustomerPortalOpen(true);
+  };
 
   // Catalog products (shared with public storefront)
   const [productsList, setProductsList] = useState<Product[]>(staticProducts as Product[]);
@@ -520,6 +538,12 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         buyNow,
         isCheckoutOpen,
         setIsCheckoutOpen,
+        isCustomerPortalOpen,
+        setIsCustomerPortalOpen,
+        customerPortalTab,
+        setCustomerPortalTab,
+        openCustomerOrders,
+        openCustomerWishlist,
         setBag,
         updateQuantity,
         removeFromBag,

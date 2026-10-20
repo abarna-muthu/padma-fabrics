@@ -72,13 +72,53 @@ export async function createCheckoutOrder(req: Request, res: Response) {
     const orderNumber = orderId;
     const paymentStatus = payment_method === "COD" ? "Pending" : "Paid";
 
+    // 1. Ensure Customer Exists & Upsert Record
+    let customerId = "";
+    const existingCust = await db.query("SELECT * FROM customers WHERE email = ?", [
+      customer_email.trim().toLowerCase(),
+    ]);
+    if (existingCust.length > 0) {
+      customerId = existingCust[0].id;
+      await db.execute("UPDATE customers SET name = ?, phone = ? WHERE id = ?", [
+        customer_name.trim(),
+        customer_phone.trim(),
+        customerId,
+      ]);
+    } else {
+      customerId = `cust-${Date.now().toString(36)}-${Math.random().toString(36).substring(2, 6)}`;
+      await db.execute("INSERT INTO customers (id, name, email, phone) VALUES (?, ?, ?, ?)", [
+        customerId,
+        customer_name.trim(),
+        customer_email.trim().toLowerCase(),
+        customer_phone.trim(),
+      ]);
+    }
+
+    // Save Customer Address
+    if (shipping_address) {
+      const addrId = `addr-${Date.now().toString(36)}-${Math.random().toString(36).substring(2, 6)}`;
+      await db.execute(
+        "INSERT INTO customer_addresses (id, customer_id, address_line1, city, state, postal_code, country) VALUES (?, ?, ?, ?, ?, ?, ?)",
+        [
+          addrId,
+          customerId,
+          shipping_address.trim(),
+          "Chennai",
+          "Tamil Nadu",
+          "600053",
+          "India",
+        ],
+      );
+    }
+
     // Create Order Record
     await db.execute(
-      `INSERT INTO orders (id, order_number, customer_name, customer_email, customer_phone, shipping_address, subtotal, shipping_fee, discount_amount, total_amount, order_status, payment_method, payment_status, notes)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      `INSERT INTO orders (id, order_number, customer_id, customer_name, customer_email, customer_phone, shipping_address, subtotal, shipping_fee, discount_amount, total_amount, order_status, payment_method, payment_status, notes)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         orderId,
         orderNumber,
+        customerId,
         customer_name,
         customer_email,
         customer_phone,
@@ -380,3 +420,81 @@ export async function updatePaymentStatus(req: Request, res: Response) {
     return res.status(500).json({ success: false, error: "Failed to update payment status." });
   }
 }
+
+export async function getCustomers(req: Request, res: Response) {
+  try {
+    const db = await getDb();
+    const customers = await db.query("SELECT * FROM customers");
+    const orders = await db.query("SELECT * FROM orders");
+    const addresses = await db.query("SELECT * FROM customer_addresses");
+
+    const customerMap = new Map<string, any>();
+
+    for (const c of customers) {
+      if (!c.email) continue;
+      customerMap.set(c.email.toLowerCase(), {
+        id: c.id,
+        name: c.name,
+        email: c.email,
+        phone: c.phone || "",
+        address: "",
+        ordersCount: 0,
+        totalSpent: 0,
+        lastOrderDate: "",
+        createdAt: c.created_at ? c.created_at.split("T")[0] : "",
+      });
+    }
+
+    for (const o of orders) {
+      const email = o.customer_email?.toLowerCase();
+      if (!email) continue;
+      if (!customerMap.has(email)) {
+        customerMap.set(email, {
+          id: o.customer_id || `cust-${Math.random().toString(36).substring(2, 8)}`,
+          name: o.customer_name || "Customer",
+          email: o.customer_email,
+          phone: o.customer_phone || "",
+          address: o.shipping_address || "",
+          ordersCount: 0,
+          totalSpent: 0,
+          lastOrderDate: "",
+          createdAt: o.created_at ? o.created_at.split("T")[0] : "",
+        });
+      }
+      const entry = customerMap.get(email);
+      entry.ordersCount += 1;
+      if (o.payment_status === "Paid") {
+        entry.totalSpent += Number(o.total_amount || 0);
+      }
+      if (!entry.address && o.shipping_address) {
+        entry.address = o.shipping_address;
+      }
+      const orderDate = o.created_at ? o.created_at.split("T")[0] : "";
+      if (orderDate && (!entry.lastOrderDate || orderDate > entry.lastOrderDate)) {
+        entry.lastOrderDate = orderDate;
+      }
+    }
+
+    for (const addr of addresses) {
+      for (const [_, entry] of customerMap) {
+        if (entry.id === addr.customer_id && !entry.address) {
+          entry.address = `${addr.address_line1}, ${addr.city}`;
+        }
+      }
+    }
+
+    const list = Array.from(customerMap.values()).sort(
+      (a, b) => (b.ordersCount || 0) - (a.ordersCount || 0),
+    );
+
+    return res.status(200).json({
+      success: true,
+      customers: list,
+      data: list,
+    });
+  } catch (err: any) {
+    console.error("[OrderController] getCustomers error:", err);
+    return res.status(500).json({ success: false, error: "Failed to retrieve customers list." });
+  }
+}
+

@@ -271,6 +271,15 @@ export const dashboardApi = {
 };
 
 // ----------------------------------------------------
+// Customers API
+// ----------------------------------------------------
+export const customerApi = {
+  async getAll() {
+    return apiRequest<any[]>("/api/admin/customers");
+  },
+};
+
+// ----------------------------------------------------
 // Contact Enquiries API
 // ----------------------------------------------------
 export const contactApi = {

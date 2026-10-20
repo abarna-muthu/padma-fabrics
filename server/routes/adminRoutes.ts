@@ -14,6 +14,7 @@ import {
   getOrderById,
   updateOrderStatus,
   updatePaymentStatus,
+  getCustomers,
 } from "../controllers/orderController";
 import { getEnquiries } from "../controllers/contactController";
 import { adminUpdateCredentials, getAdminProfile } from "../controllers/authController";
@@ -25,6 +26,9 @@ router.use(authenticate, requireAdmin);
 
 // Dashboard
 router.get("/dashboard", getDashboardStats);
+
+// Customers
+router.get("/customers", getCustomers);
 
 // Products catalog management
 router.get("/products", (req, res) => {

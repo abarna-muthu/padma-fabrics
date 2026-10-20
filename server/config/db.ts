@@ -551,14 +551,26 @@ function executeMemoryQuery<T = any>(sql: string, params: any[] = []): T[] {
     return [...memoryDb.contact_enquiries].reverse() as any;
   }
 
-  // Carts
-  if (normalized.includes("from carts") && normalized.includes("where session_id =")) {
-    const sid = params[0];
-    return memoryDb.carts.filter((c) => c.session_id === sid) as any;
+  // Customers
+  if (normalized.includes("from customers") && normalized.includes("where email =")) {
+    const email = params[0]?.toLowerCase();
+    return memoryDb.customers.filter((c) => c.email?.toLowerCase() === email) as any;
   }
-  if (normalized.includes("from cart_items") && normalized.includes("where cart_id =")) {
+  if (normalized.includes("from customers") && normalized.includes("where id =")) {
+    const id = params[0];
+    return memoryDb.customers.filter((c) => c.id === id) as any;
+  }
+  if (normalized.includes("from customers")) {
+    return [...memoryDb.customers].reverse() as any;
+  }
+
+  // Customer addresses
+  if (normalized.includes("from customer_addresses") && normalized.includes("where customer_id =")) {
     const cid = params[0];
-    return memoryDb.cart_items.filter((ci) => ci.cart_id === cid) as any;
+    return memoryDb.customer_addresses.filter((a) => a.customer_id === cid) as any;
+  }
+  if (normalized.includes("from customer_addresses")) {
+    return [...memoryDb.customer_addresses] as any;
   }
 
   return [] as any;
@@ -780,6 +792,50 @@ function executeMemoryCommand(sql: string, params: any[] = []): any {
       memoryDb.cart_items.splice(idx, 1);
       return { affectedRows: 1 };
     }
+  }
+
+  // Customer insert/update
+  if (normalized.startsWith("insert into customers")) {
+    const cust = {
+      id: params[0],
+      name: params[1],
+      email: params[2],
+      phone: params[3],
+      password_hash: params[4] || null,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    };
+    memoryDb.customers.unshift(cust);
+    return { insertId: cust.id, affectedRows: 1 };
+  }
+
+  if (normalized.startsWith("update customers set")) {
+    const name = params[0];
+    const phone = params[1];
+    const id = params[2];
+    const cust = memoryDb.customers.find((c) => c.id === id);
+    if (cust) {
+      if (name) cust.name = name;
+      if (phone) cust.phone = phone;
+      cust.updated_at = new Date().toISOString();
+      return { affectedRows: 1 };
+    }
+  }
+
+  // Customer addresses insert
+  if (normalized.startsWith("insert into customer_addresses")) {
+    const addr = {
+      id: params[0],
+      customer_id: params[1],
+      address_line1: params[2],
+      city: params[3] || "Chennai",
+      state: params[4] || "Tamil Nadu",
+      postal_code: params[5] || "600053",
+      country: params[6] || "India",
+      created_at: new Date().toISOString(),
+    };
+    memoryDb.customer_addresses.push(addr);
+    return { insertId: addr.id, affectedRows: 1 };
   }
 
   return { affectedRows: 0 };

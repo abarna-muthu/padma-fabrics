@@ -9,7 +9,14 @@ import { useSiteContent } from "@/context/SiteContentContext";
 import { useCustomerAuth } from "@/context/CustomerAuthContext";
 
 export function Header() {
-  const { count, setPanel, setFilter } = useStore();
+  const {
+    count,
+    setPanel,
+    setFilter,
+    openCustomerOrders,
+    openCustomerWishlist,
+    setIsCustomerPortalOpen,
+  } = useStore();
   const { isAuthenticated } = useAdminAuth();
   const { content } = useSiteContent();
   const { customer, isLoggedIn } = useCustomerAuth();
@@ -78,21 +85,45 @@ export function Header() {
           >
             <Heart />
           </Button>
-          <Link
-            to={isAuthenticated ? "/admin" : "/admin/login"}
-            className="inline-flex"
-            title={isAuthenticated ? "Admin Portal" : "Sign In / Admin"}
-            aria-label={isAuthenticated ? "Admin Portal" : "Sign In"}
-          >
+          {/* Customer Account Button */}
+          {isLoggedIn && customer ? (
+            <button
+              type="button"
+              onClick={() => openCustomerOrders()}
+              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#9B2242]/10 hover:bg-[#9B2242]/20 border border-[#9B2242]/30 text-xs font-semibold text-primary transition-all cursor-pointer shadow-2xs"
+              title="My Orders & Wishlist"
+              aria-label="My Orders & Wishlist"
+            >
+              <div className="size-5 rounded-full bg-primary text-white flex items-center justify-center text-[10px] font-bold uppercase shrink-0">
+                {customer.name ? customer.name.charAt(0) : "C"}
+              </div>
+              <span className="max-w-[80px] truncate hidden sm:inline-block">
+                {customer.name ? customer.name.split(" ")[0] : "Account"}
+              </span>
+            </button>
+          ) : (
             <Button
               variant="ghost"
               size="icon"
-              className="icon-control"
-              aria-label="Sign In"
+              className="icon-control cursor-pointer"
+              title="Sign In / My Orders"
+              aria-label="Sign In / My Orders"
+              onClick={() => setIsCustomerPortalOpen(true)}
             >
               <User className="size-4" />
             </Button>
-          </Link>
+          )}
+
+          {/* Quick Admin link if admin authenticated */}
+          {isAuthenticated && (
+            <Link
+              to="/admin"
+              className="hidden lg:inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-700 dark:text-amber-300 border border-amber-500/20 text-[10px] font-semibold uppercase tracking-wider hover:bg-amber-500/20 transition-all"
+              title="Admin Portal"
+            >
+              <span>Admin</span>
+            </Link>
+          )}
           <Button
             variant="ghost"
             className="icon-control px-2.5 py-1.5 rounded-full hover:bg-[#9B2242]/10 transition-colors"

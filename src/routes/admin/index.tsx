@@ -27,9 +27,11 @@ import {
   Trash2,
   TrendingUp,
   User,
+  Users,
   X,
   Globe,
   Phone,
+  Mail,
   Sparkles,
   RotateCcw,
 } from "lucide-react";
@@ -42,6 +44,8 @@ import { useAdminAuth } from "@/context/AdminAuthContext";
 import { useStore } from "@/context/StoreContext";
 import { useSiteContent } from "@/context/SiteContentContext";
 import { ALL, categories, money, type Product, type Order } from "@/lib/catalog";
+import { customerApi } from "@/lib/api";
+import { AdminLoginView } from "./login";
 
 export const Route = createFileRoute("/admin/")({
   head: () => ({
@@ -121,6 +125,7 @@ type AdminTab =
   | "products"
   | "inventory"
   | "orders"
+  | "customers"
   | "sales"
   | "home-content"
   | "about-content"
@@ -147,17 +152,63 @@ function AdminDashboardPage() {
   const [activeTab, setActiveTab] = useState<AdminTab>("dashboard");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-  // Protected route check
+  // Customer management states
+  const [customersList, setCustomersList] = useState<any[]>([]);
+  const [customerSearch, setCustomerSearch] = useState("");
+
+  // Sync customers from backend API and orders
   useEffect(() => {
-    if (!isAuthenticated) {
-      navigate({ to: "/admin/login" });
-    }
-  }, [isAuthenticated, navigate]);
+    if (!isAuthenticated) return;
+    const loadCustomers = async () => {
+      try {
+        const res = await customerApi.getAll();
+        const serverCustomers = (res as any)?.customers || res.data;
+        if (res.success && Array.isArray(serverCustomers) && serverCustomers.length > 0) {
+          setCustomersList(serverCustomers);
+          return;
+        }
+      } catch (err) {
+        console.debug("Customer API fetch standby:", err);
+      }
+
+      // Fallback: build customer list dynamically from orders
+      const map = new Map<string, any>();
+      for (const o of orders) {
+        const email = o.customerEmail?.toLowerCase() || "";
+        if (!email) continue;
+        if (!map.has(email)) {
+          map.set(email, {
+            id: `cust-${email.replace(/[^a-z0-9]/g, "").slice(0, 8)}`,
+            name: o.customerName || "Customer",
+            email: o.customerEmail,
+            phone: o.customerPhone || "",
+            address: o.shippingAddress || "",
+            ordersCount: 0,
+            totalSpent: 0,
+            lastOrderDate: o.date || "",
+          });
+        }
+        const entry = map.get(email);
+        entry.ordersCount += 1;
+        if (o.paymentStatus === "Paid") {
+          entry.totalSpent += Number(o.total || 0);
+        }
+        if (o.date && (!entry.lastOrderDate || o.date > entry.lastOrderDate)) {
+          entry.lastOrderDate = o.date;
+        }
+        if (!entry.address && o.shippingAddress) {
+          entry.address = o.shippingAddress;
+        }
+      }
+      setCustomersList(Array.from(map.values()));
+    };
+
+    loadCustomers();
+  }, [isAuthenticated, orders]);
 
   // Handle logout
   const handleLogout = () => {
     logout();
-    navigate({ to: "/admin/login" });
   };
 
   // Product management modal states
@@ -401,8 +452,21 @@ function AdminDashboardPage() {
     });
   }, [orders, orderStatusFilter, orderSearch]);
 
+  // Filtered customers list
+  const filteredCustomers = useMemo(() => {
+    return customersList.filter((c) => {
+      const q = customerSearch.toLowerCase();
+      return (
+        c.name.toLowerCase().includes(q) ||
+        c.email.toLowerCase().includes(q) ||
+        (c.phone && c.phone.includes(q)) ||
+        (c.address && c.address.toLowerCase().includes(q))
+      );
+    });
+  }, [customersList, customerSearch]);
+
   if (!isAuthenticated) {
-    return null; // Will redirect in useEffect
+    return <AdminLoginView onLoginSuccess={() => setActiveTab("dashboard")} />;
   }
 
   return (
@@ -537,6 +601,33 @@ function AdminDashboardPage() {
               }`}
             >
               {orders.length}
+            </span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              setActiveTab("customers");
+              setMobileMenuOpen(false);
+            }}
+            className={`w-full flex items-center justify-between px-3.5 py-2.5 text-sm font-medium rounded-sm transition-colors text-left cursor-pointer ${
+              activeTab === "customers"
+                ? "bg-primary text-primary-foreground font-semibold"
+                : "text-muted-foreground hover:bg-secondary hover:text-foreground"
+            }`}
+          >
+            <div className="flex items-center gap-3">
+              <Users className="size-4 shrink-0" />
+              <span>Customers</span>
+            </div>
+            <span
+              className={`text-xs px-2 py-0.5 rounded font-sans font-medium tabular-nums ${
+                activeTab === "customers"
+                  ? "bg-primary-foreground/20 text-white"
+                  : "bg-secondary text-muted-foreground"
+              }`}
+            >
+              {customersList.length}
             </span>
           </button>
 
@@ -1275,6 +1366,141 @@ function AdminDashboardPage() {
                       <tr>
                         <td colSpan={8} className="p-8 text-center text-muted-foreground text-sm">
                           No orders found matching the filter.
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ----------------- TAB: CUSTOMERS ----------------- */}
+        {activeTab === "customers" && (
+          <div className="space-y-6">
+            {/* Header + Stats */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div className="bg-card border border-border p-5">
+                <span className="text-sm font-medium text-muted-foreground">Total Customers</span>
+                <div className="font-sans font-bold text-3xl tracking-tight text-foreground mt-2 tabular-nums">
+                  {customersList.length}
+                </div>
+                <span className="text-xs text-muted-foreground mt-1.5 block">
+                  Buyer accounts recorded from orders
+                </span>
+              </div>
+              <div className="bg-card border border-border p-5">
+                <span className="text-sm font-medium text-muted-foreground">Total Orders Placed</span>
+                <div className="font-sans font-bold text-3xl tracking-tight text-primary mt-2 tabular-nums">
+                  {orders.length} orders
+                </div>
+                <span className="text-xs text-primary font-medium mt-1.5 block">
+                  Across all customer profiles
+                </span>
+              </div>
+              <div className="bg-card border border-border p-5">
+                <span className="text-sm font-medium text-muted-foreground">Customer Lifetime Value</span>
+                <div className="font-sans font-bold text-3xl tracking-tight text-gold mt-2 tabular-nums">
+                  {money(totalRevenue)}
+                </div>
+                <span className="text-xs text-muted-foreground mt-1.5 block">
+                  Total revenue collected from buyers
+                </span>
+              </div>
+            </div>
+
+            {/* Filter & Search Bar */}
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+              <div className="relative flex-1 sm:w-80">
+                <Search className="size-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  placeholder="Search by customer name, email, phone, city…"
+                  value={customerSearch}
+                  onChange={(e) => setCustomerSearch(e.target.value)}
+                  className="pl-8 text-xs h-9 rounded-none border-border"
+                />
+              </div>
+
+              <div className="text-xs text-muted-foreground">
+                Showing {filteredCustomers.length} of {customersList.length} customer records
+              </div>
+            </div>
+
+            {/* Customers Table */}
+            <div className="bg-card border border-border overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-sm">
+                  <thead className="bg-secondary/40 text-muted-foreground border-b border-border">
+                    <tr>
+                      <th className="p-3.5 text-xs font-semibold uppercase tracking-wider">Customer Name</th>
+                      <th className="p-3.5 text-xs font-semibold uppercase tracking-wider">Contact Info</th>
+                      <th className="p-3.5 text-xs font-semibold uppercase tracking-wider">Delivery Address</th>
+                      <th className="p-3.5 text-xs font-semibold uppercase tracking-wider">Total Orders</th>
+                      <th className="p-3.5 text-xs font-semibold uppercase tracking-wider">Total Spent</th>
+                      <th className="p-3.5 text-xs font-semibold uppercase tracking-wider">Last Order Date</th>
+                      <th className="p-3.5 text-xs font-semibold uppercase tracking-wider text-right">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-border">
+                    {filteredCustomers.map((c) => (
+                      <tr key={c.id || c.email} className="hover:bg-secondary/20 transition-colors">
+                        <td className="p-3.5">
+                          <div className="flex items-center gap-2.5">
+                            <div className="size-8 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold text-xs uppercase shrink-0">
+                              {c.name ? c.name.charAt(0) : "C"}
+                            </div>
+                            <div>
+                              <div className="font-medium text-foreground">{c.name}</div>
+                              <span className="text-[10px] text-muted-foreground font-mono">
+                                {c.id || "CUST-ACT"}
+                              </span>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="p-3.5">
+                          <div className="text-xs text-foreground flex items-center gap-1">
+                            <Mail className="size-3 text-muted-foreground shrink-0" />
+                            <span>{c.email}</span>
+                          </div>
+                          <div className="text-xs font-sans tabular-nums text-muted-foreground mt-0.5 flex items-center gap-1">
+                            <Phone className="size-3 text-muted-foreground shrink-0" />
+                            <span>{c.phone || "N/A"}</span>
+                          </div>
+                        </td>
+                        <td className="p-3.5 max-w-xs text-xs text-muted-foreground">
+                          <p className="line-clamp-2 leading-relaxed">
+                            {c.address || "Chennai, Tamil Nadu"}
+                          </p>
+                        </td>
+                        <td className="p-3.5 font-sans font-bold tabular-nums text-sm text-foreground">
+                          {c.ordersCount || 1} order(s)
+                        </td>
+                        <td className="p-3.5 font-sans font-bold tabular-nums text-sm text-primary">
+                          {money(c.totalSpent || 0)}
+                        </td>
+                        <td className="p-3.5 font-sans tabular-nums text-xs text-muted-foreground">
+                          {c.lastOrderDate || "Recent"}
+                        </td>
+                        <td className="p-3.5 text-right">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="text-xs h-8 cursor-pointer"
+                            onClick={() => {
+                              setOrderSearch(c.email || c.name);
+                              setActiveTab("orders");
+                            }}
+                          >
+                            <Eye className="size-3.5 mr-1" /> View Orders
+                          </Button>
+                        </td>
+                      </tr>
+                    ))}
+                    {filteredCustomers.length === 0 && (
+                      <tr>
+                        <td colSpan={7} className="p-8 text-center text-muted-foreground text-sm">
+                          No customer records found matching your search. Customer details will appear automatically when orders are placed.
                         </td>
                       </tr>
                     )}

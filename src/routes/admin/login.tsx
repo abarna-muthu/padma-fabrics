@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState, type FormEvent } from "react";
-import { AlertCircle, ArrowLeft, ArrowRight, Eye, EyeOff, Lock, ShieldCheck } from "lucide-react";
+import { AlertCircle, ArrowLeft, ArrowRight, Eye, EyeOff, Lock, ShieldCheck, KeyRound } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import logo from "@/assets/padmanabha-logo.jpg";
@@ -16,22 +16,26 @@ export const Route = createFileRoute("/admin/login")({
   component: AdminLoginPage,
 });
 
-function AdminLoginPage() {
+export function AdminLoginView({ onLoginSuccess }: { onLoginSuccess?: () => void }) {
   const { isAuthenticated, login } = useAdminAuth();
   const navigate = useNavigate();
 
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const [email, setEmail] = useState("admin@gmail.com");
+  const [password, setPassword] = useState("admin123");
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // If already authenticated, redirect to /admin
+  // If already authenticated and standalone, redirect to /admin
   useEffect(() => {
     if (isAuthenticated) {
-      navigate({ to: "/admin" });
+      if (onLoginSuccess) {
+        onLoginSuccess();
+      } else {
+        navigate({ to: "/admin" });
+      }
     }
-  }, [isAuthenticated, navigate]);
+  }, [isAuthenticated, navigate, onLoginSuccess]);
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -41,7 +45,11 @@ function AdminLoginPage() {
     try {
       const result = await login(email, password);
       if (result.success) {
-        navigate({ to: "/admin" });
+        if (onLoginSuccess) {
+          onLoginSuccess();
+        } else {
+          navigate({ to: "/admin" });
+        }
       } else {
         setError(result.error || "Authentication failed. Please verify credentials.");
         setIsSubmitting(false);
@@ -50,6 +58,12 @@ function AdminLoginPage() {
       setError(err.message || "Failed to authenticate.");
       setIsSubmitting(false);
     }
+  };
+
+  const handleFillDemo = () => {
+    setEmail("admin@gmail.com");
+    setPassword("admin123");
+    setError(null);
   };
 
   return (
@@ -77,18 +91,39 @@ function AdminLoginPage() {
             <span>Private Admin Portal</span>
           </div>
           <h1 className="font-display text-3xl font-medium mt-4 text-foreground">
-            Sign In
+            Admin Sign In
           </h1>
           <p className="text-xs text-muted-foreground mt-1.5">
-            Authorized store administration and inventory management
+            Store management, customer orders, inventory, and analytics
           </p>
+        </div>
+
+        {/* Demo Credentials Helper Pill */}
+        <div className="mb-4 p-3 bg-primary/5 border border-primary/20 rounded-sm flex items-center justify-between text-xs text-foreground">
+          <div className="space-y-0.5">
+            <span className="font-semibold text-primary flex items-center gap-1">
+              <KeyRound className="size-3 text-primary" /> Admin Login Credentials:
+            </span>
+            <div className="text-[11px] text-muted-foreground font-mono">
+              Username: <strong className="text-foreground">admin@gmail.com</strong> | Password: <strong className="text-foreground">admin123</strong>
+            </div>
+          </div>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="text-[11px] h-7 px-2 border-primary/30 text-primary hover:bg-primary/10"
+            onClick={handleFillDemo}
+          >
+            Auto-fill
+          </Button>
         </div>
 
         {/* Login Card */}
         <div className="bg-card border border-border p-8 shadow-sm">
           {error && (
             <div
-              className="mb-6 p-3.5 bg-destructive/10 border border-destructive/20 text-destructive text-xs flex items-start gap-2.5"
+              className="mb-6 p-3.5 bg-destructive/10 border border-destructive/20 text-destructive text-xs flex items-start gap-2.5 rounded-sm"
               role="alert"
             >
               <AlertCircle className="size-4 shrink-0 mt-0.5" />
@@ -99,7 +134,7 @@ function AdminLoginPage() {
           <form onSubmit={handleSubmit} className="space-y-5">
             <div className="space-y-2">
               <label htmlFor="email" className="text-xs font-medium text-foreground">
-                Email Address
+                Username / Email Address
               </label>
               <Input
                 id="email"
@@ -108,8 +143,8 @@ function AdminLoginPage() {
                 autoComplete="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="Email Address"
-                className="rounded-none border-border focus-visible:ring-primary text-xs h-10"
+                placeholder="admin@gmail.com"
+                className="rounded-none border-border focus-visible:ring-primary text-xs h-10 font-mono"
               />
             </div>
 
@@ -127,13 +162,13 @@ function AdminLoginPage() {
                   autoComplete="current-password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="••••••••"
-                  className="rounded-none border-border focus-visible:ring-primary text-xs h-10 pr-10"
+                  placeholder="admin123"
+                  className="rounded-none border-border focus-visible:ring-primary text-xs h-10 pr-10 font-mono"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground cursor-pointer"
                   aria-label={showPassword ? "Hide password" : "Show password"}
                 >
                   {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
@@ -144,11 +179,11 @@ function AdminLoginPage() {
             <Button
               type="submit"
               variant="editorial"
-              className="w-full h-11"
+              className="w-full h-11 text-xs uppercase tracking-wider font-semibold cursor-pointer"
               disabled={isSubmitting}
             >
               <Lock className="size-4 mr-2" />
-              {isSubmitting ? "Authenticating..." : "Sign In"}
+              {isSubmitting ? "Authenticating..." : "Sign In to Admin Portal"}
               <ArrowRight className="size-4 ml-2" />
             </Button>
           </form>
@@ -166,4 +201,8 @@ function AdminLoginPage() {
       </div>
     </div>
   );
+}
+
+function AdminLoginPage() {
+  return <AdminLoginView />;
 }

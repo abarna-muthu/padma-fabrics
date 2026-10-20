@@ -21,6 +21,7 @@ import { Header } from "../components/Header";
 import { Footer } from "../components/Footer";
 import { ShopSheet } from "../components/ShopSheet";
 import { CheckoutModal } from "../components/CheckoutModal";
+import { CustomerPortalModal } from "../components/CustomerPortalModal";
 
 function NotFoundComponent() {
   return (
@@ -160,6 +161,7 @@ function RootComponent() {
                   <Footer />
                   <ShopSheet />
                   <GlobalCheckoutModal />
+                  <CustomerPortalModal />
                 </div>
               )}
             </CustomerAuthProvider>
