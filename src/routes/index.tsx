@@ -17,6 +17,7 @@ import burgundy from "@/assets/burgundy-silk.jpg";
 import ivory from "@/assets/ivory-brocade.jpg";
 import shirt from "@/assets/mens-shirt.jpg";
 import kids from "@/assets/kids-dress.jpg";
+import sage from "@/assets/sage-fabric.jpg";
 import { ALL, collections, categories } from "@/lib/catalog";
 import { useStore } from "@/context/StoreContext";
 import { useSiteContent } from "@/context/SiteContentContext";

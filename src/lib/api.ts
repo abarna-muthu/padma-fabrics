@@ -191,10 +191,11 @@ export const productApi = {
     public_id?: string;
     error?: string;
   }> {
-    return apiRequest<any>("/api/admin/products/upload-image", {
+    const res = await apiRequest<any>("/api/admin/products/upload-image", {
       method: "POST",
       body: JSON.stringify({ image: imageData, folder }),
     });
+    return res as any;
   },
 };
 

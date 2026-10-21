@@ -44,6 +44,7 @@ export type Item = {
   sizes?: readonly string[];
   stock: number;
   status: "active" | "inactive" | "archived";
+  isActive?: boolean;
   sku?: string;
   updatedAt?: string;
 };
