@@ -18,6 +18,7 @@ import {
 } from "../controllers/orderController";
 import { getEnquiries } from "../controllers/contactController";
 import { adminUpdateCredentials, getAdminProfile } from "../controllers/authController";
+import { uploadImage, getUploadSignature } from "../controllers/uploadController";
 
 const router = Router();
 
@@ -41,6 +42,9 @@ router.put("/products/:id", updateProduct);
 router.delete("/products/:id", deleteProduct);
 router.patch("/products/:id/toggle", toggleProductStatus);
 router.patch("/products/:id/toggle-status", toggleProductStatus);
+router.post("/upload", uploadImage);
+router.post("/products/upload-image", uploadImage);
+router.get("/upload/signature", getUploadSignature);
 
 // Inventory
 router.get("/inventory", getInventory);

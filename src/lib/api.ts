@@ -183,6 +183,19 @@ export const productApi = {
       method: "PATCH",
     });
   },
+
+  async uploadImage(imageData: string, folder = "padma_products"): Promise<{
+    success: boolean;
+    url: string;
+    secure_url?: string;
+    public_id?: string;
+    error?: string;
+  }> {
+    return apiRequest<any>("/api/admin/products/upload-image", {
+      method: "POST",
+      body: JSON.stringify({ image: imageData, folder }),
+    });
+  },
 };
 
 // ----------------------------------------------------

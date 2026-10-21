@@ -47,7 +47,7 @@ import { useAdminAuth } from "@/context/AdminAuthContext";
 import { useStore } from "@/context/StoreContext";
 import { useSiteContent } from "@/context/SiteContentContext";
 import { ALL, categories, money, type Product, type Order } from "@/lib/catalog";
-import { customerApi } from "@/lib/api";
+import { customerApi, productApi } from "@/lib/api";
 import { AdminLoginView } from "./login";
 
 export const Route = createFileRoute("/admin/")({
@@ -250,22 +250,25 @@ function AdminDashboardPage() {
     if (!file) return;
 
     if (!file.type.startsWith("image/")) {
-      alert("Please select a valid image file (JPG, PNG, WebP).");
+      toast.error("Please select a valid image file (JPG, PNG, WebP).");
       return;
     }
 
     setIsUploadingImage(true);
+    setImageUploadStatus("Optimizing photo for Cloudinary upload...");
+
     const reader = new FileReader();
     reader.onload = (event) => {
       const result = event.target?.result as string;
       if (!result) {
         setIsUploadingImage(false);
+        setImageUploadStatus("");
         return;
       }
 
       // Automatically optimize/compress image to keep it lightweight and fast
       const img = new Image();
-      img.onload = () => {
+      img.onload = async () => {
         const canvas = document.createElement("canvas");
         const maxDim = 1200;
         let width = img.width;
@@ -284,16 +287,30 @@ function AdminDashboardPage() {
         canvas.width = width;
         canvas.height = height;
         const ctx = canvas.getContext("2d");
-        if (ctx) {
-          ctx.drawImage(img, 0, 0, width, height);
-          const compressedUrl = canvas.toDataURL("image/jpeg", 0.85);
-          setProdImage(compressedUrl);
-          setImageUploadStatus(`${file.name} (${(compressedUrl.length / 1024).toFixed(0)} KB)`);
-        } else {
-          setProdImage(result);
-          setImageUploadStatus(`${file.name} (${(file.size / 1024).toFixed(0)} KB)`);
+        const base64Data = ctx
+          ? (ctx.drawImage(img, 0, 0, width, height), canvas.toDataURL("image/jpeg", 0.88))
+          : result;
+
+        // Immediately upload to Cloudinary into padma_products folder
+        setImageUploadStatus("Uploading to Cloudinary (folder: padma_products)...");
+        try {
+          const uploadRes = await productApi.uploadImage(base64Data, "padma_products");
+          if (uploadRes && uploadRes.success && (uploadRes.secure_url || uploadRes.url)) {
+            const cloudUrl = uploadRes.secure_url || uploadRes.url;
+            setProdImage(cloudUrl);
+            setImageUploadStatus(`Cloudinary: ${file.name} (uploaded)`);
+            toast.success("Photo uploaded to Cloudinary (padma_products)!");
+          } else {
+            setProdImage(base64Data);
+            setImageUploadStatus(`${file.name} (local preview)`);
+          }
+        } catch (uploadErr: any) {
+          console.warn("Cloudinary upload fallback to local preview:", uploadErr);
+          setProdImage(base64Data);
+          setImageUploadStatus(`${file.name} (local preview)`);
+        } finally {
+          setIsUploadingImage(false);
         }
-        setIsUploadingImage(false);
       };
       img.onerror = () => {
         setProdImage(result);
@@ -304,7 +321,8 @@ function AdminDashboardPage() {
     };
     reader.onerror = () => {
       setIsUploadingImage(false);
-      alert("Failed to read image file.");
+      setImageUploadStatus("");
+      toast.error("Failed to read image file.");
     };
     reader.readAsDataURL(file);
     // Reset file input value so selecting the same file again triggers onChange
@@ -448,6 +466,25 @@ function AdminDashboardPage() {
     e.preventDefault();
     if (!prodName || !prodPrice) return;
 
+    // If image is still a base64 string, upload to Cloudinary now
+    let finalImage = prodImage || (editingProduct ? editingProduct.image : productsList[0]?.image || "");
+    if (finalImage && finalImage.startsWith("data:")) {
+      try {
+        toast.loading("Saving photo to Cloudinary...", { id: "cloud-save" });
+        const cloudRes = await productApi.uploadImage(finalImage, "padma_products");
+        if (cloudRes && cloudRes.success && (cloudRes.secure_url || cloudRes.url)) {
+          finalImage = cloudRes.secure_url || cloudRes.url;
+          setProdImage(finalImage);
+          toast.success("Photo uploaded to Cloudinary (padma_products)!", { id: "cloud-save" });
+        } else {
+          toast.dismiss("cloud-save");
+        }
+      } catch (uploadErr) {
+        console.warn("Could not upload to Cloudinary on save:", uploadErr);
+        toast.dismiss("cloud-save");
+      }
+    }
+
     try {
       if (editingProduct) {
         await updateProduct(editingProduct.id, {
@@ -461,7 +498,7 @@ function AdminDashboardPage() {
           description: prodDescription,
           sku: prodSku,
           sizes: prodSizes,
-          image: prodImage || editingProduct.image,
+          image: finalImage,
           status: editingProduct.status || "active",
           isActive: true,
         });
@@ -478,7 +515,7 @@ function AdminDashboardPage() {
           description: prodDescription,
           sku: prodSku,
           sizes: prodSizes,
-          image: prodImage || productsList[0]?.image || "",
+          image: finalImage,
           status: "active",
           isActive: true,
         });
@@ -2616,10 +2653,15 @@ function AdminDashboardPage() {
                     <div className="flex-1 space-y-1.5 text-left w-full min-w-0">
                       <div className="flex items-center gap-1.5 text-xs font-semibold text-emerald-600 dark:text-emerald-400">
                         <Check className="size-3.5" />
-                        <span>Photo Attached</span>
+                        <span>{prodImage.includes("cloudinary.com") ? "Cloudinary CDN Hosted" : "Photo Attached"}</span>
+                        {prodImage.includes("cloudinary.com") && (
+                          <span className="text-[10px] px-1.5 py-0.5 bg-sky-500/10 text-sky-600 border border-sky-500/20 rounded font-mono">
+                            padma_products
+                          </span>
+                        )}
                       </div>
                       <p className="text-[11px] text-muted-foreground truncate font-mono">
-                        {imageUploadStatus || (prodImage.startsWith("data:") ? "Uploaded from your computer/device" : prodImage)}
+                        {imageUploadStatus || prodImage}
                       </p>
 
                       <div className="flex flex-wrap items-center gap-2 pt-1">
