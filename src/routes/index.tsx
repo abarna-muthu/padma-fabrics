@@ -254,27 +254,27 @@ function HomePage() {
           {[
             {
               title: "Heirloom Festive Drapes",
-              category: "Sarees",
+              category: "Saree",
               desc: "Rich wine and gold zari borders for auspicious weddings and celebratory moments.",
               image: burgundy,
             },
             {
-              title: "Bespoke Occasion Brocades",
-              category: "Fabrics",
-              desc: "Intricate metallic florals and textured brocade yardage for lehengas and tailored blouses.",
+              title: "Elegant Ethnic Ensembles",
+              category: "Chudithar",
+              desc: "Flowing festive chudithar suits and dupattas crafted for graceful occasion wear.",
               image: ivory,
             },
             {
-              title: "Little Celebrations",
-              category: "Kids Wear",
-              desc: "Traditional silk pavadai sets with peacock zari borders tailored for little ones.",
-              image: kids,
+              title: "Modern Styled Coordinates",
+              category: "Coordset",
+              desc: "Contemporary two-piece coordinated sets tailored for effortlessly chic comfort.",
+              image: sage,
             },
             {
-              title: "Effortless Tailored Linen",
-              category: "Shirts",
-              desc: "Crisp white linen and combed cottons designed for breathable all-day comfort.",
-              image: shirt,
+              title: "Special Celebrations Edit",
+              category: "Combo Dresses",
+              desc: "Curated celebration combo dress pairing for festive and wedding seasons.",
+              image: kids,
             },
           ].map((item) => (
             <div

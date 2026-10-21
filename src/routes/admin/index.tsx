@@ -75,62 +75,47 @@ export const DUMMY_PRODUCT_IMAGES = [
   {
     name: "Wine Zari Silk Saree",
     url: "/assets/burgundy-silk.jpg",
-    category: "Sarees",
+    category: "Saree",
   },
   {
     name: "Heritage Gold Silk Saree",
     url: "/assets/fabric-hero.jpg",
-    category: "Sarees",
+    category: "Saree",
   },
   {
-    name: "Sage Buti Cotton Fabric",
-    url: "/assets/sage-fabric.jpg",
-    category: "Fabrics",
-  },
-  {
-    name: "Ivory Floral Brocade Fabric",
-    url: "/assets/ivory-brocade.jpg",
-    category: "Fabrics",
-  },
-  {
-    name: "Classic Linen Formal Shirt",
-    url: "/assets/mens-shirt.jpg",
-    category: "Shirts",
-  },
-  {
-    name: "Everyday Combed Cotton Tee",
-    url: "/assets/tshirt.jpg",
-    category: "T-Shirts",
-  },
-  {
-    name: "Maroon Anarkali Festive Dress",
+    name: "Maroon Chudithar Suit",
     url: "/assets/womens-dress.jpg",
-    category: "Women's Dresses",
+    category: "Chudithar",
   },
   {
-    name: "Royal Festive Party Lehenga",
-    url: "/assets/girls-lehenga.jpg",
-    category: "Women's Dresses",
+    name: "Sage Elegance Coordset",
+    url: "/assets/sage-fabric.jpg",
+    category: "Coordset",
   },
   {
-    name: "Traditional Pattu Pavadai Set",
-    url: "/assets/kids-dress.jpg",
-    category: "Kids Wear",
+    name: "Ivory Flowing Floral Maxi",
+    url: "/assets/ivory-brocade.jpg",
+    category: "Maxi",
   },
   {
-    name: "Cotton Daily Girls Frock",
+    name: "Pure Soft Cotton Nighty",
     url: "/assets/girls-daily-frock.jpg",
-    category: "Kids Wear",
+    category: "Nighty",
   },
   {
-    name: "Celebration Party Frock",
-    url: "/assets/girls-party-frock.jpg",
-    category: "Kids Wear",
+    name: "Tailored Chudithar Top",
+    url: "/assets/mens-shirt.jpg",
+    category: "Chudithar Top",
   },
   {
-    name: "Festive Silk Kids Anarkali",
-    url: "/assets/girls-hero.jpg",
-    category: "Kids Wear",
+    name: "Stylish 2piece Everyday Set",
+    url: "/assets/tshirt.jpg",
+    category: "2piece",
+  },
+  {
+    name: "Festive Combo Dresses Set",
+    url: "/assets/kids-dress.jpg",
+    category: "Combo Dresses",
   },
 ];
 
@@ -234,7 +219,7 @@ function AdminDashboardPage() {
 
   // Product form state
   const [prodName, setProdName] = useState("");
-  const [prodCategory, setProdCategory] = useState<string>("Sarees");
+  const [prodCategory, setProdCategory] = useState<string>("Saree");
   const [prodColour, setProdColour] = useState("");
   const [prodPrice, setProdPrice] = useState("");
   const [prodUnit, setProdUnit] = useState("piece");
@@ -422,7 +407,7 @@ function AdminDashboardPage() {
   const handleOpenAddProduct = () => {
     setEditingProduct(null);
     setProdName("");
-    setProdCategory("Sarees");
+    setProdCategory("Saree");
     setProdColour("");
     setProdPrice("");
     setProdUnit("piece");
@@ -1690,10 +1675,10 @@ function AdminDashboardPage() {
 
               <div className="space-y-4">
                 {[
-                  { name: "Sarees & Silks", share: "45%", revenue: 9700 },
-                  { name: "Fabrics by Metre", share: "35%", revenue: 20540 },
-                  { name: "Men's Linen & Shirts", share: "12%", revenue: 5096 },
-                  { name: "Dresses & Kids", share: "8%", revenue: 5198 },
+                  { name: "Saree & Silk Edit", share: "40%", revenue: 9700 },
+                  { name: "Chudithar & Sets", share: "25%", revenue: 6540 },
+                  { name: "Coordset & 2piece", share: "20%", revenue: 5096 },
+                  { name: "Maxi, Nighty & Combo Dresses", share: "15%", revenue: 4198 },
                 ].map((cat) => (
                   <div key={cat.name} className="space-y-1.5">
                     <div className="flex justify-between text-sm">

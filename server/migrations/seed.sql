@@ -1,12 +1,14 @@
 -- Initial Seed Data for Padma Fabrics
 -- Categories
 INSERT INTO categories (id, name, slug, description, display_order) VALUES
-('sarees', 'Sarees', 'sarees', 'Silk & handloom drapes', 1),
-('fabrics', 'Fabrics', 'fabrics', 'Beautiful by the metre', 2),
-('shirts', 'Shirts', 'shirts', 'Crisp linen & cotton', 3),
-('t-shirts', 'T-Shirts', 't-shirts', 'Easy everyday comfort', 4),
-('womens-dresses', 'Women\'s Dresses', 'womens-dresses', 'Festive & daily wear', 5),
-('kids-wear', 'Kids Wear', 'kids-wear', 'Little celebrations', 6)
+('saree', 'Saree', 'saree', 'Silk & handloom drapes', 1),
+('chudithar', 'Chudithar', 'chudithar', 'Elegant ethnic suits', 2),
+('coordset', 'Coordset', 'coordset', 'Modern stylish coordinates', 3),
+('maxi', 'Maxi', 'maxi', 'Graceful flowy silhouettes', 4),
+('nighty', 'Nighty', 'nighty', 'Pure comfort & soft cotton', 5),
+('chudithar-top', 'Chudithar Top', 'chudithar-top', 'Everyday festive tunics', 6),
+('2piece', '2piece', '2piece', 'Chic two-piece ensembles', 7),
+('combo-dresses', 'Combo Dresses', 'combo-dresses', 'Special curated sets', 8)
 ON DUPLICATE KEY UPDATE name=VALUES(name);
 
 -- Initial Administrator (admin@gmail.com / admin123)

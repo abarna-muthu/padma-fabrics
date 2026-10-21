@@ -2,21 +2,39 @@ import { Request, Response } from "express";
 import { getDb } from "../config/db";
 
 const CATEGORY_ID_TO_NAME: Record<string, string> = {
-  "sarees": "Sarees",
-  "fabrics": "Fabrics",
-  "shirts": "Shirts",
-  "t-shirts": "T-Shirts",
-  "womens-dresses": "Women's Dresses",
-  "kids-wear": "Kids Wear",
+  "saree": "Saree",
+  "chudithar": "Chudithar",
+  "coordset": "Coordset",
+  "maxi": "Maxi",
+  "nighty": "Nighty",
+  "chudithar-top": "Chudithar Top",
+  "2piece": "2piece",
+  "combo-dresses": "Combo Dresses",
+  // Aliases for backward compatibility
+  "sarees": "Saree",
+  "fabrics": "Coordset",
+  "shirts": "Chudithar Top",
+  "t-shirts": "2piece",
+  "womens-dresses": "Chudithar",
+  "kids-wear": "Combo Dresses",
 };
 
 const CATEGORY_NAME_TO_ID: Record<string, string> = {
-  "Sarees": "sarees",
-  "Fabrics": "fabrics",
-  "Shirts": "shirts",
-  "T-Shirts": "t-shirts",
-  "Women's Dresses": "womens-dresses",
-  "Kids Wear": "kids-wear",
+  "Saree": "saree",
+  "Chudithar": "chudithar",
+  "Coordset": "coordset",
+  "Maxi": "maxi",
+  "Nighty": "nighty",
+  "Chudithar Top": "chudithar-top",
+  "2piece": "2piece",
+  "Combo Dresses": "combo-dresses",
+  // Aliases for backward compatibility
+  "Sarees": "saree",
+  "Fabrics": "coordset",
+  "Shirts": "chudithar-top",
+  "T-Shirts": "2piece",
+  "Women's Dresses": "chudithar",
+  "Kids Wear": "combo-dresses",
 };
 
 export async function getProducts(req: Request, res: Response) {

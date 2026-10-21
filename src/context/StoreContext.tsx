@@ -79,6 +79,23 @@ const STORAGE_ORDERS_KEY = "pf_admin_orders";
 const STORAGE_STOCK_LOGS_KEY = "pf_admin_stock_logs";
 const STORAGE_DELETED_PRODUCTS_KEY = "pf_admin_deleted_product_ids";
 
+const CATEGORY_MIGRATION: Record<string, string> = {
+  Sarees: "Saree",
+  Fabrics: "Coordset",
+  Shirts: "Chudithar Top",
+  "T-Shirts": "2piece",
+  "Women's Dresses": "Chudithar",
+  "Kids Wear": "Combo Dresses",
+};
+
+export function normalizeProduct(p: any): Product {
+  const cat = CATEGORY_MIGRATION[p.category] || p.category || "Saree";
+  return {
+    ...p,
+    category: cat,
+  };
+}
+
 const StoreContext = createContext<StoreContextType | null>(null);
 
 export function StoreProvider({ children }: { children: ReactNode }) {
@@ -106,7 +123,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   };
 
   // Catalog products (shared with public storefront)
-  const [productsList, setProductsList] = useState<Product[]>(staticProducts as Product[]);
+  const [productsList, setProductsList] = useState<Product[]>((staticProducts as Product[]).map(normalizeProduct));
 
   // Orders & inventory
   const [orders, setOrders] = useState<Order[]>(initialOrders);
@@ -122,7 +139,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       if (storedProducts) {
         const parsed = JSON.parse(storedProducts);
         if (Array.isArray(parsed) && parsed.length > 0) {
-          setProductsList(parsed);
+          setProductsList(parsed.map(normalizeProduct));
         }
       }
       const storedOrders = localStorage.getItem(STORAGE_ORDERS_KEY);
@@ -149,7 +166,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         try {
           const parsed = JSON.parse(e.newValue);
           if (Array.isArray(parsed)) {
-            setProductsList(parsed);
+            setProductsList(parsed.map(normalizeProduct));
           }
         } catch (err) {}
       }
@@ -166,7 +183,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     // 3. In-tab custom event listener
     const handleCustomProductUpdate = (e: any) => {
       if (e.detail && Array.isArray(e.detail)) {
-        setProductsList(e.detail);
+        setProductsList(e.detail.map(normalizeProduct));
       }
     };
 
@@ -186,7 +203,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
           } catch {}
 
           // Filter out deleted items from server response
-          const activeServerProds = serverProds.filter((sp: any) => !deletedIds.includes(sp.id));
+          const activeServerProds = serverProds.filter((sp: any) => !deletedIds.includes(sp.id)).map(normalizeProduct);
           let merged: Product[] = activeServerProds;
 
           if (currentLocal) {
@@ -201,7 +218,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
                 }
 
                 // Intelligently overlay local products
-                for (const lp of localList) {
+                for (const rawLp of localList) {
+                  const lp = normalizeProduct(rawLp);
                   if (deletedIds.includes(lp.id)) continue;
 
                   const sp = mergedMap.get(lp.id);
@@ -230,7 +248,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
               }
             } catch {}
           }
-          setProductsList(merged);
+          setProductsList(merged.map(normalizeProduct));
           localStorage.setItem(STORAGE_PRODUCTS_KEY, JSON.stringify(merged));
         }
 

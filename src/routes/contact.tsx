@@ -339,7 +339,7 @@ function ContactPage() {
                         <option value="Wholesale Sourcing">Wholesale Sourcing</option>
                         <option value="Retail Selection">Retail Selection</option>
                         <option value="Export & International">Export & International</option>
-                        <option value="Sarees & Silk Inquiries">Sarees & Silk Inquiries</option>
+                        <option value="Saree & Silk Inquiries">Saree & Silk Inquiries</option>
                         <option value="General Question">General Question</option>
                       </select>
                     </div>
