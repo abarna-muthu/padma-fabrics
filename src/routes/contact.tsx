@@ -10,6 +10,7 @@ import {
   Phone,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { contactApi } from "@/lib/api";
@@ -49,12 +50,30 @@ function ContactPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
 
+  const generateWhatsAppUrl = () => {
+    const textLines = [
+      "Hello Padmanabha Fabrics,",
+      "I would like to submit an enquiry regarding fabrics:",
+      name ? `• Name: ${name}` : null,
+      phone ? `• Phone / WhatsApp: ${phone}` : null,
+      email ? `• Email: ${email}` : null,
+      enquiryType ? `• Enquiry Type: ${enquiryType}` : null,
+      message
+        ? `• Requirements: ${message}`
+        : "• Requirements: I would like to enquire about your fabric collections and wholesale prices.",
+    ].filter(Boolean);
+
+    return `https://wa.me/919940145700?text=${encodeURIComponent(textLines.join("\n"))}`;
+  };
+
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     if (!name || !phone || !email || !message) return;
 
     setIsSubmitting(true);
     setFormError(null);
+
+    const waUrl = generateWhatsAppUrl();
 
     try {
       const res = await contactApi.submit({
@@ -67,19 +86,42 @@ function ContactPage() {
 
       if (res.success) {
         setSubmitted(true);
+        toast.success("Enquiry submitted! Opening WhatsApp to connect directly...");
+        if (typeof window !== "undefined") {
+          window.open(waUrl, "_blank", "noopener,noreferrer");
+        }
       } else {
-        setFormError(res.error || "Failed to submit enquiry. Please try again.");
+        toast.info("Connecting directly to WhatsApp with your enquiry...");
+        if (typeof window !== "undefined") {
+          window.open(waUrl, "_blank", "noopener,noreferrer");
+        }
+        setSubmitted(true);
       }
     } catch (err: any) {
-      setFormError(err.message || "Failed to submit enquiry.");
+      toast.info("Connecting directly to WhatsApp...");
+      if (typeof window !== "undefined") {
+        window.open(waUrl, "_blank", "noopener,noreferrer");
+      }
+      setSubmitted(true);
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  const directWhatsAppUrl = `https://wa.me/919940145700?text=${encodeURIComponent(
-    `Hello Padmanabha Fabrics,\nMy name is ${name || "Customer"}.\nEnquiry Type: ${enquiryType}\nEmail: ${email}\nPhone: ${phone}\nMessage: ${message || "I would like to enquire about your fabrics."}`,
-  )}`;
+  const handleDirectWhatsAppClick = () => {
+    // If the customer entered any details, record enquiry in backend in background
+    if (name || phone || email || message) {
+      contactApi
+        .submit({
+          name: name || "WhatsApp Visitor",
+          email: email || "whatsapp@visitor.com",
+          phone: phone || "Direct WhatsApp",
+          enquiryType,
+          message: message || "Direct WhatsApp Click",
+        })
+        .catch(() => {});
+    }
+  };
 
   return (
     <main>
@@ -222,7 +264,7 @@ function ContactPage() {
                   </p>
                   <div className="pt-4 flex flex-wrap justify-center gap-4">
                     <Button variant="whatsapp" className="h-11 px-6 text-xs uppercase tracking-wider font-semibold shadow-md" asChild>
-                      <a href={directWhatsAppUrl} target="_blank" rel="noreferrer">
+                      <a href={generateWhatsAppUrl()} target="_blank" rel="noreferrer">
                         Continue on WhatsApp <ArrowUpRight className="ml-2" />
                       </a>
                     </Button>
@@ -324,18 +366,25 @@ function ContactPage() {
                     </div>
                   )}
 
-                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pt-2">
-                    <Button type="submit" variant="editorial" disabled={isSubmitting}>
-                      {isSubmitting ? "Sending..." : "Send Enquiry"} <ArrowRight className="ml-4" />
+                  <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 pt-3 border-t border-border/60">
+                    <Button
+                      type="submit"
+                      variant="editorial"
+                      disabled={isSubmitting}
+                      className="h-11 px-7 text-xs font-semibold uppercase tracking-wider cursor-pointer shadow-md hover:shadow-lg transition-all"
+                    >
+                      {isSubmitting ? "Sending..." : "Send Enquiry"} <ArrowRight className="ml-3 size-4" />
                     </Button>
                     <a
-                      href={directWhatsAppUrl}
+                      href={generateWhatsAppUrl()}
                       target="_blank"
                       rel="noreferrer"
-                      className="text-xs text-muted-foreground hover:text-primary transition-colors flex items-center gap-1.5"
+                      onClick={handleDirectWhatsAppClick}
+                      className="inline-flex items-center justify-center gap-2 px-4 py-2.5 text-xs font-semibold text-emerald-800 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/40 hover:bg-emerald-100 dark:hover:bg-emerald-900/50 border border-emerald-300 dark:border-emerald-700/60 rounded-sm transition-all shadow-xs group cursor-pointer"
                     >
-                      <MessageCircle className="size-3.5 text-gold" /> Or submit directly via
-                      WhatsApp
+                      <MessageCircle className="size-4 text-emerald-600 dark:text-emerald-400 group-hover:scale-110 transition-transform" />
+                      <span>Or submit directly via WhatsApp</span>
+                      <ArrowUpRight className="size-3.5 text-emerald-600 dark:text-emerald-400" />
                     </a>
                   </div>
                 </form>
