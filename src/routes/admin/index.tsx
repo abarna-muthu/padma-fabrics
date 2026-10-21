@@ -459,42 +459,48 @@ function AdminDashboardPage() {
   };
 
   // Save product (Add or Edit)
-  const handleSaveProduct = (e: React.FormEvent) => {
+  const handleSaveProduct = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!prodName || !prodPrice) return;
 
-    if (editingProduct) {
-      updateProduct(editingProduct.id, {
-        name: prodName,
-        category: prodCategory as (typeof categories)[number],
-        colour: prodColour,
-        price: Number(prodPrice),
-        unit: prodUnit,
-        stock: Number(prodStock),
-        badge: prodBadge,
-        description: prodDescription,
-        sku: prodSku,
-        sizes: prodSizes,
-        image: prodImage || editingProduct.image,
-        status: editingProduct.status || "active",
-      });
-      toast.success(`"${prodName}" updated successfully! Changes are live on customer storefront.`);
-    } else {
-      addProduct({
-        name: prodName,
-        category: prodCategory as (typeof categories)[number],
-        colour: prodColour,
-        price: Number(prodPrice),
-        unit: prodUnit,
-        stock: Number(prodStock),
-        badge: prodBadge,
-        description: prodDescription,
-        sku: prodSku,
-        sizes: prodSizes,
-        image: prodImage || productsList[0]?.image || "",
-        status: "active",
-      });
-      toast.success(`"${prodName}" published to catalog and customer storefront!`);
+    try {
+      if (editingProduct) {
+        await updateProduct(editingProduct.id, {
+          name: prodName,
+          category: prodCategory as (typeof categories)[number],
+          colour: prodColour,
+          price: Number(prodPrice),
+          unit: prodUnit,
+          stock: Number(prodStock),
+          badge: prodBadge,
+          description: prodDescription,
+          sku: prodSku,
+          sizes: prodSizes,
+          image: prodImage || editingProduct.image,
+          status: editingProduct.status || "active",
+          isActive: true,
+        });
+        toast.success(`"${prodName}" updated successfully! Changes are live on customer storefront.`);
+      } else {
+        await addProduct({
+          name: prodName,
+          category: prodCategory as (typeof categories)[number],
+          colour: prodColour,
+          price: Number(prodPrice),
+          unit: prodUnit,
+          stock: Number(prodStock),
+          badge: prodBadge,
+          description: prodDescription,
+          sku: prodSku,
+          sizes: prodSizes,
+          image: prodImage || productsList[0]?.image || "",
+          status: "active",
+          isActive: true,
+        });
+        toast.success(`"${prodName}" published to catalog and customer storefront!`);
+      }
+    } catch (err: any) {
+      toast.error(`Failed to save product: ${err?.message || "Unknown error"}`);
     }
 
     setIsProductModalOpen(false);

@@ -227,6 +227,50 @@ export const INITIAL_PRODUCTS = [
   },
 ];
 
+const isServerless = process.env["VERCEL"] === "1" || process.env["AWS_LAMBDA_FUNCTION_NAME"] !== undefined;
+const DATA_DIR = isServerless ? "/tmp" : path.resolve(process.cwd(), "server/data");
+const PRODUCTS_FILE = path.join(DATA_DIR, "products.json");
+
+export function loadPersistedProducts(): any[] {
+  try {
+    if (fs.existsSync(PRODUCTS_FILE)) {
+      const data = fs.readFileSync(PRODUCTS_FILE, "utf-8");
+      const parsed = JSON.parse(data);
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        return parsed;
+      }
+    }
+    const fallbackSrc = path.resolve(process.cwd(), "server/data/products.json");
+    if (fs.existsSync(fallbackSrc)) {
+      const data = fs.readFileSync(fallbackSrc, "utf-8");
+      const parsed = JSON.parse(data);
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        return parsed;
+      }
+    }
+  } catch (err) {
+    console.warn("[Database] Error loading persisted products:", err);
+  }
+  return [...INITIAL_PRODUCTS];
+}
+
+export function savePersistedProducts(prods: any[]): void {
+  try {
+    if (!fs.existsSync(DATA_DIR)) {
+      fs.mkdirSync(DATA_DIR, { recursive: true });
+    }
+    fs.writeFileSync(PRODUCTS_FILE, JSON.stringify(prods, null, 2), "utf-8");
+    const srcFile = path.resolve(process.cwd(), "server/data/products.json");
+    if (srcFile !== PRODUCTS_FILE) {
+      try {
+        fs.writeFileSync(srcFile, JSON.stringify(prods, null, 2), "utf-8");
+      } catch {}
+    }
+  } catch (err) {
+    console.warn("[Database] Error saving persisted products:", err);
+  }
+}
+
 // In-Memory store for development when TiDB / MySQL is not connected
 class MemoryDatabase {
   admin_users: any[] = [];
@@ -243,9 +287,9 @@ class MemoryDatabase {
   contact_enquiries: any[] = [];
 
   constructor() {
-    // Seed categories and products synchronously so they are always immediately available
+    // Seed categories and load persisted products so catalog additions are permanent
     this.categories = [...INITIAL_CATEGORIES];
-    this.products = [...INITIAL_PRODUCTS];
+    this.products = loadPersistedProducts();
     this.initSeed();
   }
 
@@ -594,14 +638,22 @@ function executeMemoryQuery<T = any>(sql: string, params: any[] = []): T[] {
     ) as any;
   }
   if (normalized.includes("from products") && normalized.includes("is_featured = 1")) {
-    return memoryDb.products.filter((p) => p.is_active && p.is_featured) as any;
+    return memoryDb.products.filter((p) => (p.is_active === 1 || p.is_active === true) && p.is_featured) as any;
   }
   if (normalized.includes("from products") && normalized.includes("category_id =")) {
-    const cat = params[0];
-    return memoryDb.products.filter((p) => p.is_active && p.category_id === cat) as any;
+    const cat = params[params.length - 1] || params[0];
+    return memoryDb.products.filter((p) => p.category_id === cat) as any;
   }
   if (normalized.includes("from products")) {
-    return memoryDb.products as any;
+    let list = [...memoryDb.products];
+    if (normalized.includes("is_active = 1")) {
+      list = list.filter((p) => p.is_active === 1 || p.is_active === true || p.status === "active");
+    }
+    if (normalized.includes("category_id =") && params.length > 0) {
+      const cat = params[params.length - 1];
+      list = list.filter((p) => p.category_id === cat);
+    }
+    return list as any;
   }
 
   // Inventory logs
@@ -693,11 +745,25 @@ function executeMemoryCommand(sql: string, params: any[] = []): any {
       sizes: typeof params[16] === "string" ? params[16] : JSON.stringify(params[16] || []),
       created_at: new Date().toISOString(),
     };
-    memoryDb.products.unshift(newP);
+    memoryDb.products = [newP, ...memoryDb.products.filter((p) => p.id !== newP.id)];
+    savePersistedProducts(memoryDb.products);
     return { insertId: newP.id, affectedRows: 1 };
   }
 
   // Product update
+  if (normalized.startsWith("update products set is_active =")) {
+    const newStatus = Number(params[0]);
+    const id = String(params[1] || "");
+    const prod = memoryDb.products.find((p) => p.id === id || p.slug === id);
+    if (prod) {
+      prod.is_active = newStatus;
+      prod.status = newStatus === 1 ? "active" : "inactive";
+      prod.updated_at = new Date().toISOString();
+      savePersistedProducts(memoryDb.products);
+      return { affectedRows: 1 };
+    }
+  }
+
   if (normalized.startsWith("update products")) {
     const id = String(params[params.length - 1] || "");
     const prod = memoryDb.products.find(
@@ -718,11 +784,13 @@ function executeMemoryCommand(sql: string, params: any[] = []): any {
         prod.badge = params[6];
         prod.description = params[7];
         prod.image_url = params[8];
-        prod.is_active = params[9];
+        prod.is_active = params[9] ? 1 : 0;
         if (params.length >= 11 && params[10] !== undefined) {
           prod.sizes = typeof params[10] === "string" ? params[10] : JSON.stringify(params[10] || []);
         }
+        prod.updated_at = new Date().toISOString();
       }
+      savePersistedProducts(memoryDb.products);
       return { affectedRows: 1 };
     } else {
       // Upsert into memory DB if not found
@@ -741,12 +809,14 @@ function executeMemoryCommand(sql: string, params: any[] = []): any {
           badge: params[6],
           description: params[7],
           image_url: params[8],
-          is_active: params[9],
+          is_active: params[9] ? 1 : 0,
           is_featured: 0,
-          sizes: JSON.stringify([]),
+          sizes: params.length >= 11 && params[10] !== undefined ? (typeof params[10] === "string" ? params[10] : JSON.stringify(params[10])) : JSON.stringify([]),
           created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
         };
-        memoryDb.products.unshift(newP);
+        memoryDb.products = [newP, ...memoryDb.products.filter((p) => p.id !== newP.id)];
+        savePersistedProducts(memoryDb.products);
         return { insertId: newP.id, affectedRows: 1 };
       }
     }
@@ -764,6 +834,7 @@ function executeMemoryCommand(sql: string, params: any[] = []): any {
     );
     if (idx !== -1) {
       memoryDb.products.splice(idx, 1);
+      savePersistedProducts(memoryDb.products);
       return { affectedRows: 1 };
     }
   }
@@ -790,6 +861,8 @@ function executeMemoryCommand(sql: string, params: any[] = []): any {
     const prod = memoryDb.products.find((p) => p.id === id);
     if (prod) {
       prod.stock_quantity = newStock;
+      prod.updated_at = new Date().toISOString();
+      savePersistedProducts(memoryDb.products);
       return { affectedRows: 1 };
     }
   }

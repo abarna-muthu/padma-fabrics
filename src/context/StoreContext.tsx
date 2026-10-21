@@ -52,8 +52,8 @@ interface StoreContextType {
   // Dynamic products list (Admin + Public Storefront sync)
   productsList: Product[];
   activeProducts: Product[];
-  addProduct: (newP: Omit<Product, "id"> & { id?: string }) => Product;
-  updateProduct: (id: string, updates: Partial<Product>) => void;
+  addProduct: (newP: Omit<Product, "id"> & { id?: string }) => Promise<Product> | Product;
+  updateProduct: (id: string, updates: Partial<Product>) => Promise<void> | void;
   deleteProduct: (id: string) => void;
   toggleProductStatus: (id: string) => void;
 
@@ -365,18 +365,19 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const whatsappUrl = `https://wa.me/919940145700?text=${encodeURIComponent(orderText)}`;
 
   // Product management actions
-  const addProduct = (newP: Omit<Product, "id"> & { id?: string }) => {
+  const addProduct = async (newP: Omit<Product, "id"> & { id?: string }) => {
     const id = newP.id || `pf-${Date.now().toString(36)}`;
     const nowIso = new Date().toISOString();
     const product: Product = {
       ...newP,
       id,
+      isActive: true,
+      status: "active",
       stock: Number(newP.stock) || 0,
-      status: newP.status || "active",
       sku: newP.sku || `PF-NEW-${Math.floor(100 + Math.random() * 900)}`,
       updatedAt: nowIso,
     };
-    const updated = [product, ...productsList];
+    const updated = [product, ...productsList.filter((p) => p.id !== id)];
     saveProducts(updated);
 
     // Remove from deleted list if re-added
@@ -404,22 +405,41 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     }
 
     // Persist to backend database API
-    productApi.create(product).catch((err) => {
-      console.warn("Could not sync added product to backend API:", err);
-    });
+    try {
+      const res = await productApi.create(product);
+      if (res && res.success) {
+        const serverProduct = (res as any).product || res.data;
+        if (serverProduct && serverProduct.id) {
+          const finalItem = {
+            ...product,
+            ...serverProduct,
+            isActive: true,
+            status: "active",
+            sizes: serverProduct.sizes || product.sizes,
+          };
+          const reconciled = [finalItem, ...productsList.filter((p) => p.id !== id && p.id !== finalItem.id)];
+          saveProducts(reconciled);
+          return finalItem;
+        }
+      }
+    } catch (err) {
+      console.warn("Could not sync added product to backend API (saved locally):", err);
+    }
 
     return product;
   };
 
-  const updateProduct = (id: string, updates: Partial<Product>) => {
+  const updateProduct = async (id: string, updates: Partial<Product>) => {
     const previous = productsList.find((p) => p.id === id);
     const nowIso = new Date().toISOString();
     const updated = productsList.map((p) => {
       if (p.id === id) {
+        const nextStatus = updates.status || p.status || "active";
         return {
           ...p,
           ...updates,
-          status: updates.status || p.status || "active",
+          isActive: nextStatus !== "inactive" && nextStatus !== "archived",
+          status: nextStatus,
           updatedAt: nowIso,
         };
       }
@@ -443,9 +463,11 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     }
 
     // Persist to backend database API
-    productApi.update(id, { ...updates, updatedAt: nowIso }).catch((err) => {
+    try {
+      await productApi.update(id, { ...updates, updatedAt: nowIso });
+    } catch (err) {
       console.warn("Could not sync updated product to backend API:", err);
-    });
+    }
   };
 
   const deleteProduct = (id: string) => {
@@ -471,9 +493,11 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const toggleProductStatus = (id: string) => {
     const updated = productsList.map((p) => {
       if (p.id === id) {
+        const nextStatus = p.status === "active" ? ("inactive" as const) : ("active" as const);
         return {
           ...p,
-          status: p.status === "active" ? ("inactive" as const) : ("active" as const),
+          status: nextStatus,
+          isActive: nextStatus === "active",
         };
       }
       return p;

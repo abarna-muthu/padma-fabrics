@@ -77,7 +77,7 @@ export async function getProducts(req: Request, res: Response) {
       isFeatured: Boolean(p.is_featured),
       sizes: typeof p.sizes === "string" ? JSON.parse(p.sizes || "[]") : p.sizes || [],
       createdAt: p.created_at,
-      updatedAt: p.updated_at || p.created_at || new Date().toISOString(),
+      updatedAt: p.updated_at || p.created_at || "2026-10-10T00:00:00.000Z",
     }));
 
     return res.status(200).json({
@@ -162,7 +162,7 @@ export async function createProduct(req: Request, res: Response) {
       sizes = [],
     } = req.body;
 
-    if (!name || !price) {
+    if (!name || price === undefined || price === null || isNaN(Number(price))) {
       return res.status(400).json({
         success: false,
         error: "Product name and price are required fields.",
