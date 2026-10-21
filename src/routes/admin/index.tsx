@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useRef } from "react";
 import {
   AlertTriangle,
   ArrowRight,
@@ -34,6 +34,8 @@ import {
   Mail,
   Sparkles,
   RotateCcw,
+  Upload,
+  Image as ImageIcon,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -229,6 +231,75 @@ function AdminDashboardPage() {
   const [prodDescription, setProdDescription] = useState("");
   const [prodSku, setProdSku] = useState("");
   const [prodImage, setProdImage] = useState("");
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const [imageUploadStatus, setImageUploadStatus] = useState<string>("");
+  const [isUploadingImage, setIsUploadingImage] = useState<boolean>(false);
+
+  const handleImageFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith("image/")) {
+      alert("Please select a valid image file (JPG, PNG, WebP).");
+      return;
+    }
+
+    setIsUploadingImage(true);
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const result = event.target?.result as string;
+      if (!result) {
+        setIsUploadingImage(false);
+        return;
+      }
+
+      // Automatically optimize/compress image to keep it lightweight and fast
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement("canvas");
+        const maxDim = 1200;
+        let width = img.width;
+        let height = img.height;
+
+        if (width > maxDim || height > maxDim) {
+          if (width > height) {
+            height = Math.round((height * maxDim) / width);
+            width = maxDim;
+          } else {
+            width = Math.round((width * maxDim) / height);
+            height = maxDim;
+          }
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext("2d");
+        if (ctx) {
+          ctx.drawImage(img, 0, 0, width, height);
+          const compressedUrl = canvas.toDataURL("image/jpeg", 0.85);
+          setProdImage(compressedUrl);
+          setImageUploadStatus(`${file.name} (${(compressedUrl.length / 1024).toFixed(0)} KB)`);
+        } else {
+          setProdImage(result);
+          setImageUploadStatus(`${file.name} (${(file.size / 1024).toFixed(0)} KB)`);
+        }
+        setIsUploadingImage(false);
+      };
+      img.onerror = () => {
+        setProdImage(result);
+        setImageUploadStatus(`${file.name}`);
+        setIsUploadingImage(false);
+      };
+      img.src = result;
+    };
+    reader.onerror = () => {
+      setIsUploadingImage(false);
+      alert("Failed to read image file.");
+    };
+    reader.readAsDataURL(file);
+    // Reset file input value so selecting the same file again triggers onChange
+    e.target.value = "";
+  };
 
   // Stock adjustment modal states
   const [stockModalProduct, setStockModalProduct] = useState<Product | null>(null);
@@ -335,6 +406,7 @@ function AdminDashboardPage() {
     setProdDescription("");
     setProdSku(`PF-${Math.floor(100 + Math.random() * 900)}`);
     setProdImage(DUMMY_PRODUCT_IMAGES[0]?.url || productsList[0]?.image || "");
+    setImageUploadStatus("");
     setIsProductModalOpen(true);
   };
 
@@ -351,6 +423,7 @@ function AdminDashboardPage() {
     setProdDescription(p.description);
     setProdSku(p.sku || "");
     setProdImage(p.image);
+    setImageUploadStatus("");
     setIsProductModalOpen(true);
   };
 
@@ -2364,69 +2437,170 @@ function AdminDashboardPage() {
                 </div>
               </div>
 
-              {/* Product Image & Dummy Images Picker */}
-              <div className="space-y-2.5 p-3.5 bg-secondary/20 border border-border">
+              {/* Product Image & Direct Device Upload */}
+              <div className="space-y-3 p-3.5 bg-secondary/15 border border-border rounded-sm">
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  accept="image/png, image/jpeg, image/jpg, image/webp"
+                  onChange={handleImageFileUpload}
+                  className="hidden"
+                />
+
                 <div className="flex items-center justify-between">
-                  <label className="text-xs font-semibold uppercase tracking-wider text-foreground">
-                    Product Image *
+                  <label className="text-xs font-semibold uppercase tracking-wider text-foreground flex items-center gap-1.5">
+                    <ImageIcon className="size-3.5 text-primary" />
+                    <span>Product Image *</span>
                   </label>
-                  <span className="text-[11px] text-muted-foreground">
-                    Pick a sample image below or enter URL
-                  </span>
+                  {prodImage && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setProdImage("");
+                        setImageUploadStatus("");
+                      }}
+                      className="text-[11px] font-medium text-destructive hover:underline flex items-center gap-1 cursor-pointer"
+                    >
+                      <Trash2 className="size-3" />
+                      <span>Remove Photo</span>
+                    </button>
+                  )}
                 </div>
 
-                <div className="flex items-center gap-3">
-                  <div className="relative w-14 h-18 bg-muted border border-border shrink-0 overflow-hidden flex items-center justify-center">
-                    {prodImage ? (
+                {/* Direct Upload Box or Current Image Preview */}
+                {prodImage ? (
+                  <div className="flex flex-col sm:flex-row items-center gap-3.5 p-3 bg-card border border-border rounded-xs shadow-xs">
+                    <div className="relative w-20 h-24 bg-muted border border-border shrink-0 overflow-hidden rounded-xs group">
                       <img
                         src={prodImage}
-                        alt="Preview"
+                        alt="Product Preview"
                         className="w-full h-full object-cover"
                         onError={(e) => {
                           (e.currentTarget as HTMLImageElement).src = "/assets/burgundy-silk.jpg";
                         }}
                       />
-                    ) : (
-                      <span className="text-[10px] text-muted-foreground">No img</span>
-                    )}
+                      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                        <Button
+                          type="button"
+                          variant="secondary"
+                          size="sm"
+                          className="h-6 text-[10px] px-2"
+                          onClick={() => fileInputRef.current?.click()}
+                        >
+                          Change
+                        </Button>
+                      </div>
+                    </div>
+
+                    <div className="flex-1 space-y-1.5 text-left w-full min-w-0">
+                      <div className="flex items-center gap-1.5 text-xs font-semibold text-emerald-600 dark:text-emerald-400">
+                        <Check className="size-3.5" />
+                        <span>Photo Attached</span>
+                      </div>
+                      <p className="text-[11px] text-muted-foreground truncate font-mono">
+                        {imageUploadStatus || (prodImage.startsWith("data:") ? "Uploaded from your computer/device" : prodImage)}
+                      </p>
+
+                      <div className="flex flex-wrap items-center gap-2 pt-1">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          className="h-7 text-xs font-medium cursor-pointer flex items-center gap-1"
+                          onClick={() => fileInputRef.current?.click()}
+                          disabled={isUploadingImage}
+                        >
+                          <Upload className="size-3 text-primary" />
+                          <span>{isUploadingImage ? "Optimizing…" : "Upload Different Image"}</span>
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="h-7 text-xs text-destructive hover:bg-destructive/10 hover:text-destructive flex items-center gap-1 cursor-pointer"
+                          onClick={() => {
+                            setProdImage("");
+                            setImageUploadStatus("");
+                          }}
+                        >
+                          <Trash2 className="size-3" />
+                          <span>Remove</span>
+                        </Button>
+                      </div>
+                    </div>
                   </div>
-                  <div className="flex-1 space-y-1">
+                ) : (
+                  <div
+                    onClick={() => fileInputRef.current?.click()}
+                    className="border-2 border-dashed border-primary/40 hover:border-primary bg-primary/5 hover:bg-primary/10 transition-all rounded-sm p-5 text-center cursor-pointer space-y-2 group"
+                  >
+                    <div className="size-10 mx-auto bg-primary/10 text-primary rounded-full flex items-center justify-center group-hover:scale-105 transition-transform shadow-xs">
+                      <Upload className="size-5" />
+                    </div>
+                    <div>
+                      <p className="text-xs font-semibold text-foreground">
+                        Click here to Upload Dress / Fabric Photo Directly
+                      </p>
+                      <p className="text-[11px] text-muted-foreground mt-0.5">
+                        Select any photo from your computer or phone (JPG, PNG, WebP)
+                      </p>
+                    </div>
+                    <Button
+                      type="button"
+                      variant="editorial"
+                      size="sm"
+                      className="h-8 text-xs uppercase tracking-wider font-semibold pointer-events-none mt-1"
+                    >
+                      <Upload className="size-3.5 mr-1.5" /> Select Image from Device
+                    </Button>
+                  </div>
+                )}
+
+                {/* Optional URL input toggle */}
+                <details className="text-xs text-muted-foreground group">
+                  <summary className="cursor-pointer hover:text-foreground font-medium flex items-center gap-1 py-1">
+                    <span>Or enter image URL path manually</span>
+                  </summary>
+                  <div className="mt-1.5 space-y-1">
                     <Input
                       value={prodImage}
-                      onChange={(e) => setProdImage(e.target.value)}
-                      placeholder="/assets/burgundy-silk.jpg or URL"
-                      className="rounded-none text-xs h-9 font-sans"
+                      onChange={(e) => {
+                        setProdImage(e.target.value);
+                        setImageUploadStatus("");
+                      }}
+                      placeholder="e.g. /assets/burgundy-silk.jpg or https://..."
+                      className="rounded-none text-xs h-8 font-sans"
                     />
-                    <p className="text-[10px] text-muted-foreground">
-                      Local dummy paths: <code className="text-primary font-mono">/assets/...jpg</code>
-                    </p>
                   </div>
-                </div>
+                </details>
 
                 {/* Grid of sample / dummy images */}
-                <div className="pt-2">
+                <div className="pt-2 border-t border-border/60">
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-xs font-medium text-foreground">
-                      Sample Textile & Garment Images ({DUMMY_PRODUCT_IMAGES.length})
+                      Or pick from Sample Textile & Garment Images ({DUMMY_PRODUCT_IMAGES.length})
                     </span>
-                    <span className="text-[10px] text-primary">Click image to select</span>
+                    <span className="text-[10px] text-primary">Click to select</span>
                   </div>
-                  <div className="grid grid-cols-4 sm:grid-cols-6 gap-2 max-h-44 overflow-y-auto p-1 border border-border/60 bg-background">
+                  <div className="grid grid-cols-4 sm:grid-cols-6 gap-2 max-h-36 overflow-y-auto p-1.5 border border-border/60 bg-background rounded-xs">
                     {DUMMY_PRODUCT_IMAGES.map((dummy) => {
                       const isSelected = prodImage === dummy.url;
                       return (
                         <button
                           type="button"
                           key={dummy.url}
-                          onClick={() => setProdImage(dummy.url)}
-                          className={`group relative flex flex-col items-center border p-1 transition-all text-left bg-card cursor-pointer ${
+                          onClick={() => {
+                            setProdImage(dummy.url);
+                            setImageUploadStatus("");
+                          }}
+                          className={`group relative flex flex-col items-center border p-1 transition-all text-left bg-card cursor-pointer rounded-xs ${
                             isSelected
                               ? "border-primary ring-2 ring-primary/40 bg-primary/10"
                               : "border-border hover:border-foreground/50"
                           }`}
                           title={`${dummy.name} (${dummy.category})`}
                         >
-                          <div className="relative w-full aspect-square overflow-hidden bg-muted">
+                          <div className="relative w-full aspect-square overflow-hidden bg-muted rounded-xs">
                             <img
                               src={dummy.url}
                               alt={dummy.name}
@@ -2465,17 +2639,36 @@ function AdminDashboardPage() {
                 />
               </div>
 
-              <div className="pt-4 flex justify-end gap-3 border-t border-border">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setIsProductModalOpen(false)}
-                >
-                  Cancel
-                </Button>
-                <Button type="submit" variant="editorial">
-                  {editingProduct ? "Save Changes" : "Create Product"}
-                </Button>
+              <div className="pt-4 flex items-center justify-between gap-3 border-t border-border">
+                {editingProduct ? (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="text-destructive hover:bg-destructive/10 hover:text-destructive border-destructive/30 text-xs font-medium cursor-pointer"
+                    onClick={() => {
+                      const toDelete = editingProduct;
+                      setIsProductModalOpen(false);
+                      setDeleteConfirmId(toDelete.id);
+                    }}
+                  >
+                    <Trash2 className="size-3.5 mr-1.5" />
+                    Delete Dress from Store
+                  </Button>
+                ) : (
+                  <div />
+                )}
+                <div className="flex items-center gap-3">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setIsProductModalOpen(false)}
+                  >
+                    Cancel
+                  </Button>
+                  <Button type="submit" variant="editorial">
+                    {editingProduct ? "Save Changes" : "Create Product"}
+                  </Button>
+                </div>
               </div>
             </form>
           </div>
@@ -2483,34 +2676,66 @@ function AdminDashboardPage() {
       )}
 
       {/* ----------------- MODAL: DELETE CONFIRMATION ----------------- */}
-      {deleteConfirmId && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-card border border-border w-full max-w-sm p-6 shadow-xl">
-            <h3 className="font-display text-lg font-medium text-destructive mb-2">
-              Confirm Product Deletion
-            </h3>
-            <p className="text-xs text-muted-foreground leading-relaxed mb-6">
-              Are you sure you want to remove this product from the catalog? This will remove it
-              from both the admin portal and the public shop.
-            </p>
-            <div className="flex justify-end gap-3">
-              <Button variant="outline" size="sm" onClick={() => setDeleteConfirmId(null)}>
-                Cancel
-              </Button>
-              <Button
-                variant="destructive"
-                size="sm"
-                onClick={() => {
-                  deleteProduct(deleteConfirmId);
-                  setDeleteConfirmId(null);
-                }}
-              >
-                Delete Product
-              </Button>
+      {deleteConfirmId && (() => {
+        const prod = productsList.find((p) => p.id === deleteConfirmId);
+        return (
+          <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+            <div className="bg-card border border-border w-full max-w-sm p-6 shadow-xl space-y-4">
+              <div className="flex items-center gap-3">
+                <div className="size-10 rounded-full bg-destructive/10 text-destructive flex items-center justify-center shrink-0">
+                  <Trash2 className="size-5" />
+                </div>
+                <div>
+                  <h3 className="font-display text-lg font-medium text-foreground">
+                    Delete Product?
+                  </h3>
+                  <p className="text-xs text-muted-foreground">
+                    Remove this dress from sale
+                  </p>
+                </div>
+              </div>
+
+              {prod && (
+                <div className="flex items-center gap-3 p-3 bg-secondary/30 border border-border/80 rounded-xs">
+                  <img
+                    src={prod.image}
+                    alt={prod.name}
+                    className="w-12 h-14 object-cover border border-border shrink-0"
+                    onError={(e) => {
+                      (e.currentTarget as HTMLImageElement).src = "/assets/burgundy-silk.jpg";
+                    }}
+                  />
+                  <div className="text-xs min-w-0">
+                    <p className="font-semibold text-foreground truncate">{prod.name}</p>
+                    <p className="text-muted-foreground">{prod.category} · {money(prod.price)}</p>
+                    <p className="text-[10px] text-muted-foreground mt-0.5">SKU: {prod.sku || "PF-GEN"}</p>
+                  </div>
+                </div>
+              )}
+
+              <p className="text-xs text-muted-foreground leading-relaxed">
+                Are you sure you want to delete this dress? It will be immediately removed from both the admin portal and the public shop.
+              </p>
+
+              <div className="flex justify-end gap-3 pt-2 border-t border-border">
+                <Button variant="outline" size="sm" onClick={() => setDeleteConfirmId(null)}>
+                  Cancel
+                </Button>
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  onClick={() => {
+                    deleteProduct(deleteConfirmId);
+                    setDeleteConfirmId(null);
+                  }}
+                >
+                  Yes, Delete Dress
+                </Button>
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
 
       {/* ----------------- MODAL: ADJUST STOCK ----------------- */}
       {stockModalProduct && (
