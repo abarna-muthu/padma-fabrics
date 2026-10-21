@@ -484,6 +484,11 @@ async function runMigrations(pool: mysql.Pool) {
       for (const statement of statements) {
         await pool.query(statement);
       }
+
+      // Safely ensure image_url columns can handle larger Base64 photo uploads
+      await pool.query("ALTER TABLE products MODIFY COLUMN image_url LONGTEXT").catch(() => {});
+      await pool.query("ALTER TABLE product_images MODIFY COLUMN image_url LONGTEXT").catch(() => {});
+
       console.log("[Database] Schema migrations applied successfully.");
 
       // Check if products and categories need initial seeding in MySQL / TiDB
@@ -676,10 +681,15 @@ function executeMemoryCommand(sql: string, params: any[] = []): any {
 
   // Product update
   if (normalized.startsWith("update products")) {
-    const id = params[params.length - 1];
-    const prod = memoryDb.products.find((p) => p.id === id);
+    const id = String(params[params.length - 1] || "");
+    const prod = memoryDb.products.find(
+      (p) =>
+        p.id === id ||
+        p.id.toLowerCase() === id.toLowerCase() ||
+        p.slug === id ||
+        p.slug.toLowerCase() === id.toLowerCase(),
+    );
     if (prod) {
-      // params mapping
       if (params.length >= 10) {
         prod.name = params[0];
         prod.category_id = params[1];
@@ -693,13 +703,44 @@ function executeMemoryCommand(sql: string, params: any[] = []): any {
         prod.is_active = params[9];
       }
       return { affectedRows: 1 };
+    } else {
+      // Upsert into memory DB if not found
+      if (params.length >= 10) {
+        const newP: any = {
+          id,
+          sku: `PF-${Math.floor(100 + Math.random() * 900)}`,
+          name: params[0],
+          slug: (params[0] || id).toLowerCase().replace(/[^a-z0-9]+/g, "-"),
+          category_id: params[1],
+          colour: params[2],
+          price: Number(params[3]),
+          unit: params[4],
+          stock_quantity: Number(params[5]),
+          low_stock_threshold: 5,
+          badge: params[6],
+          description: params[7],
+          image_url: params[8],
+          is_active: params[9],
+          is_featured: 0,
+          sizes: JSON.stringify([]),
+          created_at: new Date().toISOString(),
+        };
+        memoryDb.products.unshift(newP);
+        return { insertId: newP.id, affectedRows: 1 };
+      }
     }
   }
 
   // Product delete
   if (normalized.startsWith("delete from products")) {
-    const id = params[0];
-    const idx = memoryDb.products.findIndex((p) => p.id === id);
+    const id = String(params[0] || "");
+    const idx = memoryDb.products.findIndex(
+      (p) =>
+        p.id === id ||
+        p.id.toLowerCase() === id.toLowerCase() ||
+        p.slug === id ||
+        p.slug.toLowerCase() === id.toLowerCase(),
+    );
     if (idx !== -1) {
       memoryDb.products.splice(idx, 1);
       return { affectedRows: 1 };

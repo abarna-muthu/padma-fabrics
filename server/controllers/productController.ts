@@ -77,6 +77,7 @@ export async function getProducts(req: Request, res: Response) {
       isFeatured: Boolean(p.is_featured),
       sizes: typeof p.sizes === "string" ? JSON.parse(p.sizes || "[]") : p.sizes || [],
       createdAt: p.created_at,
+      updatedAt: p.updated_at || p.created_at || new Date().toISOString(),
     }));
 
     return res.status(200).json({
@@ -258,65 +259,137 @@ export async function updateProduct(req: Request, res: Response) {
       categoryId,
       colour,
       price,
+      original_price,
+      originalPrice,
       unit,
       stock,
+      stock_quantity,
+      stockQuantity,
       badge,
       description,
       image,
       image_url,
+      imageUrl,
       is_active,
+      status,
+      sizes,
+      sku,
     } = req.body;
 
     const db = await getDb();
-    const rows = await db.query("SELECT * FROM products WHERE id = ?", [id]);
+    const rows = await db.query("SELECT * FROM products WHERE id = ? OR slug = ?", [id, id]);
+
+    const newStock =
+      stock !== undefined
+        ? Number(stock)
+        : stock_quantity !== undefined
+          ? Number(stock_quantity)
+          : stockQuantity !== undefined
+            ? Number(stockQuantity)
+            : rows[0]?.stock_quantity ?? 10;
+
+    const finalImage = image_url || image || imageUrl || rows[0]?.image_url || "/assets/burgundy-silk.jpg";
+    const rawCat = categoryId || category || rows[0]?.category_id || "sarees";
+    const finalCategory =
+      CATEGORY_NAME_TO_ID[rawCat] || rawCat.toLowerCase().replace(/[^a-z0-9]+/g, "-");
+    const activeVal =
+      is_active !== undefined
+        ? is_active ? 1 : 0
+        : status !== undefined
+          ? status === "active" ? 1 : 0
+          : rows[0]?.is_active ?? 1;
 
     if (rows.length === 0) {
-      return res.status(404).json({ success: false, error: "Product not found." });
-    }
+      // Upsert: product does not yet exist in the DB, create it!
+      const productSku = sku || `PF-${Math.floor(100 + Math.random() * 900)}`;
+      const productSlug = (name || id)
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/(^-|-$)/g, "");
 
-    const previous = rows[0];
-    const newStock = stock !== undefined ? Number(stock) : previous.stock_quantity;
-    const finalImage = image_url || image || previous.image_url;
-    const rawCat = categoryId || category || previous.category_id;
-    const finalCategory = CATEGORY_NAME_TO_ID[rawCat] || rawCat.toLowerCase().replace(/[^a-z0-9]+/g, "-");
-
-    await db.execute(
-      `UPDATE products SET name = ?, category_id = ?, colour = ?, price = ?, unit = ?, stock_quantity = ?, badge = ?, description = ?, image_url = ?, is_active = ? WHERE id = ?`,
-      [
-        name || previous.name,
-        finalCategory,
-        colour || previous.colour,
-        price !== undefined ? Number(price) : previous.price,
-        unit || previous.unit,
-        newStock,
-        badge !== undefined ? badge : previous.badge,
-        description !== undefined ? description : previous.description,
-        finalImage,
-        is_active !== undefined ? (is_active ? 1 : 0) : previous.is_active,
-        id,
-      ],
-    );
-
-    // If stock changed, record log
-    if (newStock !== previous.stock_quantity) {
-      const diff = newStock - previous.stock_quantity;
       await db.execute(
-        `INSERT INTO inventory_logs (id, product_id, previous_stock, new_stock, change_amount, reason)
-         VALUES (?, ?, ?, ?, ?, ?)`,
+        `INSERT INTO products (id, sku, name, slug, category_id, colour, price, original_price, unit, stock_quantity, low_stock_threshold, badge, description, image_url, is_active, is_featured, sizes)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
-          `LOG-${Date.now().toString(36)}`,
           id,
-          previous.stock_quantity,
+          productSku,
+          name || "Product",
+          productSlug,
+          finalCategory,
+          colour || "Custom",
+          price !== undefined ? Number(price) : 0,
+          original_price || originalPrice ? Number(original_price || originalPrice) : null,
+          unit || "piece",
           newStock,
-          diff,
-          "Manual product update",
+          5,
+          badge || "New arrival",
+          description || "",
+          finalImage,
+          activeVal,
+          0,
+          JSON.stringify(sizes || []),
         ],
       );
+    } else {
+      const previous = rows[0];
+      await db.execute(
+        `UPDATE products SET name = ?, category_id = ?, colour = ?, price = ?, unit = ?, stock_quantity = ?, badge = ?, description = ?, image_url = ?, is_active = ? WHERE id = ?`,
+        [
+          name || previous.name,
+          finalCategory,
+          colour || previous.colour,
+          price !== undefined ? Number(price) : previous.price,
+          unit || previous.unit,
+          newStock,
+          badge !== undefined ? badge : previous.badge,
+          description !== undefined ? description : previous.description,
+          finalImage,
+          activeVal,
+          previous.id,
+        ],
+      );
+
+      // If stock changed, record log
+      if (newStock !== previous.stock_quantity) {
+        const diff = newStock - previous.stock_quantity;
+        await db.execute(
+          `INSERT INTO inventory_logs (id, product_id, previous_stock, new_stock, change_amount, reason)
+           VALUES (?, ?, ?, ?, ?, ?)`,
+          [
+            `LOG-${Date.now().toString(36)}`,
+            previous.id,
+            previous.stock_quantity,
+            newStock,
+            diff,
+            "Manual product update",
+          ],
+        ).catch(() => {});
+      }
     }
+
+    const updatedProduct = {
+      id,
+      name: name || rows[0]?.name,
+      category: CATEGORY_ID_TO_NAME[finalCategory] || finalCategory,
+      categoryId: finalCategory,
+      colour: colour || rows[0]?.colour || "Custom",
+      price: price !== undefined ? Number(price) : rows[0]?.price,
+      unit: unit || rows[0]?.unit || "piece",
+      stock: newStock,
+      stockQuantity: newStock,
+      badge: badge !== undefined ? badge : rows[0]?.badge,
+      description: description !== undefined ? description : rows[0]?.description,
+      image: finalImage,
+      imageUrl: finalImage,
+      isActive: Boolean(activeVal),
+      status: activeVal ? "active" : "inactive",
+      updatedAt: new Date().toISOString(),
+    };
 
     return res.status(200).json({
       success: true,
       message: "Product updated successfully.",
+      product: updatedProduct,
     });
   } catch (err: any) {
     console.error("[ProductController] updateProduct error:", err);

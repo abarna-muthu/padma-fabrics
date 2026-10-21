@@ -61,7 +61,7 @@ CREATE TABLE IF NOT EXISTS products (
   low_stock_threshold INT DEFAULT 5,
   badge VARCHAR(50),
   description TEXT,
-  image_url TEXT NOT NULL,
+  image_url LONGTEXT NOT NULL,
   is_active BOOLEAN DEFAULT TRUE,
   is_featured BOOLEAN DEFAULT FALSE,
   sizes JSON,
@@ -76,7 +76,7 @@ CREATE TABLE IF NOT EXISTS products (
 CREATE TABLE IF NOT EXISTS product_images (
   id VARCHAR(36) PRIMARY KEY,
   product_id VARCHAR(50) NOT NULL,
-  image_url TEXT NOT NULL,
+  image_url LONGTEXT NOT NULL,
   alt_text VARCHAR(255),
   is_primary BOOLEAN DEFAULT FALSE,
   sort_order INT DEFAULT 0,

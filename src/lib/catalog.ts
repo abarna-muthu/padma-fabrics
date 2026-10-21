@@ -41,6 +41,7 @@ export type Item = {
   stock: number;
   status: "active" | "inactive" | "archived";
   sku?: string;
+  updatedAt?: string;
 };
 
 const adult = ["S", "M", "L", "XL", "XXL"] as const;

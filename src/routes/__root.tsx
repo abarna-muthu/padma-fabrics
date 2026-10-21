@@ -22,6 +22,7 @@ import { Footer } from "../components/Footer";
 import { ShopSheet } from "../components/ShopSheet";
 import { CheckoutModal } from "../components/CheckoutModal";
 import { CustomerPortalModal } from "../components/CustomerPortalModal";
+import { Toaster } from "@/components/ui/sonner";
 
 function NotFoundComponent() {
   return (
@@ -164,6 +165,7 @@ function RootComponent() {
                   <CustomerPortalModal />
                 </div>
               )}
+              <Toaster position="top-right" richColors />
             </CustomerAuthProvider>
           </SiteContentProvider>
         </AdminAuthProvider>

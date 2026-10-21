@@ -77,6 +77,7 @@ interface StoreContextType {
 const STORAGE_PRODUCTS_KEY = "pf_admin_products_catalog";
 const STORAGE_ORDERS_KEY = "pf_admin_orders";
 const STORAGE_STOCK_LOGS_KEY = "pf_admin_stock_logs";
+const STORAGE_DELETED_PRODUCTS_KEY = "pf_admin_deleted_product_ids";
 
 const StoreContext = createContext<StoreContextType | null>(null);
 
@@ -179,17 +180,53 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         const serverProds = (prodRes as any).products || prodRes.data;
         if (prodRes.success && Array.isArray(serverProds) && serverProds.length > 0) {
           const currentLocal = localStorage.getItem(STORAGE_PRODUCTS_KEY);
-          let merged = serverProds;
+          let deletedIds: string[] = [];
+          try {
+            deletedIds = JSON.parse(localStorage.getItem(STORAGE_DELETED_PRODUCTS_KEY) || "[]");
+          } catch {}
+
+          // Filter out deleted items from server response
+          const activeServerProds = serverProds.filter((sp: any) => !deletedIds.includes(sp.id));
+          let merged: Product[] = activeServerProds;
+
           if (currentLocal) {
             try {
               const localList: Product[] = JSON.parse(currentLocal);
               if (Array.isArray(localList)) {
-                // Keep local additions not yet in server
-                const localOnly = localList.filter((lp) => !serverProds.some((sp: any) => sp.id === lp.id));
-                merged = [...localOnly, ...serverProds];
-                localOnly.forEach((p) => {
-                  productApi.create(p).catch(() => {});
-                });
+                const mergedMap = new Map<string, Product>();
+
+                // First populate with server products
+                for (const sp of activeServerProds) {
+                  mergedMap.set(sp.id, sp);
+                }
+
+                // Intelligently overlay local products
+                for (const lp of localList) {
+                  if (deletedIds.includes(lp.id)) continue;
+
+                  const sp = mergedMap.get(lp.id);
+                  if (!sp) {
+                    // Local-only product (freshly added in admin)
+                    mergedMap.set(lp.id, lp);
+                    productApi.create(lp).catch(() => {});
+                  } else {
+                    // Both exist: check timestamps so local admin edits are NEVER overwritten
+                    const lpTime = lp.updatedAt ? new Date(lp.updatedAt).getTime() : 0;
+                    const spTime =
+                      (sp as any).updatedAt || (sp as any).updated_at
+                        ? new Date((sp as any).updatedAt || (sp as any).updated_at).getTime()
+                        : 0;
+
+                    if (lpTime >= spTime) {
+                      mergedMap.set(lp.id, { ...sp, ...lp });
+                      // Synchronize latest admin edit to backend
+                      productApi.update(lp.id, lp).catch(() => {});
+                    } else {
+                      mergedMap.set(lp.id, { ...lp, ...sp });
+                    }
+                  }
+                }
+                merged = Array.from(mergedMap.values());
               }
             } catch {}
           }
@@ -257,7 +294,9 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   };
 
   // Active products visible on the storefront
-  const activeProducts = productsList.filter((p) => p.status === "active");
+  const activeProducts = productsList.filter(
+    (p) => p.status !== "inactive" && p.status !== "archived" && (p as any).isActive !== false,
+  );
 
   const count = bag.reduce((n, item) => n + item.quantity, 0);
 
@@ -322,15 +361,26 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   // Product management actions
   const addProduct = (newP: Omit<Product, "id"> & { id?: string }) => {
     const id = newP.id || `pf-${Date.now().toString(36)}`;
+    const nowIso = new Date().toISOString();
     const product: Product = {
       ...newP,
       id,
       stock: Number(newP.stock) || 0,
       status: newP.status || "active",
       sku: newP.sku || `PF-NEW-${Math.floor(100 + Math.random() * 900)}`,
+      updatedAt: nowIso,
     };
     const updated = [product, ...productsList];
     saveProducts(updated);
+
+    // Remove from deleted list if re-added
+    try {
+      const deletedIds: string[] = JSON.parse(
+        localStorage.getItem(STORAGE_DELETED_PRODUCTS_KEY) || "[]",
+      );
+      const filtered = deletedIds.filter((x) => x !== id);
+      localStorage.setItem(STORAGE_DELETED_PRODUCTS_KEY, JSON.stringify(filtered));
+    } catch {}
 
     // Initial stock log if stock > 0
     if (product.stock > 0) {
@@ -357,7 +407,18 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
   const updateProduct = (id: string, updates: Partial<Product>) => {
     const previous = productsList.find((p) => p.id === id);
-    const updated = productsList.map((p) => (p.id === id ? { ...p, ...updates } : p));
+    const nowIso = new Date().toISOString();
+    const updated = productsList.map((p) => {
+      if (p.id === id) {
+        return {
+          ...p,
+          ...updates,
+          status: updates.status || p.status || "active",
+          updatedAt: nowIso,
+        };
+      }
+      return p;
+    });
     saveProducts(updated);
 
     // If stock changed, record log
@@ -376,7 +437,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     }
 
     // Persist to backend database API
-    productApi.update(id, updates).catch((err) => {
+    productApi.update(id, { ...updates, updatedAt: nowIso }).catch((err) => {
       console.warn("Could not sync updated product to backend API:", err);
     });
   };
@@ -384,6 +445,16 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const deleteProduct = (id: string) => {
     const updated = productsList.filter((p) => p.id !== id);
     saveProducts(updated);
+
+    try {
+      const deletedIds: string[] = JSON.parse(
+        localStorage.getItem(STORAGE_DELETED_PRODUCTS_KEY) || "[]",
+      );
+      if (!deletedIds.includes(id)) {
+        deletedIds.push(id);
+        localStorage.setItem(STORAGE_DELETED_PRODUCTS_KEY, JSON.stringify(deletedIds));
+      }
+    } catch {}
 
     // Persist to backend database API
     productApi.delete(id).catch((err) => {

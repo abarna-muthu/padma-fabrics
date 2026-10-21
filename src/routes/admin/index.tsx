@@ -38,6 +38,7 @@ import {
   Image as ImageIcon,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import logo from "@/assets/padmanabha-logo.jpg";
@@ -444,7 +445,9 @@ function AdminDashboardPage() {
         description: prodDescription,
         sku: prodSku,
         image: prodImage || editingProduct.image,
+        status: editingProduct.status || "active",
       });
+      toast.success(`"${prodName}" updated successfully! Changes are live on customer storefront.`);
     } else {
       addProduct({
         name: prodName,
@@ -459,6 +462,7 @@ function AdminDashboardPage() {
         image: prodImage || productsList[0]?.image || "",
         status: "active",
       });
+      toast.success(`"${prodName}" published to catalog and customer storefront!`);
     }
 
     setIsProductModalOpen(false);
