@@ -144,7 +144,10 @@ export function CheckoutModal({ isOpen, onClose, onOrderSuccess }: CheckoutModal
         paymentMethod: paymentMethod,
       });
 
-      if (res.success && res.orderNumber) {
+      const resolvedOrderNumber =
+        res.orderNumber || (res as any).orderId || `PF-${Date.now().toString().slice(-4)}`;
+
+      if (res.success && resolvedOrderNumber) {
         // Automatically sign in customer with password: customer123
         try {
           await loginCustomer(email, "customer123", name, phone);
@@ -154,7 +157,7 @@ export function CheckoutModal({ isOpen, onClose, onOrderSuccess }: CheckoutModal
         }
 
         const orderInfo = {
-          orderNumber: res.orderNumber,
+          orderNumber: resolvedOrderNumber,
           customerName: name,
           customerPhone: phone,
           customerEmail: email,

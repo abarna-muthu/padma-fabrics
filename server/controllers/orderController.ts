@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { getDb } from "../config/db";
+import { getDb, INITIAL_PRODUCTS } from "../config/db";
 
 export async function createCheckoutOrder(req: Request, res: Response) {
   try {
@@ -31,9 +31,28 @@ export async function createCheckoutOrder(req: Request, res: Response) {
 
     // Server-side inventory and price re-verification
     for (const item of items) {
-      const rows = await db.query("SELECT * FROM products WHERE id = ?", [
-        item.id || item.productId,
-      ]);
+      const rawId = String(item.id || item.productId || "").trim();
+      let rows = await db.query("SELECT * FROM products WHERE id = ?", [rawId]);
+      if (rows.length === 0) {
+        rows = await db.query("SELECT * FROM products WHERE LOWER(id) = ? OR LOWER(slug) = ?", [
+          rawId.toLowerCase(),
+          rawId.toLowerCase(),
+        ]);
+      }
+
+      // Fallback to INITIAL_PRODUCTS catalog definition if DB does not have the row yet
+      if (rows.length === 0) {
+        const catalogMatch = INITIAL_PRODUCTS.find(
+          (p) =>
+            p.id.toLowerCase() === rawId.toLowerCase() ||
+            p.slug.toLowerCase() === rawId.toLowerCase() ||
+            (p.sku && p.sku.toLowerCase() === rawId.toLowerCase()),
+        );
+        if (catalogMatch) {
+          rows = [catalogMatch];
+        }
+      }
+
       if (rows.length === 0) {
         return res.status(400).json({
           success: false,
@@ -179,6 +198,15 @@ export async function createCheckoutOrder(req: Request, res: Response) {
     return res.status(201).json({
       success: true,
       message: "Order placed successfully.",
+      data: {
+        orderId,
+        orderNumber,
+        totalAmount,
+        subtotal: calculatedSubtotal,
+        paymentStatus,
+        orderStatus: "Pending",
+        itemsCount: validatedItems.length,
+      },
       order: {
         id: orderId,
         orderNumber,

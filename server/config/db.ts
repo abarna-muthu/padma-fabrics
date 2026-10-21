@@ -16,6 +16,217 @@ export interface DatabaseAdapter {
   isMySQL: boolean;
 }
 
+export const INITIAL_CATEGORIES = [
+  {
+    id: "sarees",
+    name: "Sarees",
+    slug: "sarees",
+    description: "Silk & handloom drapes",
+    display_order: 1,
+  },
+  {
+    id: "fabrics",
+    name: "Fabrics",
+    slug: "fabrics",
+    description: "Beautiful by the metre",
+    display_order: 2,
+  },
+  {
+    id: "shirts",
+    name: "Shirts",
+    slug: "shirts",
+    description: "Crisp linen & cotton",
+    display_order: 3,
+  },
+  {
+    id: "t-shirts",
+    name: "T-Shirts",
+    slug: "t-shirts",
+    description: "Easy everyday comfort",
+    display_order: 4,
+  },
+  {
+    id: "womens-dresses",
+    name: "Women's Dresses",
+    slug: "womens-dresses",
+    description: "Festive & daily wear",
+    display_order: 5,
+  },
+  {
+    id: "kids-wear",
+    name: "Kids Wear",
+    slug: "kids-wear",
+    description: "Little celebrations",
+    display_order: 6,
+  },
+];
+
+export const INITIAL_PRODUCTS = [
+  {
+    id: "wine-silk",
+    sku: "PF-SAR-001",
+    name: "The Wine Zari Silk Saree",
+    slug: "the-wine-zari-silk-saree",
+    category_id: "sarees",
+    colour: "Wine & antique gold",
+    price: 4250,
+    original_price: 4800,
+    unit: "piece",
+    stock_quantity: 14,
+    low_stock_threshold: 5,
+    badge: "Editor's pick",
+    description:
+      "A rich wine palette and an ornate golden border, made for memorable occasions.",
+    image_url: "/assets/burgundy-silk.jpg",
+    is_active: 1,
+    is_featured: 1,
+    sizes: JSON.stringify(["Free Size"]),
+    created_at: new Date().toISOString(),
+  },
+  {
+    id: "heritage-silk",
+    sku: "PF-SAR-002",
+    name: "The Heritage Silk Saree",
+    slug: "the-heritage-silk-saree",
+    category_id: "sarees",
+    colour: "Burgundy & gold",
+    price: 5450,
+    original_price: 6000,
+    unit: "piece",
+    stock_quantity: 8,
+    low_stock_threshold: 5,
+    badge: "Signature",
+    description:
+      "Dramatic burgundy folds and a detailed gold border in a timeless festive palette.",
+    image_url: "/assets/fabric-hero.jpg",
+    is_active: 1,
+    is_featured: 1,
+    sizes: JSON.stringify(["Free Size"]),
+    created_at: new Date().toISOString(),
+  },
+  {
+    id: "sage-cotton",
+    sku: "PF-FAB-001",
+    name: "The Sage Buti Cotton",
+    slug: "the-sage-buti-cotton",
+    category_id: "fabrics",
+    colour: "Sage green",
+    price: 650,
+    original_price: 750,
+    unit: "metre",
+    stock_quantity: 4, // low stock!
+    low_stock_threshold: 5,
+    badge: "Everyday",
+    description: "A soft sage palette with delicate woven motifs and a subtle golden border.",
+    image_url: "/assets/sage-fabric.jpg",
+    is_active: 1,
+    is_featured: 1,
+    sizes: JSON.stringify([]),
+    created_at: new Date().toISOString(),
+  },
+  {
+    id: "ivory-brocade",
+    sku: "PF-FAB-002",
+    name: "The Ivory Floral Brocade",
+    slug: "the-ivory-floral-brocade",
+    category_id: "fabrics",
+    colour: "Ivory & gold",
+    price: 980,
+    original_price: 1100,
+    unit: "metre",
+    stock_quantity: 25,
+    low_stock_threshold: 5,
+    badge: "Occasion edit",
+    description:
+      "An intricate floral pattern in ivory and gold, with a beautifully textured finish.",
+    image_url: "/assets/ivory-brocade.jpg",
+    is_active: 1,
+    is_featured: 1,
+    sizes: JSON.stringify([]),
+    created_at: new Date().toISOString(),
+  },
+  {
+    id: "linen-shirt",
+    sku: "PF-SHT-001",
+    name: "The Classic Linen Shirt",
+    slug: "the-classic-linen-shirt",
+    category_id: "shirts",
+    colour: "Pure white",
+    price: 1499,
+    original_price: 1799,
+    unit: "piece",
+    stock_quantity: 18,
+    low_stock_threshold: 5,
+    badge: "Men",
+    description: "A breathable linen-cotton formal shirt with a clean, slim fit.",
+    image_url: "/assets/mens-shirt.jpg",
+    is_active: 1,
+    is_featured: 0,
+    sizes: JSON.stringify(["S", "M", "L", "XL", "XXL"]),
+    created_at: new Date().toISOString(),
+  },
+  {
+    id: "navy-tee",
+    sku: "PF-TEE-001",
+    name: "The Everyday Cotton Tee",
+    slug: "the-everyday-cotton-tee",
+    category_id: "t-shirts",
+    colour: "Navy blue",
+    price: 599,
+    original_price: 699,
+    unit: "piece",
+    stock_quantity: 35,
+    low_stock_threshold: 5,
+    badge: "Best seller",
+    description: "Soft combed-cotton crew neck T-shirt for all-day comfort.",
+    image_url: "/assets/tshirt.jpg",
+    is_active: 1,
+    is_featured: 0,
+    sizes: JSON.stringify(["S", "M", "L", "XL", "XXL"]),
+    created_at: new Date().toISOString(),
+  },
+  {
+    id: "maroon-anarkali",
+    sku: "PF-DRS-001",
+    name: "The Maroon Anarkali Dress",
+    slug: "the-maroon-anarkali-dress",
+    category_id: "womens-dresses",
+    colour: "Maroon & gold",
+    price: 3299,
+    original_price: 3899,
+    unit: "piece",
+    stock_quantity: 2, // low stock!
+    low_stock_threshold: 5,
+    badge: "Women",
+    description: "A flowing anarkali with gold embroidery and a matching dupatta.",
+    image_url: "/assets/womens-dress.jpg",
+    is_active: 1,
+    is_featured: 0,
+    sizes: JSON.stringify(["S", "M", "L", "XL", "XXL"]),
+    created_at: new Date().toISOString(),
+  },
+  {
+    id: "pattu-pavadai",
+    sku: "PF-KID-001",
+    name: "The Little Pattu Pavadai",
+    slug: "the-little-pattu-pavadai",
+    category_id: "kids-wear",
+    colour: "Mustard & green",
+    price: 1899,
+    original_price: 2199,
+    unit: "piece",
+    stock_quantity: 11,
+    low_stock_threshold: 5,
+    badge: "Kids",
+    description: "A traditional silk pavadai set with a peacock zari border.",
+    image_url: "/assets/kids-dress.jpg",
+    is_active: 1,
+    is_featured: 0,
+    sizes: JSON.stringify(["2-3Y", "4-5Y", "6-7Y", "8-9Y", "10-12Y"]),
+    created_at: new Date().toISOString(),
+  },
+];
+
 // In-Memory store for development when TiDB / MySQL is not connected
 class MemoryDatabase {
   admin_users: any[] = [];
@@ -32,6 +243,9 @@ class MemoryDatabase {
   contact_enquiries: any[] = [];
 
   constructor() {
+    // Seed categories and products synchronously so they are always immediately available
+    this.categories = [...INITIAL_CATEGORIES];
+    this.products = [...INITIAL_PRODUCTS];
     this.initSeed();
   }
 
@@ -45,219 +259,6 @@ class MemoryDatabase {
       role: "admin",
       created_at: new Date().toISOString(),
     });
-
-    this.categories.push(
-      {
-        id: "sarees",
-        name: "Sarees",
-        slug: "sarees",
-        description: "Silk & handloom drapes",
-        display_order: 1,
-      },
-      {
-        id: "fabrics",
-        name: "Fabrics",
-        slug: "fabrics",
-        description: "Beautiful by the metre",
-        display_order: 2,
-      },
-      {
-        id: "shirts",
-        name: "Shirts",
-        slug: "shirts",
-        description: "Crisp linen & cotton",
-        display_order: 3,
-      },
-      {
-        id: "t-shirts",
-        name: "T-Shirts",
-        slug: "t-shirts",
-        description: "Easy everyday comfort",
-        display_order: 4,
-      },
-      {
-        id: "womens-dresses",
-        name: "Women's Dresses",
-        slug: "womens-dresses",
-        description: "Festive & daily wear",
-        display_order: 5,
-      },
-      {
-        id: "kids-wear",
-        name: "Kids Wear",
-        slug: "kids-wear",
-        description: "Little celebrations",
-        display_order: 6,
-      },
-    );
-
-    const initialProducts = [
-      {
-        id: "wine-silk",
-        sku: "PF-SAR-001",
-        name: "The Wine Zari Silk Saree",
-        slug: "the-wine-zari-silk-saree",
-        category_id: "sarees",
-        colour: "Wine & antique gold",
-        price: 4250,
-        original_price: 4800,
-        unit: "piece",
-        stock_quantity: 14,
-        low_stock_threshold: 5,
-        badge: "Editor's pick",
-        description:
-          "A rich wine palette and an ornate golden border, made for memorable occasions.",
-        image_url: "/assets/burgundy-silk.jpg",
-        is_active: 1,
-        is_featured: 1,
-        sizes: JSON.stringify(["Free Size"]),
-        created_at: new Date().toISOString(),
-      },
-      {
-        id: "heritage-silk",
-        sku: "PF-SAR-002",
-        name: "The Heritage Silk Saree",
-        slug: "the-heritage-silk-saree",
-        category_id: "sarees",
-        colour: "Burgundy & gold",
-        price: 5450,
-        original_price: 6000,
-        unit: "piece",
-        stock_quantity: 8,
-        low_stock_threshold: 5,
-        badge: "Signature",
-        description:
-          "Dramatic burgundy folds and a detailed gold border in a timeless festive palette.",
-        image_url: "/assets/fabric-hero.jpg",
-        is_active: 1,
-        is_featured: 1,
-        sizes: JSON.stringify(["Free Size"]),
-        created_at: new Date().toISOString(),
-      },
-      {
-        id: "sage-cotton",
-        sku: "PF-FAB-001",
-        name: "The Sage Buti Cotton",
-        slug: "the-sage-buti-cotton",
-        category_id: "fabrics",
-        colour: "Sage green",
-        price: 650,
-        original_price: 750,
-        unit: "metre",
-        stock_quantity: 4, // low stock!
-        low_stock_threshold: 5,
-        badge: "Everyday",
-        description: "A soft sage palette with delicate woven motifs and a subtle golden border.",
-        image_url: "/assets/sage-fabric.jpg",
-        is_active: 1,
-        is_featured: 1,
-        sizes: JSON.stringify([]),
-        created_at: new Date().toISOString(),
-      },
-      {
-        id: "ivory-brocade",
-        sku: "PF-FAB-002",
-        name: "The Ivory Floral Brocade",
-        slug: "the-ivory-floral-brocade",
-        category_id: "fabrics",
-        colour: "Ivory & gold",
-        price: 980,
-        original_price: 1100,
-        unit: "metre",
-        stock_quantity: 25,
-        low_stock_threshold: 5,
-        badge: "Occasion edit",
-        description:
-          "An intricate floral pattern in ivory and gold, with a beautifully textured finish.",
-        image_url: "/assets/ivory-brocade.jpg",
-        is_active: 1,
-        is_featured: 1,
-        sizes: JSON.stringify([]),
-        created_at: new Date().toISOString(),
-      },
-      {
-        id: "linen-shirt",
-        sku: "PF-SHT-001",
-        name: "The Classic Linen Shirt",
-        slug: "the-classic-linen-shirt",
-        category_id: "shirts",
-        colour: "Pure white",
-        price: 1499,
-        original_price: 1799,
-        unit: "piece",
-        stock_quantity: 18,
-        low_stock_threshold: 5,
-        badge: "Men",
-        description: "A breathable linen-cotton formal shirt with a clean, slim fit.",
-        image_url: "/assets/mens-shirt.jpg",
-        is_active: 1,
-        is_featured: 0,
-        sizes: JSON.stringify(["S", "M", "L", "XL", "XXL"]),
-        created_at: new Date().toISOString(),
-      },
-      {
-        id: "navy-tee",
-        sku: "PF-TEE-001",
-        name: "The Everyday Cotton Tee",
-        slug: "the-everyday-cotton-tee",
-        category_id: "t-shirts",
-        colour: "Navy blue",
-        price: 599,
-        original_price: 699,
-        unit: "piece",
-        stock_quantity: 35,
-        low_stock_threshold: 5,
-        badge: "Best seller",
-        description: "Soft combed-cotton crew neck T-shirt for all-day comfort.",
-        image_url: "/assets/tshirt.jpg",
-        is_active: 1,
-        is_featured: 0,
-        sizes: JSON.stringify(["S", "M", "L", "XL", "XXL"]),
-        created_at: new Date().toISOString(),
-      },
-      {
-        id: "maroon-anarkali",
-        sku: "PF-DRS-001",
-        name: "The Maroon Anarkali Dress",
-        slug: "the-maroon-anarkali-dress",
-        category_id: "womens-dresses",
-        colour: "Maroon & gold",
-        price: 3299,
-        original_price: 3899,
-        unit: "piece",
-        stock_quantity: 2, // low stock!
-        low_stock_threshold: 5,
-        badge: "Women",
-        description: "A flowing anarkali with gold embroidery and a matching dupatta.",
-        image_url: "/assets/womens-dress.jpg",
-        is_active: 1,
-        is_featured: 0,
-        sizes: JSON.stringify(["S", "M", "L", "XL", "XXL"]),
-        created_at: new Date().toISOString(),
-      },
-      {
-        id: "pattu-pavadai",
-        sku: "PF-KID-001",
-        name: "The Little Pattu Pavadai",
-        slug: "the-little-pattu-pavadai",
-        category_id: "kids-wear",
-        colour: "Mustard & green",
-        price: 1899,
-        original_price: 2199,
-        unit: "piece",
-        stock_quantity: 11,
-        low_stock_threshold: 5,
-        badge: "Kids",
-        description: "A traditional silk pavadai set with a peacock zari border.",
-        image_url: "/assets/kids-dress.jpg",
-        is_active: 1,
-        is_featured: 0,
-        sizes: JSON.stringify(["2-3Y", "4-5Y", "6-7Y", "8-9Y", "10-12Y"]),
-        created_at: new Date().toISOString(),
-      },
-    ];
-
-    this.products.push(...initialProducts);
 
     // Initial development sample orders
     const o1 = {
@@ -484,6 +485,48 @@ async function runMigrations(pool: mysql.Pool) {
         await pool.query(statement);
       }
       console.log("[Database] Schema migrations applied successfully.");
+
+      // Check if products and categories need initial seeding in MySQL / TiDB
+      try {
+        const [existingProducts]: any = await pool.query("SELECT COUNT(*) as count FROM products");
+        if (existingProducts && existingProducts[0]?.count === 0) {
+          console.log("[Database] Seeding initial products & categories to MySQL/TiDB...");
+          for (const cat of INITIAL_CATEGORIES) {
+            await pool.execute(
+              "INSERT IGNORE INTO categories (id, name, slug, description, display_order) VALUES (?, ?, ?, ?, ?)",
+              [cat.id, cat.name, cat.slug, cat.description, cat.display_order],
+            );
+          }
+          for (const prod of INITIAL_PRODUCTS) {
+            await pool.execute(
+              `INSERT IGNORE INTO products (id, sku, name, slug, category_id, colour, price, original_price, unit, stock_quantity, low_stock_threshold, badge, description, image_url, is_active, is_featured, sizes)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+              [
+                prod.id,
+                prod.sku,
+                prod.name,
+                prod.slug,
+                prod.category_id,
+                prod.colour,
+                prod.price,
+                prod.original_price,
+                prod.unit,
+                prod.stock_quantity,
+                prod.low_stock_threshold,
+                prod.badge,
+                prod.description,
+                prod.image_url,
+                prod.is_active,
+                prod.is_featured,
+                prod.sizes,
+              ],
+            );
+          }
+          console.log("[Database] Initial products & categories seeded successfully.");
+        }
+      } catch (seedErr: any) {
+        console.warn("[Database] Notice checking/seeding initial products:", seedErr.message);
+      }
     }
   } catch (err: any) {
     console.error("[Database] Migration error:", err.message);
@@ -513,9 +556,19 @@ function executeMemoryQuery<T = any>(sql: string, params: any[] = []): T[] {
   }
 
   // Products
-  if (normalized.includes("from products") && normalized.includes("where id =")) {
-    const id = params[0];
-    return memoryDb.products.filter((p) => p.id === id) as any;
+  if (
+    normalized.includes("from products") &&
+    (normalized.includes("where id =") ||
+      normalized.includes("where lower(id) =") ||
+      normalized.includes("where slug ="))
+  ) {
+    const target = String(params[0] || "").trim().toLowerCase();
+    return memoryDb.products.filter(
+      (p) =>
+        p.id?.toLowerCase() === target ||
+        p.slug?.toLowerCase() === target ||
+        (p.sku && p.sku.toLowerCase() === target),
+    ) as any;
   }
   if (normalized.includes("from products") && normalized.includes("is_featured = 1")) {
     return memoryDb.products.filter((p) => p.is_active && p.is_featured) as any;

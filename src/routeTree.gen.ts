@@ -12,9 +12,9 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AboutRouteImport } from './routes/about'
 import { Route as ContactRouteImport } from './routes/contact'
+import { Route as RefundPolicyRouteImport } from './routes/refund-policy'
 import { Route as ShopRouteImport } from './routes/shop'
 import { Route as TermsRouteImport } from './routes/terms'
-import { Route as RefundPolicyRouteImport } from './routes/refund-policy'
 import { Route as AdminIndexRouteImport } from './routes/admin/index'
 import { Route as AdminLoginRouteImport } from './routes/admin/login'
 
@@ -33,6 +33,11 @@ const ContactRoute = ContactRouteImport.update({
   path: '/contact',
   getParentRoute: () => rootRouteImport,
 } as any)
+const RefundPolicyRoute = RefundPolicyRouteImport.update({
+  id: '/refund-policy',
+  path: '/refund-policy',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ShopRoute = ShopRouteImport.update({
   id: '/shop',
   path: '/shop',
@@ -41,11 +46,6 @@ const ShopRoute = ShopRouteImport.update({
 const TermsRoute = TermsRouteImport.update({
   id: '/terms',
   path: '/terms',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const RefundPolicyRoute = RefundPolicyRouteImport.update({
-  id: '/refund-policy',
-  path: '/refund-policy',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdminIndexRoute = AdminIndexRouteImport.update({
@@ -63,9 +63,9 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
   '/contact': typeof ContactRoute
+  '/refund-policy': typeof RefundPolicyRoute
   '/shop': typeof ShopRoute
   '/terms': typeof TermsRoute
-  '/refund-policy': typeof RefundPolicyRoute
   '/admin/login': typeof AdminLoginRoute
   '/admin/': typeof AdminIndexRoute
 }
@@ -73,9 +73,9 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
   '/contact': typeof ContactRoute
+  '/refund-policy': typeof RefundPolicyRoute
   '/shop': typeof ShopRoute
   '/terms': typeof TermsRoute
-  '/refund-policy': typeof RefundPolicyRoute
   '/admin/login': typeof AdminLoginRoute
   '/admin': typeof AdminIndexRoute
 }
@@ -84,9 +84,9 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
   '/contact': typeof ContactRoute
+  '/refund-policy': typeof RefundPolicyRoute
   '/shop': typeof ShopRoute
   '/terms': typeof TermsRoute
-  '/refund-policy': typeof RefundPolicyRoute
   '/admin/login': typeof AdminLoginRoute
   '/admin/': typeof AdminIndexRoute
 }
@@ -96,9 +96,9 @@ export interface FileRouteTypes {
     | '/'
     | '/about'
     | '/contact'
+    | '/refund-policy'
     | '/shop'
     | '/terms'
-    | '/refund-policy'
     | '/admin/login'
     | '/admin/'
   fileRoutesByTo: FileRoutesByTo
@@ -106,9 +106,9 @@ export interface FileRouteTypes {
     | '/'
     | '/about'
     | '/contact'
+    | '/refund-policy'
     | '/shop'
     | '/terms'
-    | '/refund-policy'
     | '/admin/login'
     | '/admin'
   id:
@@ -116,9 +116,9 @@ export interface FileRouteTypes {
     | '/'
     | '/about'
     | '/contact'
+    | '/refund-policy'
     | '/shop'
     | '/terms'
-    | '/refund-policy'
     | '/admin/login'
     | '/admin/'
   fileRoutesById: FileRoutesById
@@ -127,9 +127,9 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AboutRoute: typeof AboutRoute
   ContactRoute: typeof ContactRoute
+  RefundPolicyRoute: typeof RefundPolicyRoute
   ShopRoute: typeof ShopRoute
   TermsRoute: typeof TermsRoute
-  RefundPolicyRoute: typeof RefundPolicyRoute
   AdminLoginRoute: typeof AdminLoginRoute
   AdminIndexRoute: typeof AdminIndexRoute
 }
@@ -157,6 +157,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ContactRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/refund-policy': {
+      id: '/refund-policy'
+      path: '/refund-policy'
+      fullPath: '/refund-policy'
+      preLoaderRoute: typeof RefundPolicyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/shop': {
       id: '/shop'
       path: '/shop'
@@ -169,13 +176,6 @@ declare module '@tanstack/react-router' {
       path: '/terms'
       fullPath: '/terms'
       preLoaderRoute: typeof TermsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/refund-policy': {
-      id: '/refund-policy'
-      path: '/refund-policy'
-      fullPath: '/refund-policy'
-      preLoaderRoute: typeof RefundPolicyRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin/': {
@@ -199,9 +199,9 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AboutRoute: AboutRoute,
   ContactRoute: ContactRoute,
+  RefundPolicyRoute: RefundPolicyRoute,
   ShopRoute: ShopRoute,
   TermsRoute: TermsRoute,
-  RefundPolicyRoute: RefundPolicyRoute,
   AdminLoginRoute: AdminLoginRoute,
   AdminIndexRoute: AdminIndexRoute,
 }
