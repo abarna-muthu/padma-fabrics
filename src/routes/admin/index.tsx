@@ -654,9 +654,9 @@ function AdminDashboardPage() {
   }
 
   return (
-    <div className="min-h-screen bg-sand-50 dark:bg-background flex flex-col md:flex-row text-foreground">
+    <div className="h-screen w-full bg-sand-50 dark:bg-background flex flex-col md:flex-row text-foreground overflow-hidden">
       {/* Mobile Top Header */}
-      <div className="md:hidden flex items-center justify-between p-4 bg-card border-b border-border">
+      <div className="md:hidden flex items-center justify-between p-4 bg-card border-b border-border shrink-0 z-30">
         <div className="flex items-center gap-2.5">
           <img
             src={typeof logo === "string" ? logo : (logo as any)?.url || "/padmanabha-logo.jpg"}
@@ -673,11 +673,11 @@ function AdminDashboardPage() {
       {/* Sidebar Navigation */}
       <aside
         className={`${
-          mobileMenuOpen ? "block" : "hidden"
-        } md:block w-full md:w-64 bg-card border-r border-border md:min-h-screen flex flex-col shrink-0`}
+          mobileMenuOpen ? "fixed inset-0 top-[65px] z-40 bg-card flex" : "hidden"
+        } md:static md:flex w-full md:w-64 bg-card border-r border-border h-[calc(100vh-65px)] md:h-screen flex-col shrink-0 overflow-hidden z-20`}
       >
         {/* Brand header */}
-        <div className="p-6 border-b border-border hidden md:flex items-center gap-3">
+        <div className="p-6 border-b border-border hidden md:flex items-center gap-3 shrink-0">
           <img
             src={typeof logo === "string" ? logo : (logo as any)?.url || "/padmanabha-logo.jpg"}
             className="w-10 h-10 rounded-full object-cover ring-1 ring-border"
@@ -694,7 +694,7 @@ function AdminDashboardPage() {
         </div>
 
         {/* Navigation tabs */}
-        <nav className="p-4 space-y-1.5 flex-1">
+        <nav className="p-4 space-y-1.5 flex-1 overflow-y-auto overscroll-contain">
           <button
             type="button"
             onClick={() => {
@@ -903,7 +903,7 @@ function AdminDashboardPage() {
         </nav>
 
         {/* Sidebar Footer */}
-        <div className="p-4 border-t border-border space-y-3 bg-secondary/30">
+        <div className="p-4 border-t border-border space-y-3 bg-secondary/30 shrink-0">
           <div className="flex items-center gap-2.5 text-xs">
             <div className="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center font-semibold">
               <User className="size-4" />
@@ -934,7 +934,7 @@ function AdminDashboardPage() {
       </aside>
 
       {/* Main Content Area */}
-      <main className="flex-1 min-w-0 p-4 sm:p-6 md:p-8 overflow-y-auto">
+      <main className="flex-1 min-w-0 h-full md:h-screen p-4 sm:p-6 md:p-8 overflow-y-auto overscroll-contain">
         {/* Top bar info */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-border mb-6">
           <div>
