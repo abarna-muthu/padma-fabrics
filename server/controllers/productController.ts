@@ -237,6 +237,7 @@ export async function createProduct(req: Request, res: Response) {
       image: finalImage,
       isActive: true,
       status: "active",
+      sizes: Array.isArray(sizes) ? sizes : (typeof sizes === "string" ? JSON.parse(sizes || "[]") : []),
     };
 
     return res.status(201).json({
@@ -332,8 +333,17 @@ export async function updateProduct(req: Request, res: Response) {
       );
     } else {
       const previous = rows[0];
+      const sizesToSave =
+        sizes !== undefined
+          ? JSON.stringify(sizes)
+          : previous.sizes
+            ? typeof previous.sizes === "string"
+              ? previous.sizes
+              : JSON.stringify(previous.sizes)
+            : JSON.stringify([]);
+
       await db.execute(
-        `UPDATE products SET name = ?, category_id = ?, colour = ?, price = ?, unit = ?, stock_quantity = ?, badge = ?, description = ?, image_url = ?, is_active = ? WHERE id = ?`,
+        `UPDATE products SET name = ?, category_id = ?, colour = ?, price = ?, unit = ?, stock_quantity = ?, badge = ?, description = ?, image_url = ?, is_active = ?, sizes = ? WHERE id = ?`,
         [
           name || previous.name,
           finalCategory,
@@ -345,6 +355,7 @@ export async function updateProduct(req: Request, res: Response) {
           description !== undefined ? description : previous.description,
           finalImage,
           activeVal,
+          sizesToSave,
           previous.id,
         ],
       );
@@ -367,6 +378,15 @@ export async function updateProduct(req: Request, res: Response) {
       }
     }
 
+    const resolvedSizes =
+      sizes !== undefined
+        ? Array.isArray(sizes)
+          ? sizes
+          : JSON.parse(sizes || "[]")
+        : typeof rows[0]?.sizes === "string"
+          ? JSON.parse(rows[0].sizes || "[]")
+          : rows[0]?.sizes || [];
+
     const updatedProduct = {
       id,
       name: name || rows[0]?.name,
@@ -383,6 +403,7 @@ export async function updateProduct(req: Request, res: Response) {
       imageUrl: finalImage,
       isActive: Boolean(activeVal),
       status: activeVal ? "active" : "inactive",
+      sizes: resolvedSizes,
       updatedAt: new Date().toISOString(),
     };
 

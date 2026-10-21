@@ -60,6 +60,17 @@ export const Route = createFileRoute("/admin/")({
   component: AdminDashboardPage,
 });
 
+export const AVAILABLE_SIZES = [
+  "S",
+  "M",
+  "L",
+  "XL",
+  "2XL",
+  "3XL",
+  "4XL",
+  "5XL",
+] as const;
+
 export const DUMMY_PRODUCT_IMAGES = [
   {
     name: "Wine Zari Silk Saree",
@@ -231,7 +242,20 @@ function AdminDashboardPage() {
   const [prodBadge, setProdBadge] = useState("New");
   const [prodDescription, setProdDescription] = useState("");
   const [prodSku, setProdSku] = useState("");
+  const [prodSizes, setProdSizes] = useState<string[]>([...AVAILABLE_SIZES]);
   const [prodImage, setProdImage] = useState("");
+
+  const toggleSize = (sz: string) => {
+    setProdSizes((prev) => {
+      const hasIt = prev.includes(sz) || (sz === "2XL" && prev.includes("XXL"));
+      if (hasIt) {
+        return prev.filter((s) => s !== sz && s !== (sz === "2XL" ? "XXL" : ""));
+      } else {
+        const next = [...prev.filter((s) => s !== (sz === "2XL" ? "XXL" : "")), sz];
+        return AVAILABLE_SIZES.filter((s) => next.includes(s));
+      }
+    });
+  };
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [imageUploadStatus, setImageUploadStatus] = useState<string>("");
   const [isUploadingImage, setIsUploadingImage] = useState<boolean>(false);
@@ -406,6 +430,7 @@ function AdminDashboardPage() {
     setProdBadge("New arrival");
     setProdDescription("");
     setProdSku(`PF-${Math.floor(100 + Math.random() * 900)}`);
+    setProdSizes([...AVAILABLE_SIZES]);
     setProdImage(DUMMY_PRODUCT_IMAGES[0]?.url || productsList[0]?.image || "");
     setImageUploadStatus("");
     setIsProductModalOpen(true);
@@ -423,6 +448,11 @@ function AdminDashboardPage() {
     setProdBadge(p.badge);
     setProdDescription(p.description);
     setProdSku(p.sku || "");
+    setProdSizes(
+      p.sizes && p.sizes.length > 0
+        ? p.sizes.map((s) => (s === "XXL" ? "2XL" : s))
+        : [],
+    );
     setProdImage(p.image);
     setImageUploadStatus("");
     setIsProductModalOpen(true);
@@ -444,6 +474,7 @@ function AdminDashboardPage() {
         badge: prodBadge,
         description: prodDescription,
         sku: prodSku,
+        sizes: prodSizes,
         image: prodImage || editingProduct.image,
         status: editingProduct.status || "active",
       });
@@ -459,6 +490,7 @@ function AdminDashboardPage() {
         badge: prodBadge,
         description: prodDescription,
         sku: prodSku,
+        sizes: prodSizes,
         image: prodImage || productsList[0]?.image || "",
         status: "active",
       });
@@ -1112,9 +1144,23 @@ function AdminDashboardPage() {
                           <div className="text-xs text-muted-foreground font-sans tabular-nums mt-0.5">
                             {p.sku || "PF-GEN"}
                           </div>
-                          <span className="text-[10px] px-1.5 py-0.5 bg-secondary text-muted-foreground mt-1 inline-block font-medium">
-                            {p.badge}
-                          </span>
+                          <div className="flex flex-wrap items-center gap-1 mt-1">
+                            <span className="text-[10px] px-1.5 py-0.5 bg-secondary text-muted-foreground inline-block font-medium">
+                              {p.badge}
+                            </span>
+                            {p.sizes && p.sizes.length > 0 && (
+                              <div className="flex flex-wrap gap-1">
+                                {p.sizes.map((s) => (
+                                  <span
+                                    key={s}
+                                    className="text-[9px] px-1 py-0.2 bg-primary/10 text-primary border border-primary/20 rounded-xs font-semibold font-mono"
+                                  >
+                                    {s}
+                                  </span>
+                                ))}
+                              </div>
+                            )}
+                          </div>
                         </td>
                         <td className="p-3.5 text-sm">{p.category}</td>
                         <td className="p-3.5 text-sm text-muted-foreground">{p.colour}</td>
@@ -2438,6 +2484,86 @@ function AdminDashboardPage() {
                     placeholder="PF-SAR-009"
                     className="rounded-none text-sm h-10 font-sans tabular-nums"
                   />
+                </div>
+              </div>
+
+              {/* Product Size Options (S to 5XL) */}
+              <div className="space-y-2.5 p-3.5 bg-secondary/15 border border-border rounded-sm">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 pb-2 border-b border-border/50">
+                  <div>
+                    <label className="text-xs font-semibold uppercase tracking-wider text-foreground flex items-center gap-1.5">
+                      <span>Available Sizes (S to 5XL) *</span>
+                    </label>
+                    <p className="text-[11px] text-muted-foreground">
+                      Select which garment sizes are available in stock
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2 text-xs">
+                    <button
+                      type="button"
+                      onClick={() => setProdSizes([...AVAILABLE_SIZES])}
+                      className="text-[11px] font-semibold text-primary hover:underline cursor-pointer"
+                    >
+                      All (S-5XL)
+                    </button>
+                    <span className="text-muted-foreground/40">·</span>
+                    <button
+                      type="button"
+                      onClick={() => setProdSizes(["S", "M", "L", "XL", "2XL"])}
+                      className="text-[11px] font-medium text-muted-foreground hover:text-foreground cursor-pointer"
+                    >
+                      S to 2XL
+                    </button>
+                    <span className="text-muted-foreground/40">·</span>
+                    <button
+                      type="button"
+                      onClick={() => setProdSizes([])}
+                      className="text-[11px] font-medium text-destructive hover:underline cursor-pointer"
+                    >
+                      Clear
+                    </button>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-4 sm:grid-cols-8 gap-2 pt-1">
+                  {AVAILABLE_SIZES.map((sz) => {
+                    const isSelected = prodSizes.includes(sz) || (sz === "2XL" && prodSizes.includes("XXL"));
+                    return (
+                      <button
+                        key={sz}
+                        type="button"
+                        onClick={() => toggleSize(sz)}
+                        className={`h-9 px-2 rounded-xs text-xs font-semibold tracking-wider transition-all cursor-pointer flex items-center justify-center gap-1 border ${
+                          isSelected
+                            ? "bg-[#9B2242] text-white border-[#9B2242] shadow-xs ring-2 ring-[#9B2242]/30 font-bold scale-[1.02]"
+                            : "bg-background text-foreground/80 border-border hover:border-foreground/40 hover:bg-muted/40"
+                        }`}
+                        title={isSelected ? `Size ${sz} (Selected - click to remove)` : `Size ${sz} (Click to select)`}
+                      >
+                        {isSelected && <Check className="size-3 stroke-[2.5]" />}
+                        <span>{sz}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+
+                <div className="pt-1 text-[11px] text-muted-foreground flex items-center justify-between">
+                  <span>
+                    {prodSizes.length > 0 ? (
+                      <>
+                        <span className="text-foreground font-semibold">
+                          {prodSizes.length} {prodSizes.length === 1 ? "size" : "sizes"} selected:
+                        </span>{" "}
+                        <span className="font-mono text-primary font-bold">
+                          {prodSizes.join(", ")}
+                        </span>
+                      </>
+                    ) : (
+                      <span className="italic text-muted-foreground/80">
+                        No sizes selected (sold as free size drape or metre-cut fabric)
+                      </span>
+                    )}
+                  </span>
                 </div>
               </div>
 

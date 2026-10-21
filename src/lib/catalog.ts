@@ -181,13 +181,21 @@ export type OrderItem = {
 
 export type Order = {
   id: string;
+  orderNumber?: string;
   customerName: string;
   customerEmail: string;
   customerPhone: string;
   date: string;
+  createdAt?: string;
   items: OrderItem[];
   total: number;
+  subtotal?: number;
+  totalAmount?: number;
+  shippingFee?: number;
+  discountAmount?: number;
   status: "Pending" | "Processing" | "Shipped" | "Delivered" | "Cancelled";
+  orderStatus?: string;
+  paymentMethod?: string;
   paymentStatus: "Paid" | "Pending" | "Failed";
   shippingAddress: string;
   notes?: string;

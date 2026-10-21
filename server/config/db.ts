@@ -719,6 +719,9 @@ function executeMemoryCommand(sql: string, params: any[] = []): any {
         prod.description = params[7];
         prod.image_url = params[8];
         prod.is_active = params[9];
+        if (params.length >= 11 && params[10] !== undefined) {
+          prod.sizes = typeof params[10] === "string" ? params[10] : JSON.stringify(params[10] || []);
+        }
       }
       return { affectedRows: 1 };
     } else {

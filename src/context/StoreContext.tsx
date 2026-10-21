@@ -308,7 +308,13 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     setPanel(null);
     setSelected(p);
     setQuantity(1);
-    setSize(p.sizes?.[2] ?? "");
+    setSize(
+      p.sizes && p.sizes.length > 0
+        ? p.sizes.includes("M")
+          ? "M"
+          : (p.sizes[0] ?? "")
+        : "",
+    );
   };
 
   const addToBag = () => {
@@ -595,6 +601,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         customerName: details.customerName,
         customerEmail: details.customerEmail,
         customerPhone: details.customerPhone,
+        date: new Date().toISOString().split("T")[0] || "",
         shippingAddress: details.shippingAddress || "Ambattur, Chennai",
         items: bag.map((b) => {
           const prod = productsList.find((p) => p.id === b.id);
@@ -604,6 +611,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
             productId: b.id,
             productName: prod?.name || b.id,
             productSku: prod?.sku,
+            price: prod?.price || 0,
             unitPrice: prod?.price || 0,
             quantity: b.quantity,
             unit: prod?.unit || "piece",
@@ -616,10 +624,15 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         }, 0),
         shippingFee: 0,
         discountAmount: 0,
+        total: bag.reduce((acc, b) => {
+          const prod = productsList.find((p) => p.id === b.id);
+          return acc + (prod?.price || 0) * b.quantity;
+        }, 0),
         totalAmount: bag.reduce((acc, b) => {
           const prod = productsList.find((p) => p.id === b.id);
           return acc + (prod?.price || 0) * b.quantity;
         }, 0),
+        status: "Pending",
         orderStatus: "Pending",
         paymentMethod: details.paymentMethod === "online" ? "Online UPI" : "COD",
         paymentStatus: details.paymentMethod === "online" ? "Paid" : "Pending",
@@ -643,6 +656,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         customerName: details.customerName,
         customerEmail: details.customerEmail,
         customerPhone: details.customerPhone,
+        date: new Date().toISOString().split("T")[0] || "",
         shippingAddress: details.shippingAddress || "Ambattur, Chennai",
         items: bag.map((b) => {
           const prod = productsList.find((p) => p.id === b.id);
@@ -652,6 +666,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
             productId: b.id,
             productName: prod?.name || b.id,
             productSku: prod?.sku,
+            price: prod?.price || 0,
             unitPrice: prod?.price || 0,
             quantity: b.quantity,
             unit: prod?.unit || "piece",
@@ -664,10 +679,15 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         }, 0),
         shippingFee: 0,
         discountAmount: 0,
+        total: bag.reduce((acc, b) => {
+          const prod = productsList.find((p) => p.id === b.id);
+          return acc + (prod?.price || 0) * b.quantity;
+        }, 0),
         totalAmount: bag.reduce((acc, b) => {
           const prod = productsList.find((p) => p.id === b.id);
           return acc + (prod?.price || 0) * b.quantity;
         }, 0),
+        status: "Pending",
         orderStatus: "Pending",
         paymentMethod: details.paymentMethod === "online" ? "Online UPI" : "COD",
         paymentStatus: details.paymentMethod === "online" ? "Paid" : "Pending",
