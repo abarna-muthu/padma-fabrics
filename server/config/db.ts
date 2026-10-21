@@ -403,15 +403,33 @@ let isConnectedToMySQL = false;
 const memoryDb = new MemoryDatabase();
 
 export async function initDatabase(): Promise<DatabaseAdapter> {
-  const host = process.env["DB_HOST"] || process.env["TIDB_HOST"];
-  const user = process.env["DB_USER"] || process.env["TIDB_USER"];
-  const password = process.env["DB_PASSWORD"] || process.env["TIDB_PASSWORD"];
-  const database = process.env["DB_NAME"] || process.env["TIDB_DATABASE"] || "padma_fabrics";
-  const port = Number(process.env["DB_PORT"] || process.env["TIDB_PORT"]) || 4000;
-  const ssl =
+  let host = process.env["DB_HOST"] || process.env["TIDB_HOST"];
+  let user = process.env["DB_USER"] || process.env["TIDB_USER"];
+  let password = process.env["DB_PASSWORD"] || process.env["TIDB_PASSWORD"];
+  let database = process.env["DB_NAME"] || process.env["TIDB_DATABASE"] || "padmanabha_fabrics";
+  let port = Number(process.env["DB_PORT"] || process.env["TIDB_PORT"]) || 4000;
+  let ssl =
     process.env["DB_SSL"] === "true" || process.env["TIDB_SSL"] === "true"
       ? { minVersion: "TLSv1.2", rejectUnauthorized: true }
       : undefined;
+
+  // Support direct connection string (e.g. copied from TiDB Cloud Connection String tab)
+  const connectionUrl = process.env["DATABASE_URL"] || process.env["TIDB_URL"];
+  if (connectionUrl) {
+    try {
+      const cleanUrl = connectionUrl.replace(/^mysql:\/\//, "http://");
+      const parsed = new URL(cleanUrl);
+      host = host || parsed.hostname;
+      if (parsed.port) port = Number(parsed.port);
+      if (parsed.username) user = user || decodeURIComponent(parsed.username);
+      if (parsed.password) password = password || decodeURIComponent(parsed.password);
+      const pathname = parsed.pathname.replace(/^\//, "");
+      if (pathname) database = pathname;
+      ssl = { minVersion: "TLSv1.2", rejectUnauthorized: true };
+    } catch (err) {
+      console.warn("[Database] Could not parse DATABASE_URL string, falling back to parameters:", err);
+    }
+  }
 
   if (host && user && password) {
     try {
