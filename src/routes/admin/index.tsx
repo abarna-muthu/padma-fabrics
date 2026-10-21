@@ -19,6 +19,8 @@ import {
   Menu,
   Package,
   Plus,
+  FolderPlus,
+  Tag,
   RefreshCw,
   Search,
   Settings,
@@ -137,6 +139,8 @@ function AdminDashboardPage() {
 
   const {
     productsList,
+    categoriesList,
+    addCategory,
     addProduct,
     updateProduct,
     deleteProduct,
@@ -147,6 +151,11 @@ function AdminDashboardPage() {
     updateOrderStatus,
     updatePaymentStatus,
   } = useStore();
+
+  const activeCategoriesList =
+    categoriesList && categoriesList.length > 0
+      ? categoriesList
+      : (categories as readonly string[]);
 
   const [activeTab, setActiveTab] = useState<AdminTab>("dashboard");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -216,6 +225,44 @@ function AdminDashboardPage() {
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
   const [productSearch, setProductSearch] = useState("");
   const [productCategoryFilter, setProductCategoryFilter] = useState<string>(ALL);
+
+  // Category management modal states
+  const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
+  const [newCatName, setNewCatName] = useState("");
+  const [newCatDesc, setNewCatDesc] = useState("");
+  const [isSubmittingCategory, setIsSubmittingCategory] = useState(false);
+
+  const handleCreateCategory = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const trimmed = newCatName.trim();
+    if (!trimmed) {
+      toast.error("Please enter a category name");
+      return;
+    }
+
+    if (activeCategoriesList.some((c) => c.toLowerCase() === trimmed.toLowerCase())) {
+      toast.error(`Category "${trimmed}" already exists!`);
+      return;
+    }
+
+    setIsSubmittingCategory(true);
+    try {
+      const ok = await addCategory(trimmed, newCatDesc.trim());
+      if (ok) {
+        toast.success(`Category "${trimmed}" added successfully!`);
+        setProdCategory(trimmed);
+        setNewCatName("");
+        setNewCatDesc("");
+        setIsCategoryModalOpen(false);
+      } else {
+        toast.error("Failed to add category");
+      }
+    } catch (err: any) {
+      toast.error(err?.message || "Failed to add category");
+    } finally {
+      setIsSubmittingCategory(false);
+    }
+  };
 
   // Product form state
   const [prodName, setProdName] = useState("");
@@ -489,7 +536,7 @@ function AdminDashboardPage() {
       if (editingProduct) {
         await updateProduct(editingProduct.id, {
           name: prodName,
-          category: prodCategory as (typeof categories)[number],
+          category: prodCategory,
           colour: prodColour,
           price: Number(prodPrice),
           unit: prodUnit,
@@ -506,7 +553,7 @@ function AdminDashboardPage() {
       } else {
         await addProduct({
           name: prodName,
-          category: prodCategory as (typeof categories)[number],
+          category: prodCategory,
           colour: prodColour,
           price: Number(prodPrice),
           unit: prodUnit,
@@ -1125,7 +1172,7 @@ function AdminDashboardPage() {
                   onChange={(e) => setProductCategoryFilter(e.target.value)}
                   className="h-10 px-3 text-sm bg-background border border-border text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
                 >
-                  {categories.map((c) => (
+                  {activeCategoriesList.map((c) => (
                     <option key={c} value={c}>
                       {c === ALL ? "All Categories" : c}
                     </option>
@@ -1133,9 +1180,24 @@ function AdminDashboardPage() {
                 </select>
               </div>
 
-              <Button variant="editorial" size="sm" className="h-10 text-sm font-medium" onClick={handleOpenAddProduct}>
-                <Plus className="size-4 mr-1.5" /> Add Product
-              </Button>
+              <div className="flex items-center gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="h-10 text-sm font-medium border-border hover:bg-secondary/40"
+                  onClick={() => {
+                    setNewCatName("");
+                    setNewCatDesc("");
+                    setIsCategoryModalOpen(true);
+                  }}
+                >
+                  <FolderPlus className="size-4 mr-1.5 text-primary" /> New Category
+                </Button>
+                <Button variant="editorial" size="sm" className="h-10 text-sm font-medium" onClick={handleOpenAddProduct}>
+                  <Plus className="size-4 mr-1.5" /> Add Product
+                </Button>
+              </div>
             </div>
 
             {/* Products Table */}
@@ -2421,7 +2483,20 @@ function AdminDashboardPage() {
 
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1.5">
-                  <label className="text-sm font-medium">Category</label>
+                  <div className="flex items-center justify-between">
+                    <label className="text-sm font-medium">Category</label>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setNewCatName("");
+                        setNewCatDesc("");
+                        setIsCategoryModalOpen(true);
+                      }}
+                      className="text-xs text-primary hover:underline font-medium flex items-center gap-0.5"
+                    >
+                      <Plus className="size-3" /> New
+                    </button>
+                  </div>
                   <select
                     value={prodCategory}
                     onChange={(e) => {
@@ -2436,7 +2511,7 @@ function AdminDashboardPage() {
                     }}
                     className="w-full h-10 px-3 text-sm bg-background border border-border"
                   >
-                    {categories
+                    {activeCategoriesList
                       .filter((c) => c !== ALL)
                       .map((c) => (
                         <option key={c} value={c}>
@@ -2832,6 +2907,102 @@ function AdminDashboardPage() {
                     {editingProduct ? "Save Changes" : "Create Product"}
                   </Button>
                 </div>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ----------------- MODAL: ADD NEW CATEGORY ----------------- */}
+      {isCategoryModalOpen && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-card border border-border w-full max-w-md p-6 shadow-xl animate-in fade-in zoom-in-95 duration-150">
+            <div className="flex justify-between items-center pb-3 border-b border-border">
+              <div className="flex items-center gap-2">
+                <div className="p-2 bg-primary/10 rounded">
+                  <FolderPlus className="size-5 text-primary" />
+                </div>
+                <div>
+                  <h2 className="font-display text-lg font-semibold text-foreground">
+                    Add New Category
+                  </h2>
+                  <p className="text-xs text-muted-foreground">
+                    Create a new apparel or fabric category
+                  </p>
+                </div>
+              </div>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="size-7"
+                onClick={() => setIsCategoryModalOpen(false)}
+              >
+                <X className="size-4" />
+              </Button>
+            </div>
+
+            <form onSubmit={handleCreateCategory} className="space-y-4 mt-4">
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium text-foreground">
+                  Category Name *
+                </label>
+                <Input
+                  required
+                  autoFocus
+                  value={newCatName}
+                  onChange={(e) => setNewCatName(e.target.value)}
+                  placeholder="e.g. Kurtis, Lehengas, Silk Dupattas…"
+                  className="rounded-none text-sm h-10"
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium text-foreground">
+                  Description / Subtitle <span className="text-xs text-muted-foreground font-normal">(Optional)</span>
+                </label>
+                <Input
+                  value={newCatDesc}
+                  onChange={(e) => setNewCatDesc(e.target.value)}
+                  placeholder="e.g. Pure handwoven dupattas and stoles"
+                  className="rounded-none text-sm h-10"
+                />
+              </div>
+
+              {/* Current Active Categories Preview */}
+              <div className="space-y-1.5 pt-2 border-t border-border/60">
+                <label className="text-xs text-muted-foreground uppercase tracking-wider font-semibold">
+                  Existing Categories ({activeCategoriesList.filter((c) => c !== ALL).length})
+                </label>
+                <div className="flex flex-wrap gap-1.5 max-h-24 overflow-y-auto p-2 bg-secondary/20 border border-border rounded text-xs">
+                  {activeCategoriesList
+                    .filter((c) => c !== ALL)
+                    .map((cat) => (
+                      <span
+                        key={cat}
+                        className="px-2 py-0.5 bg-background border border-border rounded text-[11px] text-muted-foreground font-medium"
+                      >
+                        {cat}
+                      </span>
+                    ))}
+                </div>
+              </div>
+
+              <div className="flex justify-end gap-2 pt-2 border-t border-border">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setIsCategoryModalOpen(false)}
+                  disabled={isSubmittingCategory}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="submit"
+                  variant="editorial"
+                  disabled={isSubmittingCategory || !newCatName.trim()}
+                >
+                  {isSubmittingCategory ? "Adding Category..." : "+ Add Category"}
+                </Button>
               </div>
             </form>
           </div>

@@ -159,6 +159,60 @@ export async function getCategories(req: Request, res: Response) {
   }
 }
 
+export async function createCategory(req: Request, res: Response) {
+  try {
+    const { name, description = "" } = req.body;
+    if (!name || typeof name !== "string" || !name.trim()) {
+      return res.status(400).json({ success: false, error: "Category name is required." });
+    }
+
+    const trimmedName = name.trim();
+    const slug = trimmedName.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
+    const id = slug || `cat-${Date.now().toString(36)}`;
+    const db = await getDb();
+
+    // Register in in-memory mapping
+    CATEGORY_ID_TO_NAME[id] = trimmedName;
+    CATEGORY_NAME_TO_ID[trimmedName] = id;
+
+    // Check if category already exists
+    const existing = await db.query(
+      "SELECT * FROM categories WHERE id = ? OR LOWER(name) = LOWER(?)",
+      [id, trimmedName],
+    );
+    if (existing && existing.length > 0) {
+      return res.status(200).json({
+        success: true,
+        message: "Category already exists.",
+        category: existing[0],
+      });
+    }
+
+    const countRes = await db.query("SELECT count(*) as count FROM categories");
+    const nextOrder = Number(countRes[0]?.count || 0) + 1;
+
+    await db.execute(
+      "INSERT INTO categories (id, name, slug, description, display_order) VALUES (?, ?, ?, ?, ?)",
+      [id, trimmedName, slug, description, nextOrder],
+    );
+
+    return res.status(201).json({
+      success: true,
+      message: "Category created successfully.",
+      category: {
+        id,
+        name: trimmedName,
+        slug,
+        description,
+        display_order: nextOrder,
+      },
+    });
+  } catch (err: any) {
+    console.error("[ProductController] createCategory error:", err);
+    return res.status(500).json({ success: false, error: "Failed to create product category." });
+  }
+}
+
 export async function createProduct(req: Request, res: Response) {
   try {
     const {
@@ -190,10 +244,15 @@ export async function createProduct(req: Request, res: Response) {
     const db = await getDb();
     const id = customId || `pf-${Date.now().toString(36)}`;
     const productSku = sku || `PF-${Math.floor(100 + Math.random() * 900)}`;
-    const productSlug = name
+    let productSlug = name
       .toLowerCase()
       .replace(/[^a-z0-9]+/g, "-")
       .replace(/(^-|-$)/g, "");
+
+    const existingSlug = await db.query("SELECT id FROM products WHERE slug = ?", [productSlug]);
+    if (existingSlug && existingSlug.length > 0) {
+      productSlug = `${productSlug}-${Date.now().toString(36)}`;
+    }
     const rawCat = categoryId || category || "sarees";
     const finalCategory = CATEGORY_NAME_TO_ID[rawCat] || rawCat.toLowerCase().replace(/[^a-z0-9]+/g, "-");
     const finalImage = image_url || image || "/assets/burgundy-silk.jpg";

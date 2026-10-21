@@ -7,6 +7,7 @@ import {
   updateProduct,
   deleteProduct,
   toggleProductStatus,
+  createCategory,
 } from "../controllers/productController";
 import { getInventory, adjustStock, getInventoryLogs } from "../controllers/inventoryController";
 import {
@@ -42,6 +43,8 @@ router.put("/products/:id", updateProduct);
 router.delete("/products/:id", deleteProduct);
 router.patch("/products/:id/toggle", toggleProductStatus);
 router.patch("/products/:id/toggle-status", toggleProductStatus);
+router.post("/categories", createCategory);
+router.post("/products/categories", createCategory);
 router.post("/upload", uploadImage);
 router.post("/products/upload-image", uploadImage);
 router.get("/upload/signature", getUploadSignature);

@@ -32,8 +32,11 @@ export async function getDashboardStats(req: Request, res: Response) {
       customerPhone: o.customer_phone,
       total: Number(o.total_amount),
       status: o.order_status,
-      paymentStatus: o.payment_status,
-      date: o.created_at ? o.created_at.split("T")[0] || o.created_at.split(" ")[0] : "",
+      date: o.created_at
+        ? typeof o.created_at === "string"
+          ? o.created_at.split("T")[0] || o.created_at.split(" ")[0]
+          : new Date(o.created_at).toISOString().split("T")[0]
+        : "",
     }));
 
     return res.status(200).json({

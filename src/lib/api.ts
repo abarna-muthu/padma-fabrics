@@ -154,6 +154,13 @@ export const productApi = {
     >("/api/products/categories");
   },
 
+  async createCategory(data: { name: string; description?: string }) {
+    return apiRequest<any>("/api/admin/categories", {
+      method: "POST",
+      body: JSON.stringify(data),
+    });
+  },
+
   async getById(id: string) {
     return apiRequest<any>(`/api/products/${id}`);
   },

@@ -34,7 +34,7 @@ export const collections = [
 export type Item = {
   id: string;
   name: string;
-  category: (typeof categories)[number];
+  category: string;
   colour: string;
   price: number;
   image: string;

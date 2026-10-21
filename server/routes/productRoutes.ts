@@ -7,12 +7,14 @@ import {
   updateProduct,
   deleteProduct,
   toggleProductStatus,
+  createCategory,
 } from "../controllers/productController";
 
 const router = Router();
 
 router.get("/", getProducts);
 router.get("/categories", getCategories);
+router.post("/categories", createCategory);
 router.get("/:id", getProductById);
 router.post("/", createProduct);
 router.put("/:id", updateProduct);

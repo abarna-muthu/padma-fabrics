@@ -565,8 +565,13 @@ export async function initDatabase(): Promise<DatabaseAdapter> {
 
 async function runMigrations(pool: mysql.Pool) {
   try {
-    const schemaPath = path.join(__dirname, "../migrations/schema.sql");
-    if (fs.existsSync(schemaPath)) {
+    const possibleSchemaPaths = [
+      path.resolve(process.cwd(), "server/migrations/schema.sql"),
+      path.resolve(process.cwd(), "migrations/schema.sql"),
+    ];
+    const schemaPath = possibleSchemaPaths.find((p) => fs.existsSync(p));
+
+    if (schemaPath && fs.existsSync(schemaPath)) {
       const sql = fs.readFileSync(schemaPath, "utf-8");
       const statements = sql
         .split(";")
@@ -582,6 +587,22 @@ async function runMigrations(pool: mysql.Pool) {
       await pool.query("ALTER TABLE product_images MODIFY COLUMN image_url LONGTEXT").catch(() => {});
 
       console.log("[Database] Schema migrations applied successfully.");
+
+      // Check if admin user needs initial seeding
+      try {
+        const [adminUsers]: any = await pool.query("SELECT COUNT(*) as count FROM admin_users");
+        if (adminUsers && adminUsers[0]?.count === 0) {
+          console.log("[Database] Seeding initial admin user to MySQL/TiDB...");
+          const hash = await bcrypt.hash(INITIAL_ADMIN_PASS, 10);
+          await pool.execute(
+            "INSERT INTO admin_users (id, email, password_hash, name, role) VALUES (?, ?, ?, ?, ?)",
+            ["adm-001", INITIAL_ADMIN_EMAIL, hash, "Padmanabha Administrator", "admin"],
+          );
+          console.log("[Database] Initial admin user seeded successfully.");
+        }
+      } catch (adminErr: any) {
+        console.warn("[Database] Notice checking/seeding admin user:", adminErr.message);
+      }
 
       // Check if products and categories need initial seeding in MySQL / TiDB
       try {

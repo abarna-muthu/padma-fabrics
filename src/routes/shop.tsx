@@ -33,13 +33,14 @@ export const Route = createFileRoute("/shop")({
 
 function ShopPage() {
   const { category: queryCategory } = Route.useSearch();
-  const { filter, setFilter, activeProducts } = useStore();
+  const { filter, setFilter, activeProducts, categoriesList } = useStore();
+  const activeCats = categoriesList && categoriesList.length > 0 ? categoriesList : (categories as readonly string[]);
 
   useEffect(() => {
-    if (queryCategory && categories.includes(queryCategory as (typeof categories)[number])) {
+    if (queryCategory && activeCats.includes(queryCategory)) {
       setFilter(queryCategory);
     }
-  }, [queryCategory, setFilter]);
+  }, [queryCategory, setFilter, activeCats]);
 
   const visible = activeProducts.filter((p) => filter === ALL || p.category === filter);
 
@@ -86,7 +87,7 @@ function ShopPage() {
         </div>
 
         <div className="filter-tabs">
-          {categories.map((c) => (
+          {activeCats.map((c) => (
             <Button
               key={c}
               variant="filter"

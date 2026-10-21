@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import {
   ALL,
+  categories as staticCategories,
   products as staticProducts,
   initialOrders,
   initialStockLogs,
@@ -49,7 +50,9 @@ interface StoreContextType {
   orderText: string;
   whatsappUrl: string;
 
-  // Dynamic products list (Admin + Public Storefront sync)
+  // Dynamic categories & products list (Admin + Public Storefront sync)
+  categoriesList: string[];
+  addCategory: (name: string, description?: string) => Promise<boolean>;
   productsList: Product[];
   activeProducts: Product[];
   addProduct: (newP: Omit<Product, "id"> & { id?: string }) => Promise<Product> | Product;
@@ -75,6 +78,7 @@ interface StoreContextType {
 }
 
 const STORAGE_PRODUCTS_KEY = "pf_admin_products_catalog";
+const STORAGE_CATEGORIES_KEY = "pf_admin_categories";
 const STORAGE_ORDERS_KEY = "pf_admin_orders";
 const STORAGE_STOCK_LOGS_KEY = "pf_admin_stock_logs";
 const STORAGE_DELETED_PRODUCTS_KEY = "pf_admin_deleted_product_ids";
@@ -122,6 +126,56 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     setIsCustomerPortalOpen(true);
   };
 
+  // Catalog categories (Dynamic admin additions + storefront sync)
+  const [categoriesList, setCategoriesList] = useState<string[]>(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const stored = localStorage.getItem(STORAGE_CATEGORIES_KEY);
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            return parsed;
+          }
+        }
+      } catch {}
+    }
+    return [...staticCategories];
+  });
+
+  const saveCategories = (cats: string[]) => {
+    setCategoriesList(cats);
+    if (typeof window !== "undefined") {
+      try {
+        localStorage.setItem(STORAGE_CATEGORIES_KEY, JSON.stringify(cats));
+        window.dispatchEvent(new CustomEvent("pf_categories_updated", { detail: cats }));
+      } catch (err) {
+        console.warn("Could not save categories to localStorage:", err);
+      }
+    }
+  };
+
+  const addCategory = async (rawName: string, description?: string): Promise<boolean> => {
+    const name = rawName.trim();
+    if (!name) return false;
+
+    // Check if category already exists (case-insensitive)
+    if (categoriesList.some((c) => c.toLowerCase() === name.toLowerCase())) {
+      return true;
+    }
+
+    const updated = [...categoriesList, name];
+    saveCategories(updated);
+
+    // Sync to backend database API
+    try {
+      await productApi.createCategory({ name, description });
+    } catch (err) {
+      console.warn("Could not sync created category to backend API:", err);
+    }
+
+    return true;
+  };
+
   // Catalog products (shared with public storefront)
   const [productsList, setProductsList] = useState<Product[]>((staticProducts as Product[]).map(normalizeProduct));
 
@@ -162,6 +216,14 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
     // 2. Real-time listener for other open tabs
     const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === STORAGE_CATEGORIES_KEY && e.newValue) {
+        try {
+          const parsed = JSON.parse(e.newValue);
+          if (Array.isArray(parsed)) {
+            setCategoriesList(parsed);
+          }
+        } catch (err) {}
+      }
       if (e.key === STORAGE_PRODUCTS_KEY && e.newValue) {
         try {
           const parsed = JSON.parse(e.newValue);
@@ -186,9 +248,35 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         setProductsList(e.detail.map(normalizeProduct));
       }
     };
+    const handleCustomCategoryUpdate = (e: any) => {
+      if (e.detail && Array.isArray(e.detail)) {
+        setCategoriesList(e.detail);
+      }
+    };
 
     window.addEventListener("storage", handleStorageChange);
     window.addEventListener("pf_products_updated", handleCustomProductUpdate);
+    window.addEventListener("pf_categories_updated", handleCustomCategoryUpdate);
+
+    // 4. Background fetch categories from database
+    productApi.getCategories().then((res) => {
+      const backendCats = (res as any)?.categories || res?.data;
+      if (Array.isArray(backendCats) && backendCats.length > 0) {
+        setCategoriesList((prev) => {
+          const merged = [...prev];
+          for (const bc of backendCats) {
+            const catName = bc.name || bc.id;
+            if (catName && !merged.some((m) => m.toLowerCase() === catName.toLowerCase())) {
+              merged.push(catName);
+            }
+          }
+          try {
+            localStorage.setItem(STORAGE_CATEGORIES_KEY, JSON.stringify(merged));
+          } catch {}
+          return merged;
+        });
+      }
+    }).catch(() => {});
 
     // 4. Background sync with database API
     const syncWithBackend = async () => {
@@ -785,6 +873,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         whatsappUrl,
 
         // Admin & dynamic catalog
+        categoriesList,
+        addCategory,
         productsList,
         activeProducts,
         addProduct,

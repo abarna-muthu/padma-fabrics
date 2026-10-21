@@ -46,7 +46,8 @@ export const Route = createFileRoute("/")({
 });
 
 function HomePage() {
-  const { filter, setFilter, activeProducts } = useStore();
+  const { filter, setFilter, activeProducts, categoriesList } = useStore();
+  const activeCats = categoriesList && categoriesList.length > 0 ? categoriesList : (categories as readonly string[]);
   const { content } = useSiteContent();
   const visible = activeProducts.filter((p) => filter === ALL || p.category === filter);
 
@@ -162,7 +163,7 @@ function HomePage() {
           </span>
         </div>
         <div className="filter-tabs">
-          {categories.map((c) => (
+          {activeCats.map((c) => (
             <Button
               key={c}
               variant="filter"

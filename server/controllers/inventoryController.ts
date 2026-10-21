@@ -117,8 +117,11 @@ export async function getInventoryLogs(req: Request, res: Response) {
           previousStock: l.previous_stock,
           newStock: l.new_stock,
           change: l.change_amount,
-          reason: l.reason,
-          date: l.created_at ? l.created_at.split("T")[0] || l.created_at.split(" ")[0] : "",
+          date: l.created_at
+            ? typeof l.created_at === "string"
+              ? l.created_at.split("T")[0] || l.created_at.split(" ")[0]
+              : new Date(l.created_at).toISOString().split("T")[0]
+            : "",
         };
       }),
     );
