@@ -5,6 +5,7 @@ import {
   ArrowRight,
   ArrowUpRight,
   Boxes,
+  Calendar,
   Check,
   CheckCircle2,
   ChevronDown,
@@ -596,11 +597,36 @@ function AdminDashboardPage() {
     setIsProductModalOpen(false);
   };
 
-  // Handle stock adjustment submit
+  // Stock adjustment modal controls
+  const handleOpenAddStock = (product?: Product) => {
+    const target = product || productsList[0] || null;
+    setStockModalProduct(target);
+    setNewStockQty(target ? target.stock.toString() : "0");
+    setStockReason("");
+  };
+
+  const handleSelectStockProduct = (productId: string) => {
+    const found = productsList.find((p) => p.id === productId);
+    if (found) {
+      setStockModalProduct(found);
+      setNewStockQty(found.stock.toString());
+    }
+  };
+
   const handleAdjustStockSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!stockModalProduct || newStockQty === "") return;
-    adjustStock(stockModalProduct.id, Number(newStockQty), stockReason);
+    const qty = Number(newStockQty);
+    if (isNaN(qty) || qty < 0) {
+      toast.error("Please enter a valid stock quantity (0 or greater).");
+      return;
+    }
+    const today = new Date().toISOString().split("T")[0];
+    const reasonText = stockReason.trim() || "Manual inventory adjustment";
+    adjustStock(stockModalProduct.id, qty, reasonText);
+    toast.success(
+      `Stock for "${stockModalProduct.name}" updated to ${qty} ${stockModalProduct.unit}s! (Logged on: ${today})`
+    );
     setStockModalProduct(null);
     setStockReason("");
   };
@@ -1385,10 +1411,20 @@ function AdminDashboardPage() {
 
             {/* Stock adjustment table */}
             <div className="bg-card border border-border p-6">
-              <h2 className="font-display text-lg font-medium mb-1">Product Inventory Status</h2>
-              <p className="text-xs text-muted-foreground mb-4">
-                Update stock levels, track buffer thresholds, and log changes
-              </p>
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
+                <div>
+                  <h2 className="font-display text-lg font-medium mb-1">Product Inventory Status</h2>
+                  <p className="text-xs text-muted-foreground">
+                    Update stock levels, track buffer thresholds, and log changes with automatic date tracking
+                  </p>
+                </div>
+                <Button
+                  onClick={() => handleOpenAddStock()}
+                  className="bg-gold hover:bg-gold/90 text-primary-foreground font-medium text-xs px-4 py-2 h-9 inline-flex items-center gap-1.5 shadow-sm shrink-0"
+                >
+                  <Plus className="size-4" /> Add Stock
+                </Button>
+              </div>
 
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-sm">
@@ -1433,11 +1469,7 @@ function AdminDashboardPage() {
                             variant="outline"
                             size="sm"
                             className="text-xs h-8"
-                            onClick={() => {
-                              setStockModalProduct(p);
-                              setNewStockQty(p.stock.toString());
-                              setStockReason("");
-                            }}
+                            onClick={() => handleOpenAddStock(p)}
                           >
                             <SlidersHorizontal className="size-3.5 mr-1" /> Adjust Stock
                           </Button>
@@ -3102,38 +3134,193 @@ function AdminDashboardPage() {
         );
       })()}
 
-      {/* ----------------- MODAL: ADJUST STOCK ----------------- */}
+      {/* ----------------- MODAL: ADJUST / ADD STOCK ----------------- */}
       {stockModalProduct && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-card border border-border w-full max-w-sm p-6 shadow-xl">
-            <h3 className="font-display text-lg font-medium mb-1">Adjust Inventory Stock</h3>
-            <p className="text-xs text-muted-foreground mb-4">
-              {stockModalProduct.name} ({stockModalProduct.unit}s)
-            </p>
+          <div className="bg-card border border-border w-full max-w-lg p-6 shadow-2xl animate-in fade-in zoom-in-95 duration-150">
+            <div className="flex items-start justify-between pb-3 border-b border-border">
+              <div>
+                <div className="flex items-center gap-2">
+                  <div className="size-7 rounded bg-gold/15 text-gold flex items-center justify-center">
+                    <Boxes className="size-4" />
+                  </div>
+                  <h3 className="font-display text-lg font-medium">Add & Adjust Product Stock</h3>
+                </div>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Select any product from your catalog, update its stock count, and log date automatically.
+                </p>
+              </div>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className="size-8 text-muted-foreground hover:text-foreground"
+                onClick={() => setStockModalProduct(null)}
+              >
+                <X className="size-4" />
+              </Button>
+            </div>
 
-            <form onSubmit={handleAdjustStockSubmit} className="space-y-4">
+            <form onSubmit={handleAdjustStockSubmit} className="space-y-4 pt-4">
+              {/* Automatic Today's Date Banner */}
+              <div className="bg-secondary/40 border border-border p-3 flex items-center justify-between">
+                <div className="flex items-center gap-2.5">
+                  <div className="size-8 rounded bg-gold/15 text-gold flex items-center justify-center shrink-0">
+                    <Calendar className="size-4" />
+                  </div>
+                  <div>
+                    <div className="text-[10px] uppercase tracking-wider font-bold text-muted-foreground">
+                      Automatic Date Record
+                    </div>
+                    <div className="text-xs font-semibold text-foreground">
+                      {new Date().toLocaleDateString("en-IN", {
+                        weekday: "short",
+                        day: "numeric",
+                        month: "short",
+                        year: "numeric",
+                      })}
+                    </div>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-sans font-bold bg-emerald-500/15 text-emerald-600 tabular-nums">
+                    {new Date().toISOString().split("T")[0]} (Today)
+                  </span>
+                  <span className="block text-[10px] text-muted-foreground mt-0.5">Auto-saved to history</span>
+                </div>
+              </div>
+
+              {/* Product Selector Dropdown */}
               <div className="space-y-1.5">
-                <label className="text-sm font-medium">New Stock Quantity *</label>
+                <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                  Select Product * ({productsList.length} products in catalog)
+                </label>
+                <select
+                  value={stockModalProduct.id}
+                  onChange={(e) => handleSelectStockProduct(e.target.value)}
+                  className="w-full h-10 px-3 border border-border bg-background text-sm focus:outline-none focus:ring-1 focus:ring-gold font-medium text-foreground cursor-pointer"
+                >
+                  {productsList.map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.name} — [{p.category}] — Current: {p.stock} {p.unit}s
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Selected Product Quick Info Card */}
+              <div className="flex items-center gap-3 p-3 bg-secondary/30 border border-border">
+                <img
+                  src={stockModalProduct.image}
+                  alt={stockModalProduct.name}
+                  className="size-12 object-cover border border-border shrink-0 bg-background"
+                />
+                <div className="min-w-0 flex-1">
+                  <h4 className="text-xs font-semibold text-foreground truncate">
+                    {stockModalProduct.name}
+                  </h4>
+                  <div className="text-[11px] text-muted-foreground flex items-center gap-2 mt-0.5">
+                    <span>{stockModalProduct.category}</span>
+                    <span>•</span>
+                    <span className="font-sans tabular-nums">{stockModalProduct.sku || "PF-N/A"}</span>
+                  </div>
+                </div>
+                <div className="text-right shrink-0">
+                  <div className="text-[10px] uppercase text-muted-foreground">Current Stock</div>
+                  <div className="text-sm font-bold font-sans tabular-nums text-foreground">
+                    {stockModalProduct.stock} {stockModalProduct.unit}s
+                  </div>
+                </div>
+              </div>
+
+              {/* Stock Quantity Input */}
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                    New Stock Quantity *
+                  </label>
+                  <span className="text-[11px] text-muted-foreground font-sans tabular-nums">
+                    Change:{" "}
+                    <span
+                      className={
+                        Number(newStockQty || 0) >= stockModalProduct.stock
+                          ? "text-emerald-600 font-bold"
+                          : "text-destructive font-bold"
+                      }
+                    >
+                      {Number(newStockQty || 0) - stockModalProduct.stock >= 0 ? "+" : ""}
+                      {Number(newStockQty || 0) - stockModalProduct.stock} units
+                    </span>
+                  </span>
+                </div>
                 <Input
                   type="number"
                   min="0"
                   required
                   value={newStockQty}
                   onChange={(e) => setNewStockQty(e.target.value)}
-                  className="rounded-none text-sm h-10 font-sans tabular-nums"
+                  className="rounded-none text-base h-11 font-sans tabular-nums font-bold"
+                  placeholder="Enter total stock quantity"
                 />
+                {/* Quick Add Chips */}
+                <div className="flex flex-wrap items-center gap-1.5 pt-1">
+                  <span className="text-[10px] uppercase font-semibold text-muted-foreground mr-1">
+                    Quick Add:
+                  </span>
+                  {[5, 10, 25, 50, 100].map((inc) => (
+                    <button
+                      key={inc}
+                      type="button"
+                      onClick={() => {
+                        const current = Number(newStockQty) || stockModalProduct.stock || 0;
+                        setNewStockQty(String(current + inc));
+                      }}
+                      className="px-2 py-0.5 text-xs font-sans tabular-nums bg-secondary hover:bg-gold/20 hover:text-gold border border-border rounded transition-colors"
+                    >
+                      +{inc}
+                    </button>
+                  ))}
+                  <button
+                    type="button"
+                    onClick={() => setNewStockQty(String(stockModalProduct.stock))}
+                    className="px-2 py-0.5 text-xs font-sans bg-secondary hover:bg-secondary/80 border border-border rounded transition-colors text-muted-foreground ml-auto"
+                  >
+                    Reset
+                  </button>
+                </div>
               </div>
 
+              {/* Reason for Adjustment */}
               <div className="space-y-1.5">
-                <label className="text-sm font-medium">Reason for Adjustment</label>
+                <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                  Reason for Adjustment
+                </label>
                 <Input
                   value={stockReason}
                   onChange={(e) => setStockReason(e.target.value)}
-                  placeholder="e.g. Loom consignment, damaged stock, audit"
-                  className="rounded-none text-sm h-10"
+                  placeholder="e.g. Loom consignment, restock, audit"
+                  className="rounded-none text-xs h-10"
                 />
+                <div className="flex flex-wrap gap-1.5 pt-0.5">
+                  {[
+                    "Fresh Loom Batch",
+                    "Supplier Restock",
+                    "Physical Stock Audit",
+                    "Damaged / Defect",
+                  ].map((r) => (
+                    <button
+                      key={r}
+                      type="button"
+                      onClick={() => setStockReason(r)}
+                      className="text-[10px] px-2 py-0.5 bg-secondary/60 hover:bg-secondary border border-border rounded text-muted-foreground hover:text-foreground transition-colors"
+                    >
+                      {r}
+                    </button>
+                  ))}
+                </div>
               </div>
 
+              {/* Action Buttons */}
               <div className="pt-3 flex justify-end gap-3 border-t border-border">
                 <Button
                   type="button"
@@ -3143,8 +3330,8 @@ function AdminDashboardPage() {
                 >
                   Cancel
                 </Button>
-                <Button type="submit" variant="editorial" size="sm">
-                  Update Stock
+                <Button type="submit" variant="editorial" size="sm" className="bg-gold hover:bg-gold/90 text-primary-foreground">
+                  <Check className="size-4 mr-1.5" /> Save Stock Update
                 </Button>
               </div>
             </form>

@@ -51,16 +51,18 @@ export async function getInventory(req: Request, res: Response) {
 
 export async function adjustStock(req: Request, res: Response) {
   try {
-    const { productId, new_stock, reason } = req.body;
+    const productId = req.body.productId || req.body.product_id;
+    const rawStock = req.body.newStock !== undefined ? req.body.newStock : req.body.new_stock;
+    const reason = req.body.reason || "Manual stock adjustment";
 
-    if (!productId || new_stock === undefined) {
+    if (!productId || rawStock === undefined) {
       return res.status(400).json({
         success: false,
         error: "Product ID and new stock quantity are required.",
       });
     }
 
-    const stockNumber = Number(new_stock);
+    const stockNumber = Number(rawStock);
     if (isNaN(stockNumber) || stockNumber < 0) {
       return res.status(400).json({
         success: false,
@@ -117,6 +119,7 @@ export async function getInventoryLogs(req: Request, res: Response) {
           previousStock: l.previous_stock,
           newStock: l.new_stock,
           change: l.change_amount,
+          reason: l.reason || "Manual inventory adjustment",
           date: l.created_at
             ? typeof l.created_at === "string"
               ? l.created_at.split("T")[0] || l.created_at.split(" ")[0]
