@@ -11,12 +11,14 @@ import {
 import { useCart } from "@/context/CartContext";
 import { useWishlist } from "@/context/WishlistContext";
 import { useCustomerAuth } from "@/context/CustomerAuthContext";
+import { useStore } from "@/context/StoreContext";
 
 export function Header() {
   const navigate = useNavigate();
   const { cartCount, setIsCartOpen } = useCart();
   const { wishlistCount } = useWishlist();
-  const { customer, isLoggedIn } = useCustomerAuth();
+  const { customer, isLoggedIn, logoutCustomer } = useCustomerAuth();
+  const { setIsCustomerPortalOpen } = useStore();
 
   // Scroll detection for sticky header refinement
   const [isScrolled, setIsScrolled] = useState(false);
@@ -153,26 +155,62 @@ export function Header() {
               </Link>
 
               {/* SHOPPING CART ICON WITH LIVE ITEM COUNT */}
-              <button
-                type="button"
-                onClick={() => setIsCartOpen(true)}
+              <Link
+                to="/cart"
                 className="relative flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-black/5 hover:bg-black/10 border border-[rgba(14,14,14,0.12)] text-[#0E0E0E] transition-all cursor-pointer"
                 aria-label={`Shopping bag, ${cartCount} items`}
                 title="Shopping Bag"
               >
                 <ShoppingBag className="size-3.5" strokeWidth={1.5} />
                 <span className="text-xs font-semibold tabular-nums">{cartCount}</span>
-              </button>
-
-              {/* LOGIN / ACCOUNT OPTION */}
-              <Link
-                to={isLoggedIn ? "/orders" : "/login"}
-                className="p-1.5 text-[#0E0E0E] hover:text-[#B8913A] transition-colors"
-                aria-label="Account"
-                title={isLoggedIn && customer ? `Account (${customer.name})` : "Sign In"}
-              >
-                <User className="size-4" strokeWidth={1.5} />
               </Link>
+
+              {/* CUSTOMER LOGIN / NAME DISPLAY */}
+              {isLoggedIn && customer ? (
+                <div className="relative group">
+                  <button
+                    type="button"
+                    onClick={() => setIsCustomerPortalOpen(true)}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#FAF6EE] dark:bg-white/10 border border-[#B8913A]/40 text-[#0E0E0E] dark:text-[#FAF6EE] hover:border-[#B8913A] transition-all cursor-pointer text-xs font-semibold shadow-2xs"
+                    title={`Logged in as ${customer.name}`}
+                  >
+                    <User className="size-3.5 text-[#B8913A]" />
+                    <span className="max-w-[110px] truncate">{customer.name}</span>
+                  </button>
+
+                  {/* Dropdown Menu on hover */}
+                  <div className="absolute right-0 top-full mt-1.5 w-44 p-1.5 rounded-lg bg-white dark:bg-[#1E191A] border border-[#E5DAC4] dark:border-[#B8913A]/30 shadow-lg opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition-all z-50 text-xs">
+                    <div className="px-3 py-2 border-b border-[#E5DAC4]/60 dark:border-white/10">
+                      <p className="font-semibold text-[#0E0E0E] dark:text-[#FAF6EE] truncate">{customer.name}</p>
+                      <p className="text-[10px] text-[#5C5549] dark:text-[#B5AC9E] truncate">{customer.email}</p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setIsCustomerPortalOpen(true)}
+                      className="w-full text-left px-3 py-2 rounded hover:bg-[#FAF6EE] dark:hover:bg-white/5 text-[#0E0E0E] dark:text-[#FAF6EE] transition-colors cursor-pointer"
+                    >
+                      My Orders & Account
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => logoutCustomer()}
+                      className="w-full text-left px-3 py-2 rounded hover:bg-rose-50 dark:hover:bg-rose-950/20 text-rose-600 transition-colors cursor-pointer"
+                    >
+                      Sign Out
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setIsCustomerPortalOpen(true)}
+                  className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-full hover:bg-black/5 dark:hover:bg-white/5 text-[#0E0E0E] hover:text-[#B8913A] transition-colors cursor-pointer text-xs font-medium"
+                  title="Sign In / Register"
+                >
+                  <User className="size-4" strokeWidth={1.5} />
+                  <span className="hidden sm:inline">Sign In</span>
+                </button>
+              )}
 
               {/* MOBILE HAMBURGER MENU */}
               <button
@@ -270,6 +308,14 @@ export function Header() {
 
               <div className="pt-4 border-t border-[rgba(14,14,14,0.08)] space-y-3">
                 <Link
+                  to="/cart"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className="flex items-center justify-between py-1 hover:text-[#B8913A]"
+                >
+                  <span>Shopping Bag</span>
+                  <span className="text-[#B8913A] font-semibold">({cartCount})</span>
+                </Link>
+                <Link
                   to="/wishlist"
                   onClick={() => setIsMobileMenuOpen(false)}
                   className="flex items-center justify-between py-1 hover:text-[#B8913A]"
@@ -277,13 +323,34 @@ export function Header() {
                   <span>Wishlist</span>
                   <span className="text-[#B8913A] font-semibold">({wishlistCount})</span>
                 </Link>
-                <Link
-                  to={isLoggedIn ? "/orders" : "/login"}
-                  onClick={() => setIsMobileMenuOpen(false)}
-                  className="block py-1 hover:text-[#B8913A]"
-                >
-                  {isLoggedIn ? "My Orders / Account" : "Sign In / Register"}
-                </Link>
+                {isLoggedIn && customer ? (
+                  <div className="pt-2 border-t border-[rgba(14,14,14,0.08)] flex items-center justify-between py-1">
+                    <span className="font-semibold text-xs text-[#6B1E2E] dark:text-[#FAF6EE] truncate max-w-[180px]">
+                      👤 {customer.name}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        logoutCustomer();
+                        setIsMobileMenuOpen(false);
+                      }}
+                      className="text-xs text-rose-600 hover:underline cursor-pointer"
+                    >
+                      Sign Out
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsMobileMenuOpen(false);
+                      setIsCustomerPortalOpen(true);
+                    }}
+                    className="block w-full text-left py-1 hover:text-[#B8913A] cursor-pointer"
+                  >
+                    Sign In / Register
+                  </button>
+                )}
               </div>
             </div>
 

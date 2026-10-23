@@ -76,6 +76,15 @@ interface StoreContextType {
     customerPhone: string;
     shippingAddress?: string;
     paymentMethod?: "cod" | "online";
+    items?: Array<{
+      productId: string;
+      quantity: number;
+      size?: string;
+      price?: number;
+      name?: string;
+      image?: string;
+      category?: string;
+    }>;
   }) => Promise<{ success: boolean; orderId?: string; orderNumber?: string; error?: string }>;
 }
 
@@ -745,16 +754,27 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     customerPhone: string;
     shippingAddress?: string;
     paymentMethod?: "cod" | "online";
+    items?: Array<{
+      productId: string;
+      quantity: number;
+      size?: string;
+      price?: number;
+      name?: string;
+      image?: string;
+      category?: string;
+    }>;
   }) => {
-    if (bag.length === 0) {
-      return { success: false, error: "Bag is empty" };
+    const rawItems =
+      details.items && details.items.length > 0
+        ? details.items.map((i) => ({ productId: i.productId, quantity: i.quantity, size: i.size }))
+        : bag.map((b) => ({ productId: b.id, quantity: b.quantity }));
+
+    if (rawItems.length === 0) {
+      return { success: false, error: "Shopping bag is empty" };
     }
 
     try {
-      const items = bag.map((b) => ({
-        productId: b.id,
-        quantity: b.quantity,
-      }));
+      const items = rawItems;
 
       const res = await orderApi.checkout({
         customerName: details.customerName,
@@ -798,6 +818,43 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       // Graceful standalone fallback if commerce backend is unavailable or had catalog resolution issue
       console.warn("Backend checkout notice, falling back to local order store:", res.error);
       const fallbackOrderId = `PF-${Date.now().toString().slice(-4)}${Math.floor(10 + Math.random() * 90)}`;
+      
+      const constructedItems =
+        details.items && details.items.length > 0
+          ? details.items.map((it) => {
+              const prod = productsList.find((p) => p.id === it.productId);
+              const unitPrice = it.price ?? prod?.price ?? 0;
+              return {
+                id: `oi-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+                orderId: fallbackOrderId,
+                productId: it.productId,
+                productName: it.name || prod?.name || it.productId,
+                productSku: prod?.sku,
+                price: unitPrice,
+                unitPrice: unitPrice,
+                quantity: it.quantity,
+                unit: prod?.unit || "piece",
+                totalPrice: unitPrice * it.quantity,
+              };
+            })
+          : bag.map((b) => {
+              const prod = productsList.find((p) => p.id === b.id);
+              return {
+                id: `oi-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+                orderId: fallbackOrderId,
+                productId: b.id,
+                productName: prod?.name || b.id,
+                productSku: prod?.sku,
+                price: prod?.price || 0,
+                unitPrice: prod?.price || 0,
+                quantity: b.quantity,
+                unit: prod?.unit || "piece",
+                totalPrice: (prod?.price || 0) * b.quantity,
+              };
+            });
+
+      const calculatedTotal = constructedItems.reduce((acc, item) => acc + item.totalPrice, 0);
+
       const localNewOrder: Order = {
         id: fallbackOrderId,
         orderNumber: fallbackOrderId,
@@ -806,35 +863,12 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         customerPhone: details.customerPhone,
         date: new Date().toISOString().split("T")[0] || "",
         shippingAddress: details.shippingAddress || "Ambattur, Chennai",
-        items: bag.map((b) => {
-          const prod = productsList.find((p) => p.id === b.id);
-          return {
-            id: `oi-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
-            orderId: fallbackOrderId,
-            productId: b.id,
-            productName: prod?.name || b.id,
-            productSku: prod?.sku,
-            price: prod?.price || 0,
-            unitPrice: prod?.price || 0,
-            quantity: b.quantity,
-            unit: prod?.unit || "piece",
-            totalPrice: (prod?.price || 0) * b.quantity,
-          };
-        }),
-        subtotal: bag.reduce((acc, b) => {
-          const prod = productsList.find((p) => p.id === b.id);
-          return acc + (prod?.price || 0) * b.quantity;
-        }, 0),
+        items: constructedItems,
+        subtotal: calculatedTotal,
         shippingFee: 0,
         discountAmount: 0,
-        total: bag.reduce((acc, b) => {
-          const prod = productsList.find((p) => p.id === b.id);
-          return acc + (prod?.price || 0) * b.quantity;
-        }, 0),
-        totalAmount: bag.reduce((acc, b) => {
-          const prod = productsList.find((p) => p.id === b.id);
-          return acc + (prod?.price || 0) * b.quantity;
-        }, 0),
+        total: calculatedTotal,
+        totalAmount: calculatedTotal,
         status: "Pending",
         orderStatus: "Pending",
         paymentMethod: details.paymentMethod === "online" ? "Online UPI" : "COD",
