@@ -1645,7 +1645,7 @@ function AdminDashboardPage() {
             {/* Stock adjustment table */}
             <div className="bg-card border border-border p-6 space-y-5">
               {/* Section Header with Actions */}
-              <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <div>
                   <h2 className="font-display text-lg font-medium mb-1">Product Inventory Status</h2>
                   <p className="text-xs text-muted-foreground">
@@ -1653,9 +1653,9 @@ function AdminDashboardPage() {
                   </p>
                 </div>
 
-                <div className="flex flex-wrap items-center gap-2.5">
+                <div className="flex items-center gap-2.5 shrink-0 flex-nowrap">
                   {/* EXCEL DOWNLOAD MENU */}
-                  <div className="relative">
+                  <div className="relative shrink-0">
                     <Button
                       type="button"
                       variant="outline"
@@ -1964,7 +1964,8 @@ function AdminDashboardPage() {
                       <th className="p-3.5 text-xs font-semibold uppercase tracking-wider">SKU</th>
                       <th className="p-3.5 text-xs font-semibold uppercase tracking-wider">Current Stock</th>
                       <th className="p-3.5 text-xs font-semibold uppercase tracking-wider">Status</th>
-                      <th className="p-3.5 text-xs font-semibold uppercase tracking-wider text-right">Stock Action</th>
+                      <th className="p-3.5 text-xs font-semibold uppercase tracking-wider">Date</th>
+                      <th className="p-3.5 text-xs font-semibold uppercase tracking-wider text-right">Action</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-border">
@@ -1977,6 +1978,14 @@ function AdminDashboardPage() {
                         const monthLogs = invFilterMode === "month"
                           ? logs.filter((l) => l.date && l.date.startsWith(invSelectedMonth))
                           : [];
+                        const latestLog = logs[0];
+                        const displayDate = dateLog
+                          ? dateLog.date
+                          : latestLog
+                            ? latestLog.date
+                            : p.updatedAt
+                              ? p.updatedAt.split("T")[0]
+                              : new Date().toISOString().split("T")[0];
 
                         return (
                           <tr key={p.id} className="hover:bg-secondary/20 transition-colors">
@@ -2032,38 +2041,47 @@ function AdminDashboardPage() {
                                     : "In Stock"}
                               </span>
                             </td>
-                            <td className="p-3.5 text-right">
+                            <td className="p-3.5 whitespace-nowrap">
+                              <div className="font-sans font-medium text-xs text-foreground tabular-nums flex items-center gap-1.5">
+                                <Calendar className="size-3 text-gold" />
+                                <span>{displayDate}</span>
+                              </div>
+                              <div className="text-[10px] text-muted-foreground mt-0.5">
+                                {dateLog ? "Filter match" : latestLog ? "Last update" : "Catalog item"}
+                              </div>
+                            </td>
+                            <td className="p-3.5 text-right whitespace-nowrap">
                               <div className="flex items-center justify-end gap-1.5">
-                                {/* EDIT STOCK */}
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  className="text-xs h-8 px-2.5 hover:border-gold hover:text-gold"
-                                  title="Edit / Adjust Stock"
+                                {/* EDIT STOCK ICON BUTTON */}
+                                <button
+                                  type="button"
                                   onClick={() => handleOpenAddStock(p)}
+                                  className="size-8 rounded flex items-center justify-center border border-border bg-background hover:border-gold hover:bg-gold/15 text-gold transition-colors"
+                                  title="Edit Stock Quantity"
+                                  aria-label="Edit Stock"
                                 >
-                                  <Edit className="size-3.5 mr-1 text-gold" /> Edit
-                                </Button>
-                                {/* VIEW STOCK DETAILS */}
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  className="text-xs h-8 px-2.5 hover:bg-secondary"
-                                  title="View Stock Details & Logs"
+                                  <Edit className="size-3.5" />
+                                </button>
+                                {/* VIEW STOCK DETAILS ICON BUTTON */}
+                                <button
+                                  type="button"
                                   onClick={() => setViewStockProduct(p)}
+                                  className="size-8 rounded flex items-center justify-center border border-border bg-background hover:bg-secondary text-foreground hover:text-primary transition-colors"
+                                  title="View Stock History & Details"
+                                  aria-label="View Stock"
                                 >
-                                  <Eye className="size-3.5 mr-1 text-primary" /> View
-                                </Button>
-                                {/* DELETE / RESET STOCK */}
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  className="text-xs h-8 px-2.5 text-destructive hover:bg-destructive/10 hover:border-destructive/40"
-                                  title="Delete Product or Reset Stock"
+                                  <Eye className="size-3.5" />
+                                </button>
+                                {/* DELETE / RESET STOCK ICON BUTTON */}
+                                <button
+                                  type="button"
                                   onClick={() => setDeleteStockModalProduct(p)}
+                                  className="size-8 rounded flex items-center justify-center border border-border bg-background hover:border-destructive/40 hover:bg-destructive/10 text-destructive transition-colors"
+                                  title="Delete Product or Reset Stock"
+                                  aria-label="Delete Stock"
                                 >
-                                  <Trash2 className="size-3.5 mr-1" /> Delete
-                                </Button>
+                                  <Trash2 className="size-3.5" />
+                                </button>
                               </div>
                             </td>
                           </tr>
@@ -2071,7 +2089,7 @@ function AdminDashboardPage() {
                       })
                     ) : (
                       <tr>
-                        <td colSpan={6} className="p-8 text-center text-muted-foreground text-sm space-y-2">
+                        <td colSpan={7} className="p-8 text-center text-muted-foreground text-sm space-y-2">
                           <p>No products match your search or date filter.</p>
                           <Button
                             type="button"
