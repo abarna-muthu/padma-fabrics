@@ -60,6 +60,7 @@ interface StoreContextType {
   updateProduct: (id: string, updates: Partial<Product>) => Promise<void> | void;
   deleteProduct: (id: string) => void;
   toggleProductStatus: (id: string) => void;
+  restoreAllProducts: () => Promise<void>;
   syncCatalogToDatabase: (clearDefaults?: boolean) => Promise<{ success: boolean; message: string; count?: number }>;
 
   // Inventory & Stock adjustments
@@ -211,12 +212,22 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     // 1. Initial read from localStorage
     try {
       const storedProducts = localStorage.getItem(STORAGE_PRODUCTS_KEY);
+      let loadedProds: Product[] = [];
       if (storedProducts) {
         const parsed = JSON.parse(storedProducts);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          setProductsList(parsed.map(normalizeProduct));
+        if (Array.isArray(parsed) && parsed.length >= 41) {
+          loadedProds = parsed.map(normalizeProduct);
         }
       }
+
+      // Self-heal: If local storage has fewer than 41 products (e.g. from earlier testing),
+      // restore all 41 master products with photos, descriptions and categories
+      if (loadedProds.length < 41) {
+        localStorage.removeItem(STORAGE_DELETED_PRODUCTS_KEY);
+        loadedProds = (staticProducts as Product[]).map(normalizeProduct);
+        saveProducts(loadedProds);
+      }
+      setProductsList(loadedProds);
       const storedOrders = localStorage.getItem(STORAGE_ORDERS_KEY);
       if (storedOrders) {
         const parsed = JSON.parse(storedOrders);
@@ -347,6 +358,14 @@ export function StoreProvider({ children }: { children: ReactNode }) {
           try {
             deletedIds = JSON.parse(localStorage.getItem(STORAGE_DELETED_PRODUCTS_KEY) || "[]");
           } catch {}
+
+          // Ensure all 41 master products are never accidentally masked by old deleted IDs
+          if (serverProds.length >= 41 && deletedIds.length > 0 && (serverProds.length - deletedIds.length < 41)) {
+            deletedIds = [];
+            try {
+              localStorage.removeItem(STORAGE_DELETED_PRODUCTS_KEY);
+            } catch {}
+          }
 
           // Filter out deleted items from server response
           const activeServerProds = serverProds.filter((sp: any) => !deletedIds.includes(sp.id)).map(normalizeProduct);
@@ -539,12 +558,14 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const addProduct = async (newP: Omit<Product, "id"> & { id?: string }) => {
     const id = newP.id || `pf-${Date.now().toString(36)}`;
     const nowIso = new Date().toISOString();
+    // Strict rule: When adding a new product, stock starts at 0.
+    // Stock must only be added manually via Inventory & Stock "+ Add Stock".
     const product: Product = {
       ...newP,
       id,
       isActive: true,
       status: "active",
-      stock: Number(newP.stock) || 0,
+      stock: 0,
       sku: newP.sku || `PF-NEW-${Math.floor(100 + Math.random() * 900)}`,
       updatedAt: nowIso,
     };
@@ -559,21 +580,6 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       const filtered = deletedIds.filter((x) => x !== id);
       localStorage.setItem(STORAGE_DELETED_PRODUCTS_KEY, JSON.stringify(filtered));
     } catch {}
-
-    // Initial stock log if stock > 0
-    if (product.stock > 0) {
-      const newLog: StockLog = {
-        id: `LOG-${Date.now().toString(36)}`,
-        productId: product.id,
-        productName: product.name,
-        previousStock: 0,
-        newStock: product.stock,
-        change: product.stock,
-        reason: "Initial product inventory addition",
-        date: new Date().toISOString().split("T")[0] || "",
-      };
-      saveStockLogs([newLog, ...stockLogs]);
-    }
 
     // Persist to backend database API
     try {
@@ -631,6 +637,23 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         success: false,
         message: err.message || "Network error while syncing to database.",
       };
+    }
+  };
+
+  const restoreAllProducts = async () => {
+    try {
+      localStorage.removeItem(STORAGE_DELETED_PRODUCTS_KEY);
+      const masterList = (staticProducts as Product[]).map(normalizeProduct);
+      setProductsList(masterList);
+      saveProducts(masterList);
+      try {
+        await productApi.bulkSync(masterList, true);
+      } catch (syncErr) {
+        console.warn("Could not sync restored products to backend:", syncErr);
+      }
+      toast.success(`Successfully restored all ${masterList.length} products with complete photos, descriptions, and categories!`);
+    } catch (err: any) {
+      toast.error(`Restore failed: ${err?.message || "Unknown error"}`);
     }
   };
 
@@ -1064,6 +1087,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         updateProduct,
         deleteProduct,
         toggleProductStatus,
+        restoreAllProducts,
         syncCatalogToDatabase,
         adjustStock,
         stockLogs,

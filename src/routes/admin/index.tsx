@@ -152,6 +152,7 @@ function AdminDashboardPage() {
     updateProduct,
     deleteProduct,
     toggleProductStatus,
+    restoreAllProducts,
     syncCatalogToDatabase,
     adjustStock,
     stockLogs,
@@ -159,6 +160,19 @@ function AdminDashboardPage() {
     updateOrderStatus,
     updatePaymentStatus,
   } = useStore();
+
+  const [isRestoring, setIsRestoring] = useState(false);
+  const handleRestore41Products = async () => {
+    setIsRestoring(true);
+    toast.loading("Restoring all 41 products with photos & descriptions...", { id: "restore-prods" });
+    try {
+      await restoreAllProducts();
+    } catch (err: any) {
+      toast.error(err?.message || "Failed to restore products", { id: "restore-prods" });
+    } finally {
+      setIsRestoring(false);
+    }
+  };
 
   const [isSyncingDb, setIsSyncingDb] = useState(false);
 
@@ -297,7 +311,7 @@ function AdminDashboardPage() {
   const [prodColour, setProdColour] = useState("");
   const [prodPrice, setProdPrice] = useState("");
   const [prodUnit, setProdUnit] = useState("piece");
-  const [prodStock, setProdStock] = useState("10");
+  const [prodStock, setProdStock] = useState("0");
   const [prodBadge, setProdBadge] = useState("New");
   const [prodDescription, setProdDescription] = useState("");
   const [prodSku, setProdSku] = useState("");
@@ -519,7 +533,7 @@ function AdminDashboardPage() {
     setProdColour("");
     setProdPrice("");
     setProdUnit("piece");
-    setProdStock("10");
+    setProdStock("0");
     setProdBadge("New arrival");
     setProdDescription("");
     setProdSku(`PF-${Math.floor(100 + Math.random() * 900)}`);
@@ -600,7 +614,7 @@ function AdminDashboardPage() {
           colour: prodColour,
           price: Number(prodPrice),
           unit: prodUnit,
-          stock: Number(prodStock),
+          stock: 0, // Starts at 0, only added manually via Inventory
           badge: prodBadge,
           description: prodDescription,
           sku: prodSku,
@@ -609,7 +623,7 @@ function AdminDashboardPage() {
           status: "active",
           isActive: true,
         });
-        toast.success(`"${prodName}" published to catalog and customer storefront!`);
+        toast.success(`"${prodName}" added with 0 initial stock! Add stock manually from the Inventory tab.`);
       }
     } catch (err: any) {
       toast.error(`Failed to save product: ${err?.message || "Unknown error"}`);
@@ -999,25 +1013,14 @@ function AdminDashboardPage() {
               setActiveTab("products");
               setMobileMenuOpen(false);
             }}
-            className={`w-full flex items-center justify-between px-3.5 py-2.5 text-sm font-medium rounded-sm transition-colors text-left cursor-pointer ${
+            className={`w-full flex items-center gap-3 px-3.5 py-2.5 text-sm font-medium rounded-sm transition-colors text-left cursor-pointer ${
               activeTab === "products"
                 ? "bg-primary text-primary-foreground font-semibold"
                 : "text-muted-foreground hover:bg-secondary hover:text-foreground"
             }`}
           >
-            <div className="flex items-center gap-3">
-              <Package className="size-4 shrink-0" />
-              <span>Products</span>
-            </div>
-            <span
-              className={`text-xs px-2 py-0.5 rounded font-sans font-medium tabular-nums ${
-                activeTab === "products"
-                  ? "bg-primary-foreground/20 text-white"
-                  : "bg-secondary text-muted-foreground"
-              }`}
-            >
-              {productsList.length}
-            </span>
+            <Package className="size-4 shrink-0" />
+            <span>Products</span>
           </button>
 
           <button
@@ -1026,21 +1029,14 @@ function AdminDashboardPage() {
               setActiveTab("inventory");
               setMobileMenuOpen(false);
             }}
-            className={`w-full flex items-center justify-between px-3.5 py-2.5 text-sm font-medium rounded-sm transition-colors text-left cursor-pointer ${
+            className={`w-full flex items-center gap-3 px-3.5 py-2.5 text-sm font-medium rounded-sm transition-colors text-left cursor-pointer ${
               activeTab === "inventory"
                 ? "bg-primary text-primary-foreground font-semibold"
                 : "text-muted-foreground hover:bg-secondary hover:text-foreground"
             }`}
           >
-            <div className="flex items-center gap-3">
-              <Boxes className="size-4 shrink-0" />
-              <span>Inventory & Stock</span>
-            </div>
-            {lowStockCount > 0 && (
-              <span className="text-xs px-2 py-0.5 rounded bg-amber-500/10 text-amber-600 font-semibold font-sans tabular-nums">
-                {lowStockCount} low
-              </span>
-            )}
+            <Boxes className="size-4 shrink-0" />
+            <span>Inventory & Stock</span>
           </button>
 
           <button
@@ -1049,25 +1045,14 @@ function AdminDashboardPage() {
               setActiveTab("orders");
               setMobileMenuOpen(false);
             }}
-            className={`w-full flex items-center justify-between px-3.5 py-2.5 text-sm font-medium rounded-sm transition-colors text-left cursor-pointer ${
+            className={`w-full flex items-center gap-3 px-3.5 py-2.5 text-sm font-medium rounded-sm transition-colors text-left cursor-pointer ${
               activeTab === "orders"
                 ? "bg-primary text-primary-foreground font-semibold"
                 : "text-muted-foreground hover:bg-secondary hover:text-foreground"
             }`}
           >
-            <div className="flex items-center gap-3">
-              <ShoppingBag className="size-4 shrink-0" />
-              <span>Orders</span>
-            </div>
-            <span
-              className={`text-xs px-2 py-0.5 rounded font-sans font-medium tabular-nums ${
-                activeTab === "orders"
-                  ? "bg-primary-foreground/20 text-white"
-                  : "bg-secondary text-muted-foreground"
-              }`}
-            >
-              {orders.length}
-            </span>
+            <ShoppingBag className="size-4 shrink-0" />
+            <span>Orders</span>
           </button>
 
           <button
@@ -1076,25 +1061,14 @@ function AdminDashboardPage() {
               setActiveTab("customers");
               setMobileMenuOpen(false);
             }}
-            className={`w-full flex items-center justify-between px-3.5 py-2.5 text-sm font-medium rounded-sm transition-colors text-left cursor-pointer ${
+            className={`w-full flex items-center gap-3 px-3.5 py-2.5 text-sm font-medium rounded-sm transition-colors text-left cursor-pointer ${
               activeTab === "customers"
                 ? "bg-primary text-primary-foreground font-semibold"
                 : "text-muted-foreground hover:bg-secondary hover:text-foreground"
             }`}
           >
-            <div className="flex items-center gap-3">
-              <Users className="size-4 shrink-0" />
-              <span>Customers</span>
-            </div>
-            <span
-              className={`text-xs px-2 py-0.5 rounded font-sans font-medium tabular-nums ${
-                activeTab === "customers"
-                  ? "bg-primary-foreground/20 text-white"
-                  : "bg-secondary text-muted-foreground"
-              }`}
-            >
-              {customersList.length}
-            </span>
+            <Users className="size-4 shrink-0" />
+            <span>Customers</span>
           </button>
 
           <button
@@ -1187,12 +1161,12 @@ function AdminDashboardPage() {
         {/* Sidebar Footer */}
         <div className="p-4 border-t border-border space-y-3 bg-secondary/30 shrink-0">
           <div className="flex items-center gap-2.5 text-xs">
-            <div className="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center font-semibold">
+            <div className="w-8 h-8 rounded-full bg-[#B8913A]/20 text-[#B8913A] border border-[#B8913A]/30 flex items-center justify-center font-semibold shrink-0">
               <User className="size-4" />
             </div>
             <div className="overflow-hidden">
-              <div className="font-medium text-foreground truncate">{user?.name}</div>
-              <div className="text-[10px] text-muted-foreground truncate">{user?.email}</div>
+              <div className="font-semibold text-white tracking-wide truncate">{user?.name || "Padmanabha Administrator"}</div>
+              <div className="text-[11px] text-[#B8913A] font-medium truncate">{user?.email || "admin@padmanabhafabrics.com"}</div>
             </div>
           </div>
 
@@ -1463,7 +1437,18 @@ function AdminDashboardPage() {
                 </select>
               </div>
 
-              <div className="flex items-center gap-2.5">
+              <div className="flex flex-wrap items-center gap-2.5">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  disabled={isRestoring}
+                  className="h-10 text-xs font-medium rounded-full border-[rgba(14,14,14,0.18)] bg-white text-[#0E0E0E] hover:border-[#B8913A] hover:bg-[#FAF7F2] shadow-2xs px-4"
+                  onClick={handleRestore41Products}
+                  title="Restore all 41 original products with complete photos and descriptions"
+                >
+                  <RotateCcw className={`size-3.5 mr-1.5 text-[#B8913A] ${isRestoring ? "animate-spin" : ""}`} /> Restore 41 Products
+                </Button>
                 <Button
                   type="button"
                   variant="outline"
@@ -1731,6 +1716,21 @@ function AdminDashboardPage() {
                       </>
                     )}
                   </div>
+
+                  {/* RESTORE 41 PRODUCTS BUTTON (if catalog has fewer than 41) */}
+                  {productsList.length < 41 && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      disabled={isRestoring}
+                      onClick={handleRestore41Products}
+                      className="text-xs h-9 border-[#B8913A]/50 text-[#B8913A] hover:bg-[#B8913A]/10 shrink-0 gap-1.5"
+                      title="Restore all 41 original products with photos and descriptions"
+                    >
+                      <RotateCcw className={`size-3.5 ${isRestoring ? "animate-spin" : ""}`} /> Restore 41 Products
+                    </Button>
+                  )}
 
                   {/* ADD STOCK BUTTON */}
                   <Button
@@ -3331,15 +3331,28 @@ function AdminDashboardPage() {
                   </select>
                 </div>
                 <div className="space-y-1.5">
-                  <label className="text-sm font-medium">Stock Count</label>
+                  <div className="flex items-center justify-between">
+                    <label className="text-sm font-medium">Stock Count</label>
+                    {!editingProduct && (
+                      <span className="text-[10px] text-amber-600 font-semibold uppercase tracking-wider">
+                        Manual add only
+                      </span>
+                    )}
+                  </div>
                   <Input
                     type="number"
                     required
-                    value={prodStock}
+                    disabled={!editingProduct}
+                    value={editingProduct ? prodStock : "0"}
                     onChange={(e) => setProdStock(e.target.value)}
-                    placeholder="10"
-                    className="rounded-none text-sm h-10 font-sans tabular-nums"
+                    placeholder="0"
+                    className="rounded-none text-sm h-10 font-sans tabular-nums disabled:opacity-75 disabled:bg-muted"
                   />
+                  {!editingProduct && (
+                    <p className="text-[11px] text-muted-foreground leading-tight">
+                      Initial stock is 0. Add stock manually using "+ Add Stock" in the Inventory tab.
+                    </p>
+                  )}
                 </div>
               </div>
 
