@@ -10,6 +10,8 @@ import {
   Check,
   CheckCircle2,
   ChevronDown,
+  ChevronLeft,
+  ChevronRight,
   Database,
   Download,
   Edit,
@@ -413,6 +415,8 @@ function AdminDashboardPage() {
   const [invSelectedMonth, setInvSelectedMonth] = useState<string>(() => new Date().toISOString().slice(0, 7));
   const [invStrictActivityFilter, setInvStrictActivityFilter] = useState(false);
   const [isExportMenuOpen, setIsExportMenuOpen] = useState(false);
+  const [invCurrentPage, setInvCurrentPage] = useState(1);
+  const invItemsPerPage = 10;
 
   // View Stock Details Modal
   const [viewStockProduct, setViewStockProduct] = useState<Product | null>(null);
@@ -708,6 +712,20 @@ function AdminDashboardPage() {
     invStrictActivityFilter,
     stockLogsByProduct,
   ]);
+
+  // Reset pagination to page 1 whenever inventory filters or search change
+  useEffect(() => {
+    setInvCurrentPage(1);
+  }, [invSearch, invFilterMode, invSelectedDate, invSelectedMonth, invStrictActivityFilter]);
+
+  const totalInvPages = Math.max(1, Math.ceil(filteredInventoryProducts.length / invItemsPerPage));
+
+  // Paginated products list (exactly 10 items per page)
+  const paginatedInventoryProducts = useMemo(() => {
+    const validPage = Math.min(Math.max(1, invCurrentPage), totalInvPages);
+    const start = (validPage - 1) * invItemsPerPage;
+    return filteredInventoryProducts.slice(start, start + invItemsPerPage);
+  }, [filteredInventoryProducts, invCurrentPage, invItemsPerPage, totalInvPages]);
 
   // Logs matching selected date or month
   const matchingDateLogs = useMemo(() => {
@@ -1951,7 +1969,7 @@ function AdminDashboardPage() {
                   </thead>
                   <tbody className="divide-y divide-border">
                     {filteredInventoryProducts.length > 0 ? (
-                      filteredInventoryProducts.map((p) => {
+                      paginatedInventoryProducts.map((p) => {
                         const logs = stockLogsByProduct.get(p.id) || [];
                         const dateLog = invFilterMode === "date"
                           ? logs.find((l) => l.date === invSelectedDate)
@@ -2074,6 +2092,86 @@ function AdminDashboardPage() {
                   </tbody>
                 </table>
               </div>
+
+              {/* Pagination Controls (10 stocks per page) */}
+              {filteredInventoryProducts.length > 0 && (
+                <div className="pt-4 border-t border-border flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
+                  <div className="text-muted-foreground">
+                    Showing{" "}
+                    <strong className="text-foreground font-sans tabular-nums">
+                      {(invCurrentPage - 1) * invItemsPerPage + 1}
+                    </strong>{" "}
+                    to{" "}
+                    <strong className="text-foreground font-sans tabular-nums">
+                      {Math.min(invCurrentPage * invItemsPerPage, filteredInventoryProducts.length)}
+                    </strong>{" "}
+                    of{" "}
+                    <strong className="text-foreground font-sans tabular-nums">
+                      {filteredInventoryProducts.length}
+                    </strong>{" "}
+                    products (10 per page)
+                  </div>
+
+                  <div className="flex items-center gap-1.5">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      disabled={invCurrentPage <= 1}
+                      onClick={() => setInvCurrentPage((prev) => Math.max(1, prev - 1))}
+                      className="h-8 px-2.5 text-xs inline-flex items-center gap-1 disabled:opacity-40"
+                    >
+                      <ChevronLeft className="size-3.5" /> Previous
+                    </Button>
+
+                    <div className="flex items-center gap-1">
+                      {Array.from({ length: totalInvPages }, (_, i) => i + 1).map((pageNum) => {
+                        if (
+                          totalInvPages > 7 &&
+                          Math.abs(pageNum - invCurrentPage) > 2 &&
+                          pageNum !== 1 &&
+                          pageNum !== totalInvPages
+                        ) {
+                          if (pageNum === 2 || pageNum === totalInvPages - 1) {
+                            return (
+                              <span key={pageNum} className="px-1 text-muted-foreground">
+                                ...
+                              </span>
+                            );
+                          }
+                          return null;
+                        }
+
+                        return (
+                          <button
+                            key={pageNum}
+                            type="button"
+                            onClick={() => setInvCurrentPage(pageNum)}
+                            className={`size-8 text-xs font-sans tabular-nums rounded border transition-colors ${
+                              invCurrentPage === pageNum
+                                ? "bg-gold border-gold text-primary-foreground font-bold shadow-xs"
+                                : "bg-background border-border text-foreground hover:bg-secondary"
+                            }`}
+                          >
+                            {pageNum}
+                          </button>
+                        );
+                      })}
+                    </div>
+
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      disabled={invCurrentPage >= totalInvPages}
+                      onClick={() => setInvCurrentPage((prev) => Math.min(totalInvPages, prev + 1))}
+                      className="h-8 px-2.5 text-xs inline-flex items-center gap-1 disabled:opacity-40"
+                    >
+                      Next <ChevronRight className="size-3.5" />
+                    </Button>
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Stock history logs */}
