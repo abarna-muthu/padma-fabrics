@@ -6,12 +6,15 @@ import {
   ArrowUpRight,
   Boxes,
   Calendar,
+  CalendarDays,
   Check,
   CheckCircle2,
   ChevronDown,
   Database,
+  Download,
   Edit,
   Eye,
+  FileSpreadsheet,
   FileText,
   Filter,
   History,
@@ -403,6 +406,20 @@ function AdminDashboardPage() {
   const [newStockQty, setNewStockQty] = useState("");
   const [stockReason, setStockReason] = useState("");
 
+  // Inventory filtering & check states (Search, Month-wise, Date-wise)
+  const [invSearch, setInvSearch] = useState("");
+  const [invFilterMode, setInvFilterMode] = useState<"all" | "date" | "month" | "low" | "out">("all");
+  const [invSelectedDate, setInvSelectedDate] = useState<string>(() => new Date().toISOString().split("T")[0]);
+  const [invSelectedMonth, setInvSelectedMonth] = useState<string>(() => new Date().toISOString().slice(0, 7));
+  const [invStrictActivityFilter, setInvStrictActivityFilter] = useState(false);
+  const [isExportMenuOpen, setIsExportMenuOpen] = useState(false);
+
+  // View Stock Details Modal
+  const [viewStockProduct, setViewStockProduct] = useState<Product | null>(null);
+
+  // Delete / Reset Stock Modal
+  const [deleteStockModalProduct, setDeleteStockModalProduct] = useState<Product | null>(null);
+
   // Order detail view modal
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [orderSearch, setOrderSearch] = useState("");
@@ -629,6 +646,204 @@ function AdminDashboardPage() {
     );
     setStockModalProduct(null);
     setStockReason("");
+  };
+
+  // Stock logs map for fast lookup: productId -> list of logs
+  const stockLogsByProduct = useMemo(() => {
+    const map = new Map<string, typeof stockLogs>();
+    for (const log of stockLogs) {
+      const list = map.get(log.productId) || [];
+      list.push(log);
+      map.set(log.productId, list);
+    }
+    return map;
+  }, [stockLogs]);
+
+  // Filtered products list for inventory status table
+  const filteredInventoryProducts = useMemo(() => {
+    return productsList.filter((p) => {
+      // 1. Text Search: name, category, sku, status
+      if (invSearch.trim()) {
+        const q = invSearch.toLowerCase().trim();
+        const matchesName = p.name.toLowerCase().includes(q);
+        const matchesCat = p.category.toLowerCase().includes(q);
+        const matchesSku = (p.sku || "").toLowerCase().includes(q);
+        const statusStr = p.stock === 0 ? "out of stock" : p.stock < 5 ? "low stock" : "in stock";
+        const matchesStatus = statusStr.includes(q);
+        if (!matchesName && !matchesCat && !matchesSku && !matchesStatus) {
+          return false;
+        }
+      }
+
+      // 2. Filter mode logic
+      if (invFilterMode === "low") {
+        return p.stock > 0 && p.stock < 5;
+      }
+      if (invFilterMode === "out") {
+        return p.stock === 0;
+      }
+      if (invFilterMode === "date" && invSelectedDate) {
+        const prodLogs = stockLogsByProduct.get(p.id) || [];
+        const hasLogOnDate = prodLogs.some((l) => l.date === invSelectedDate);
+        if (invStrictActivityFilter) {
+          return hasLogOnDate;
+        }
+      }
+      if (invFilterMode === "month" && invSelectedMonth) {
+        const prodLogs = stockLogsByProduct.get(p.id) || [];
+        const hasLogInMonth = prodLogs.some((l) => l.date && l.date.startsWith(invSelectedMonth));
+        if (invStrictActivityFilter) {
+          return hasLogInMonth;
+        }
+      }
+
+      return true;
+    });
+  }, [
+    productsList,
+    invSearch,
+    invFilterMode,
+    invSelectedDate,
+    invSelectedMonth,
+    invStrictActivityFilter,
+    stockLogsByProduct,
+  ]);
+
+  // Logs matching selected date or month
+  const matchingDateLogs = useMemo(() => {
+    if (invFilterMode === "date" && invSelectedDate) {
+      return stockLogs.filter((l) => l.date === invSelectedDate);
+    }
+    if (invFilterMode === "month" && invSelectedMonth) {
+      return stockLogs.filter((l) => l.date && l.date.startsWith(invSelectedMonth));
+    }
+    return stockLogs;
+  }, [stockLogs, invFilterMode, invSelectedDate, invSelectedMonth]);
+
+  // Reset stock to 0 handler
+  const handleResetStock = (product: Product) => {
+    const today = new Date().toISOString().split("T")[0];
+    adjustStock(product.id, 0, "Stock cleared / reset to 0 (Admin action)");
+    toast.success(`Stock for "${product.name}" reset to 0 ${product.unit}s. Logged on ${today}.`);
+    setDeleteStockModalProduct(null);
+  };
+
+  // Delete product completely from inventory
+  const handleDeleteProductCompletely = (product: Product) => {
+    deleteProduct(product.id);
+    toast.success(`Product "${product.name}" permanently deleted from store.`);
+    setDeleteStockModalProduct(null);
+  };
+
+  // Download stock report to Excel (.csv format with UTF-8 BOM)
+  const handleExportExcel = (type: "filtered" | "all" | "logs") => {
+    try {
+      const todayStr = new Date().toISOString().split("T")[0];
+      let csvRows: string[][] = [];
+      let filename = `padma_inventory_${todayStr}.csv`;
+
+      if (type === "logs") {
+        filename = `padma_stock_history_logs_${todayStr}.csv`;
+        csvRows.push([
+          "Log ID",
+          "Date",
+          "Product Name",
+          "Product ID",
+          "Previous Stock",
+          "New Stock",
+          "Stock Change",
+          "Reason / Notes",
+        ]);
+        const targetLogs = (invFilterMode === "date" || invFilterMode === "month") ? matchingDateLogs : stockLogs;
+        for (const l of targetLogs) {
+          csvRows.push([
+            l.id,
+            l.date,
+            `"${(l.productName || "").replace(/"/g, '""')}"`,
+            l.productId,
+            String(l.previousStock),
+            String(l.newStock),
+            l.change >= 0 ? `+${l.change}` : String(l.change),
+            `"${(l.reason || "").replace(/"/g, '""')}"`,
+          ]);
+        }
+      } else {
+        const prodsToExport = type === "filtered" ? filteredInventoryProducts : productsList;
+        const isDateFiltered = invFilterMode === "date" && invSelectedDate;
+        const isMonthFiltered = invFilterMode === "month" && invSelectedMonth;
+
+        filename = type === "filtered"
+          ? isDateFiltered
+            ? `padma_stock_date_${invSelectedDate}.csv`
+            : isMonthFiltered
+              ? `padma_stock_month_${invSelectedMonth}.csv`
+              : `padma_stock_filtered_${todayStr}.csv`
+          : `padma_full_inventory_${todayStr}.csv`;
+
+        csvRows.push([
+          "Product ID",
+          "Product Name",
+          "Category",
+          "SKU",
+          "Current Stock",
+          "Unit",
+          "Status",
+          "Price (INR)",
+          "Selected Period Activity",
+          "Latest Adjustment Date",
+          "Latest Adjustment Reason",
+        ]);
+
+        for (const p of prodsToExport) {
+          const logs = stockLogsByProduct.get(p.id) || [];
+          const latestLog = logs[0];
+          let periodActivity = "None";
+          if (isDateFiltered) {
+            const dateLog = logs.find((l) => l.date === invSelectedDate);
+            periodActivity = dateLog
+              ? `${dateLog.change >= 0 ? '+' : ''}${dateLog.change} (${dateLog.previousStock} -> ${dateLog.newStock})`
+              : "No update on this date";
+          } else if (isMonthFiltered) {
+            const mLogs = logs.filter((l) => l.date && l.date.startsWith(invSelectedMonth));
+            const netChange = mLogs.reduce((acc, l) => acc + l.change, 0);
+            periodActivity = mLogs.length > 0
+              ? `${mLogs.length} updates (Net: ${netChange >= 0 ? '+' : ''}${netChange})`
+              : "No update in this month";
+          }
+
+          const statusStr = p.stock === 0 ? "Out of Stock" : p.stock < 5 ? "Low Stock" : "In Stock";
+
+          csvRows.push([
+            p.id,
+            `"${(p.name || "").replace(/"/g, '""')}"`,
+            `"${p.category || ""}"`,
+            p.sku || "PF-N/A",
+            String(p.stock),
+            p.unit || "piece",
+            statusStr,
+            String(p.price),
+            `"${periodActivity}"`,
+            latestLog ? latestLog.date : (p.updatedAt ? p.updatedAt.split("T")[0] : todayStr),
+            `"${(latestLog?.reason || "Catalog product").replace(/"/g, '""')}"`,
+          ]);
+        }
+      }
+
+      const csvContent = "\uFEFF" + csvRows.map((e) => e.join(",")).join("\n");
+      const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.setAttribute("href", url);
+      link.setAttribute("download", filename);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+      setIsExportMenuOpen(false);
+      toast.success(`Exported ${csvRows.length - 1} records to "${filename}" for Microsoft Excel!`);
+    } catch (err: any) {
+      toast.error(`Export failed: ${err?.message || "Unknown error"}`);
+    }
   };
 
   // Handle Admin Credentials update
@@ -1410,22 +1625,318 @@ function AdminDashboardPage() {
             </div>
 
             {/* Stock adjustment table */}
-            <div className="bg-card border border-border p-6">
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
+            <div className="bg-card border border-border p-6 space-y-5">
+              {/* Section Header with Actions */}
+              <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                 <div>
                   <h2 className="font-display text-lg font-medium mb-1">Product Inventory Status</h2>
                   <p className="text-xs text-muted-foreground">
-                    Update stock levels, track buffer thresholds, and log changes with automatic date tracking
+                    Search products, filter by date or month, check stock movements, and export Excel reports
                   </p>
                 </div>
-                <Button
-                  onClick={() => handleOpenAddStock()}
-                  className="bg-gold hover:bg-gold/90 text-primary-foreground font-medium text-xs px-4 py-2 h-9 inline-flex items-center gap-1.5 shadow-sm shrink-0"
-                >
-                  <Plus className="size-4" /> Add Stock
-                </Button>
+
+                <div className="flex flex-wrap items-center gap-2.5">
+                  {/* EXCEL DOWNLOAD MENU */}
+                  <div className="relative">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setIsExportMenuOpen((prev) => !prev)}
+                      className="text-xs h-9 border-border hover:border-gold hover:text-gold inline-flex items-center gap-1.5"
+                    >
+                      <FileSpreadsheet className="size-4 text-emerald-600" />
+                      <span>Download Excel</span>
+                      <ChevronDown className="size-3.5 text-muted-foreground" />
+                    </Button>
+
+                    {isExportMenuOpen && (
+                      <>
+                        <div
+                          className="fixed inset-0 z-40"
+                          onClick={() => setIsExportMenuOpen(false)}
+                        />
+                        <div className="absolute right-0 mt-1.5 z-50 w-72 bg-card border border-border shadow-xl p-2 rounded-xs space-y-1 animate-in fade-in zoom-in-95 duration-100">
+                          <div className="px-2 py-1.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground border-b border-border">
+                            Export Stock Reports (Excel .csv)
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => handleExportExcel("filtered")}
+                            className="w-full text-left px-2.5 py-2 text-xs rounded hover:bg-secondary flex items-start gap-2 text-foreground transition-colors"
+                          >
+                            <Download className="size-4 text-gold mt-0.5 shrink-0" />
+                            <div>
+                              <div className="font-medium">
+                                Download Filtered Report ({filteredInventoryProducts.length} items)
+                              </div>
+                              <div className="text-[10px] text-muted-foreground">
+                                {invFilterMode === "date"
+                                  ? `Stock data filtered by date: ${invSelectedDate}`
+                                  : invFilterMode === "month"
+                                    ? `Stock data filtered by month: ${invSelectedMonth}`
+                                    : "Active view with search & status filters"}
+                              </div>
+                            </div>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleExportExcel("all")}
+                            className="w-full text-left px-2.5 py-2 text-xs rounded hover:bg-secondary flex items-start gap-2 text-foreground transition-colors"
+                          >
+                            <FileSpreadsheet className="size-4 text-emerald-600 mt-0.5 shrink-0" />
+                            <div>
+                              <div className="font-medium">
+                                Download Full Catalog ({productsList.length} products)
+                              </div>
+                              <div className="text-[10px] text-muted-foreground">
+                                Complete inventory list with prices, SKU, units & status
+                              </div>
+                            </div>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleExportExcel("logs")}
+                            className="w-full text-left px-2.5 py-2 text-xs rounded hover:bg-secondary flex items-start gap-2 text-foreground transition-colors"
+                          >
+                            <History className="size-4 text-blue-500 mt-0.5 shrink-0" />
+                            <div>
+                              <div className="font-medium">
+                                Download Stock History Logs ({matchingDateLogs.length} logs)
+                              </div>
+                              <div className="text-[10px] text-muted-foreground">
+                                Date-wise stock change history with previous & new stock
+                              </div>
+                            </div>
+                          </button>
+                        </div>
+                      </>
+                    )}
+                  </div>
+
+                  {/* ADD STOCK BUTTON */}
+                  <Button
+                    onClick={() => handleOpenAddStock()}
+                    className="bg-gold hover:bg-gold/90 text-primary-foreground font-medium text-xs px-4 py-2 h-9 inline-flex items-center gap-1.5 shadow-sm shrink-0"
+                  >
+                    <Plus className="size-4" /> Add Stock
+                  </Button>
+                </div>
               </div>
 
+              {/* SEARCH & DATE/MONTH FILTER CONTROLS */}
+              <div className="bg-secondary/30 border border-border p-4 rounded-xs space-y-3.5">
+                {/* Search Bar & Quick Mode Pills */}
+                <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+                  <div className="relative flex-1 max-w-md">
+                    <Search className="size-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                    <Input
+                      type="text"
+                      placeholder="Search by product name, category, SKU, or status (e.g. In Stock)..."
+                      value={invSearch}
+                      onChange={(e) => setInvSearch(e.target.value)}
+                      className="pl-9 pr-8 text-xs h-9 bg-background rounded-none border-border"
+                    />
+                    {invSearch && (
+                      <button
+                        type="button"
+                        onClick={() => setInvSearch("")}
+                        className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                      >
+                        <X className="size-3.5" />
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Filter Mode Selector Pills */}
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    <button
+                      type="button"
+                      onClick={() => setInvFilterMode("all")}
+                      className={`px-3 py-1.5 text-xs rounded font-medium transition-colors ${
+                        invFilterMode === "all"
+                          ? "bg-gold text-primary-foreground shadow-xs"
+                          : "bg-background border border-border text-muted-foreground hover:text-foreground"
+                      }`}
+                    >
+                      All Products ({productsList.length})
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setInvFilterMode("date")}
+                      className={`px-3 py-1.5 text-xs rounded font-medium inline-flex items-center gap-1 transition-colors ${
+                        invFilterMode === "date"
+                          ? "bg-gold text-primary-foreground shadow-xs"
+                          : "bg-background border border-border text-muted-foreground hover:text-foreground"
+                      }`}
+                    >
+                      <CalendarDays className="size-3.5" /> Date-wise
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setInvFilterMode("month")}
+                      className={`px-3 py-1.5 text-xs rounded font-medium inline-flex items-center gap-1 transition-colors ${
+                        invFilterMode === "month"
+                          ? "bg-gold text-primary-foreground shadow-xs"
+                          : "bg-background border border-border text-muted-foreground hover:text-foreground"
+                      }`}
+                    >
+                      <Calendar className="size-3.5" /> Month-wise
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setInvFilterMode("low")}
+                      className={`px-3 py-1.5 text-xs rounded font-medium transition-colors ${
+                        invFilterMode === "low"
+                          ? "bg-amber-600 text-white shadow-xs"
+                          : "bg-background border border-border text-amber-600 hover:bg-amber-50"
+                      }`}
+                    >
+                      Low Stock (&lt;5)
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setInvFilterMode("out")}
+                      className={`px-3 py-1.5 text-xs rounded font-medium transition-colors ${
+                        invFilterMode === "out"
+                          ? "bg-destructive text-destructive-foreground shadow-xs"
+                          : "bg-background border border-border text-destructive hover:bg-destructive/10"
+                      }`}
+                    >
+                      Out of Stock (0)
+                    </button>
+                  </div>
+                </div>
+
+                {/* Date or Month Picker Row */}
+                {invFilterMode === "date" && (
+                  <div className="pt-2 border-t border-border flex flex-wrap items-center justify-between gap-3 text-xs">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="font-semibold text-foreground flex items-center gap-1.5">
+                        <CalendarDays className="size-4 text-gold" /> Choose Date:
+                      </span>
+                      <Input
+                        type="date"
+                        value={invSelectedDate}
+                        onChange={(e) => setInvSelectedDate(e.target.value)}
+                        className="h-8 w-40 text-xs bg-background border-border font-sans tabular-nums rounded-none"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setInvSelectedDate(new Date().toISOString().split("T")[0])}
+                        className="px-2.5 py-1 bg-background border border-border hover:bg-gold/15 hover:text-gold rounded text-xs transition-colors"
+                      >
+                        Today
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const y = new Date();
+                          y.setDate(y.getDate() - 1);
+                          setInvSelectedDate(y.toISOString().split("T")[0]);
+                        }}
+                        className="px-2.5 py-1 bg-background border border-border hover:bg-secondary rounded text-xs text-muted-foreground transition-colors"
+                      >
+                        Yesterday
+                      </button>
+                    </div>
+
+                    <label className="flex items-center gap-2 cursor-pointer text-muted-foreground hover:text-foreground">
+                      <input
+                        type="checkbox"
+                        checked={invStrictActivityFilter}
+                        onChange={(e) => setInvStrictActivityFilter(e.target.checked)}
+                        className="accent-gold rounded size-3.5"
+                      />
+                      <span>Only show products updated on this date ({matchingDateLogs.length} updates)</span>
+                    </label>
+                  </div>
+                )}
+
+                {invFilterMode === "month" && (
+                  <div className="pt-2 border-t border-border flex flex-wrap items-center justify-between gap-3 text-xs">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="font-semibold text-foreground flex items-center gap-1.5">
+                        <Calendar className="size-4 text-gold" /> Choose Month:
+                      </span>
+                      <Input
+                        type="month"
+                        value={invSelectedMonth}
+                        onChange={(e) => setInvSelectedMonth(e.target.value)}
+                        className="h-8 w-44 text-xs bg-background border-border font-sans tabular-nums rounded-none"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setInvSelectedMonth(new Date().toISOString().slice(0, 7))}
+                        className="px-2.5 py-1 bg-background border border-border hover:bg-gold/15 hover:text-gold rounded text-xs transition-colors"
+                      >
+                        This Month
+                      </button>
+                    </div>
+
+                    <label className="flex items-center gap-2 cursor-pointer text-muted-foreground hover:text-foreground">
+                      <input
+                        type="checkbox"
+                        checked={invStrictActivityFilter}
+                        onChange={(e) => setInvStrictActivityFilter(e.target.checked)}
+                        className="accent-gold rounded size-3.5"
+                      />
+                      <span>Only show products updated in this month ({matchingDateLogs.length} updates)</span>
+                    </label>
+                  </div>
+                )}
+
+                {/* Filter Status & Active Tag Banner */}
+                {(invSearch || invFilterMode !== "all") && (
+                  <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-border text-xs">
+                    <div className="flex items-center gap-2">
+                      <span className="text-muted-foreground">Showing:</span>
+                      <span className="font-bold text-foreground font-sans tabular-nums">
+                        {filteredInventoryProducts.length} of {productsList.length} products
+                      </span>
+                      {invFilterMode === "date" && (
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-gold/15 text-gold font-medium font-sans tabular-nums">
+                          📅 {invSelectedDate} · {matchingDateLogs.length} logs
+                        </span>
+                      )}
+                      {invFilterMode === "month" && (
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-gold/15 text-gold font-medium font-sans tabular-nums">
+                          🗓️ {invSelectedMonth} · {matchingDateLogs.length} logs
+                        </span>
+                      )}
+                      {invSearch && (
+                        <span className="px-2 py-0.5 rounded bg-secondary text-muted-foreground">
+                          Query: "{invSearch}"
+                        </span>
+                      )}
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => handleExportExcel("filtered")}
+                        className="inline-flex items-center gap-1 text-emerald-600 hover:text-emerald-700 font-medium transition-colors"
+                      >
+                        <Download className="size-3.5" /> Download Filtered Excel
+                      </button>
+                      <span className="text-border">|</span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setInvFilterMode("all");
+                          setInvSearch("");
+                          setInvStrictActivityFilter(false);
+                        }}
+                        className="text-destructive hover:underline"
+                      >
+                        Clear Filters
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Table of Products */}
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-sm">
                   <thead className="bg-secondary/40 text-muted-foreground border-b border-border">
@@ -1439,43 +1950,127 @@ function AdminDashboardPage() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-border">
-                    {productsList.map((p) => (
-                      <tr key={p.id} className="hover:bg-secondary/20 transition-colors">
-                        <td className="p-3.5 font-medium text-foreground">{p.name}</td>
-                        <td className="p-3.5 text-muted-foreground">{p.category}</td>
-                        <td className="p-3.5 font-sans tabular-nums text-muted-foreground">{p.sku || "PF-N/A"}</td>
-                        <td className="p-3.5 font-sans font-bold tabular-nums text-foreground">
-                          {p.stock} {p.unit}s
-                        </td>
-                        <td className="p-3.5">
-                          <span
-                            className={`px-2.5 py-1 rounded text-xs font-semibold font-sans tabular-nums ${
-                              p.stock === 0
-                                ? "bg-destructive/10 text-destructive"
-                                : p.stock < 5
-                                  ? "bg-amber-500/10 text-amber-600"
-                                  : "bg-emerald-500/10 text-emerald-600"
-                            }`}
-                          >
-                            {p.stock === 0
-                              ? "Out of Stock"
-                              : p.stock < 5
-                                ? "Low Stock"
-                                : "In Stock"}
-                          </span>
-                        </td>
-                        <td className="p-3.5 text-right">
+                    {filteredInventoryProducts.length > 0 ? (
+                      filteredInventoryProducts.map((p) => {
+                        const logs = stockLogsByProduct.get(p.id) || [];
+                        const dateLog = invFilterMode === "date"
+                          ? logs.find((l) => l.date === invSelectedDate)
+                          : null;
+                        const monthLogs = invFilterMode === "month"
+                          ? logs.filter((l) => l.date && l.date.startsWith(invSelectedMonth))
+                          : [];
+
+                        return (
+                          <tr key={p.id} className="hover:bg-secondary/20 transition-colors">
+                            <td className="p-3.5">
+                              <div className="flex items-center gap-2.5">
+                                <img
+                                  src={p.image}
+                                  alt={p.name}
+                                  className="size-9 object-cover border border-border shrink-0 bg-background"
+                                  onError={(e) => {
+                                    (e.currentTarget as HTMLImageElement).src = "/assets/burgundy-silk.jpg";
+                                  }}
+                                />
+                                <div>
+                                  <div className="font-medium text-foreground">{p.name}</div>
+                                  <div className="text-[11px] text-muted-foreground font-sans tabular-nums">
+                                    ₹{p.price}
+                                  </div>
+                                </div>
+                              </div>
+                            </td>
+                            <td className="p-3.5 text-muted-foreground">{p.category}</td>
+                            <td className="p-3.5 font-sans tabular-nums text-muted-foreground">{p.sku || "PF-N/A"}</td>
+                            <td className="p-3.5">
+                              <div className="font-sans font-bold tabular-nums text-foreground">
+                                {p.stock} {p.unit}s
+                              </div>
+                              {dateLog && (
+                                <div className="text-[10px] text-emerald-600 font-sans tabular-nums mt-0.5">
+                                  Updated on {invSelectedDate}: {dateLog.change >= 0 ? `+${dateLog.change}` : dateLog.change}
+                                </div>
+                              )}
+                              {!dateLog && monthLogs.length > 0 && (
+                                <div className="text-[10px] text-gold font-sans tabular-nums mt-0.5">
+                                  {monthLogs.length} updates in {invSelectedMonth}
+                                </div>
+                              )}
+                            </td>
+                            <td className="p-3.5">
+                              <span
+                                className={`px-2.5 py-1 rounded text-xs font-semibold font-sans tabular-nums ${
+                                  p.stock === 0
+                                    ? "bg-destructive/10 text-destructive"
+                                    : p.stock < 5
+                                      ? "bg-amber-500/10 text-amber-600"
+                                      : "bg-emerald-500/10 text-emerald-600"
+                                }`}
+                              >
+                                {p.stock === 0
+                                  ? "Out of Stock"
+                                  : p.stock < 5
+                                    ? "Low Stock"
+                                    : "In Stock"}
+                              </span>
+                            </td>
+                            <td className="p-3.5 text-right">
+                              <div className="flex items-center justify-end gap-1.5">
+                                {/* EDIT STOCK */}
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  className="text-xs h-8 px-2.5 hover:border-gold hover:text-gold"
+                                  title="Edit / Adjust Stock"
+                                  onClick={() => handleOpenAddStock(p)}
+                                >
+                                  <Edit className="size-3.5 mr-1 text-gold" /> Edit
+                                </Button>
+                                {/* VIEW STOCK DETAILS */}
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  className="text-xs h-8 px-2.5 hover:bg-secondary"
+                                  title="View Stock Details & Logs"
+                                  onClick={() => setViewStockProduct(p)}
+                                >
+                                  <Eye className="size-3.5 mr-1 text-primary" /> View
+                                </Button>
+                                {/* DELETE / RESET STOCK */}
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  className="text-xs h-8 px-2.5 text-destructive hover:bg-destructive/10 hover:border-destructive/40"
+                                  title="Delete Product or Reset Stock"
+                                  onClick={() => setDeleteStockModalProduct(p)}
+                                >
+                                  <Trash2 className="size-3.5 mr-1" /> Delete
+                                </Button>
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })
+                    ) : (
+                      <tr>
+                        <td colSpan={6} className="p-8 text-center text-muted-foreground text-sm space-y-2">
+                          <p>No products match your search or date filter.</p>
                           <Button
+                            type="button"
                             variant="outline"
                             size="sm"
-                            className="text-xs h-8"
-                            onClick={() => handleOpenAddStock(p)}
+                            onClick={() => {
+                              setInvFilterMode("all");
+                              setInvSearch("");
+                              setInvStrictActivityFilter(false);
+                            }}
+                            className="text-xs"
                           >
-                            <SlidersHorizontal className="size-3.5 mr-1" /> Adjust Stock
+                            Reset All Filters
                           </Button>
                         </td>
                       </tr>
-                    ))}
+                    )}
                   </tbody>
                 </table>
               </div>
@@ -3335,6 +3930,268 @@ function AdminDashboardPage() {
                 </Button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* ----------------- MODAL: VIEW STOCK DETAILS & HISTORY ----------------- */}
+      {viewStockProduct && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-card border border-border w-full max-w-2xl max-h-[90vh] overflow-y-auto p-6 shadow-2xl animate-in fade-in zoom-in-95 duration-150 space-y-5">
+            {/* Modal Header */}
+            <div className="flex items-start justify-between pb-3 border-b border-border">
+              <div className="flex items-center gap-2.5">
+                <div className="size-8 rounded bg-primary/10 text-primary flex items-center justify-center">
+                  <Eye className="size-4" />
+                </div>
+                <div>
+                  <h3 className="font-display text-lg font-medium">Product Stock Details & Movement History</h3>
+                  <p className="text-xs text-muted-foreground">
+                    Comprehensive inventory status, current threshold, and historical adjustments
+                  </p>
+                </div>
+              </div>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="size-8 text-muted-foreground hover:text-foreground"
+                onClick={() => setViewStockProduct(null)}
+              >
+                <X className="size-4" />
+              </Button>
+            </div>
+
+            {/* Product Overview Card */}
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 p-4 bg-secondary/30 border border-border">
+              <img
+                src={viewStockProduct.image}
+                alt={viewStockProduct.name}
+                className="size-20 object-cover border border-border shrink-0 bg-background"
+                onError={(e) => {
+                  (e.currentTarget as HTMLImageElement).src = "/assets/burgundy-silk.jpg";
+                }}
+              />
+              <div className="flex-1 min-w-0 space-y-1">
+                <div className="flex items-center gap-2">
+                  <span className="px-2 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wider bg-gold/15 text-gold">
+                    {viewStockProduct.category}
+                  </span>
+                  <span
+                    className={`px-2 py-0.5 rounded text-[10px] font-semibold ${
+                      viewStockProduct.stock === 0
+                        ? "bg-destructive/10 text-destructive"
+                        : viewStockProduct.stock < 5
+                          ? "bg-amber-500/10 text-amber-600"
+                          : "bg-emerald-500/10 text-emerald-600"
+                    }`}
+                  >
+                    {viewStockProduct.stock === 0 ? "Out of Stock" : viewStockProduct.stock < 5 ? "Low Stock" : "In Stock"}
+                  </span>
+                </div>
+                <h4 className="font-display text-base font-semibold text-foreground truncate">
+                  {viewStockProduct.name}
+                </h4>
+                <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground font-sans tabular-nums">
+                  <span>SKU: <strong className="text-foreground">{viewStockProduct.sku || "PF-N/A"}</strong></span>
+                  <span>•</span>
+                  <span>Price: <strong className="text-foreground">{money(viewStockProduct.price)}</strong></span>
+                  <span>•</span>
+                  <span>Unit: <strong className="text-foreground">{viewStockProduct.unit}s</strong></span>
+                </div>
+              </div>
+            </div>
+
+            {/* Metric KPI Cards */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-center">
+              <div className="p-3 bg-secondary/20 border border-border">
+                <div className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold">Current Stock</div>
+                <div className="text-2xl font-bold font-sans tabular-nums text-foreground mt-1">
+                  {viewStockProduct.stock} {viewStockProduct.unit}s
+                </div>
+              </div>
+              <div className="p-3 bg-secondary/20 border border-border">
+                <div className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold">Low Stock Threshold</div>
+                <div className="text-2xl font-bold font-sans tabular-nums text-amber-600 mt-1">
+                  5 pieces
+                </div>
+              </div>
+              <div className="p-3 bg-secondary/20 border border-border">
+                <div className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold">Adjustment Logs</div>
+                <div className="text-2xl font-bold font-sans tabular-nums text-foreground mt-1">
+                  {(stockLogsByProduct.get(viewStockProduct.id) || []).length} logs
+                </div>
+              </div>
+            </div>
+
+            {/* Historical Logs Table for This Product */}
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <History className="size-4 text-gold" />
+                <h5 className="font-semibold text-xs uppercase tracking-wider text-foreground">
+                  Date-wise Stock Movement History ({viewStockProduct.name})
+                </h5>
+              </div>
+
+              {(() => {
+                const logs = stockLogsByProduct.get(viewStockProduct.id) || [];
+                if (logs.length === 0) {
+                  return (
+                    <div className="p-6 text-center text-xs text-muted-foreground bg-secondary/20 border border-border">
+                      No stock movement logs recorded yet for this product.
+                    </div>
+                  );
+                }
+
+                return (
+                  <div className="overflow-x-auto border border-border">
+                    <table className="w-full text-left text-xs">
+                      <thead className="bg-secondary/40 text-muted-foreground border-b border-border">
+                        <tr>
+                          <th className="p-2.5 font-semibold">Date</th>
+                          <th className="p-2.5 font-semibold">Movement</th>
+                          <th className="p-2.5 font-semibold">Previous &rarr; New</th>
+                          <th className="p-2.5 font-semibold">Reason / Notes</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-border">
+                        {logs.map((log) => (
+                          <tr key={log.id} className="hover:bg-secondary/20">
+                            <td className="p-2.5 font-sans tabular-nums font-medium text-foreground">{log.date}</td>
+                            <td className="p-2.5 font-sans font-bold tabular-nums">
+                              <span className={log.change >= 0 ? "text-emerald-600" : "text-destructive"}>
+                                {log.change >= 0 ? `+${log.change}` : log.change} units
+                              </span>
+                            </td>
+                            <td className="p-2.5 font-sans tabular-nums text-muted-foreground">
+                              {log.previousStock} &rarr; {log.newStock}
+                            </td>
+                            <td className="p-2.5 text-muted-foreground italic">{log.reason || "Stock update"}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                );
+              })()}
+            </div>
+
+            {/* Footer Buttons */}
+            <div className="pt-3 flex justify-end gap-2.5 border-t border-border">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => setViewStockProduct(null)}
+              >
+                Close
+              </Button>
+              <Button
+                type="button"
+                variant="editorial"
+                size="sm"
+                className="bg-gold hover:bg-gold/90 text-primary-foreground"
+                onClick={() => {
+                  const target = viewStockProduct;
+                  setViewStockProduct(null);
+                  handleOpenAddStock(target);
+                }}
+              >
+                <Edit className="size-3.5 mr-1" /> Adjust Stock Now
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ----------------- MODAL: DELETE / RESET PRODUCT STOCK ----------------- */}
+      {deleteStockModalProduct && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-card border border-border w-full max-w-md p-6 shadow-2xl animate-in fade-in zoom-in-95 duration-150 space-y-4">
+            <div className="flex items-center gap-3">
+              <div className="size-10 rounded-full bg-destructive/10 text-destructive flex items-center justify-center shrink-0">
+                <Trash2 className="size-5" />
+              </div>
+              <div>
+                <h3 className="font-display text-lg font-medium text-foreground">
+                  Stock Actions & Delete
+                </h3>
+                <p className="text-xs text-muted-foreground">
+                  Choose to reset stock to zero or remove product
+                </p>
+              </div>
+            </div>
+
+            {/* Product Card */}
+            <div className="flex items-center gap-3 p-3 bg-secondary/30 border border-border rounded-xs">
+              <img
+                src={deleteStockModalProduct.image}
+                alt={deleteStockModalProduct.name}
+                className="w-12 h-14 object-cover border border-border shrink-0"
+                onError={(e) => {
+                  (e.currentTarget as HTMLImageElement).src = "/assets/burgundy-silk.jpg";
+                }}
+              />
+              <div className="text-xs min-w-0 flex-1">
+                <p className="font-semibold text-foreground truncate">{deleteStockModalProduct.name}</p>
+                <p className="text-muted-foreground">{deleteStockModalProduct.category} · {money(deleteStockModalProduct.price)}</p>
+                <p className="text-[11px] font-sans font-bold tabular-nums text-foreground mt-0.5">
+                  Current Stock: {deleteStockModalProduct.stock} {deleteStockModalProduct.unit}s
+                </p>
+              </div>
+            </div>
+
+            <p className="text-xs text-muted-foreground leading-relaxed">
+              What action would you like to perform for <strong>"{deleteStockModalProduct.name}"</strong>?
+            </p>
+
+            {/* Action 1: Reset Stock to 0 */}
+            <div className="p-3 bg-secondary/20 border border-border rounded flex items-center justify-between gap-3">
+              <div>
+                <div className="text-xs font-semibold text-foreground">Reset Stock to 0</div>
+                <div className="text-[11px] text-muted-foreground">
+                  Keeps product in store, marks as "Out of Stock" & logs today's date.
+                </div>
+              </div>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="text-xs shrink-0 text-amber-600 border-amber-300 hover:bg-amber-50"
+                onClick={() => handleResetStock(deleteStockModalProduct)}
+              >
+                Reset to 0
+              </Button>
+            </div>
+
+            {/* Action 2: Delete Product Completely */}
+            <div className="p-3 bg-destructive/5 border border-destructive/20 rounded flex items-center justify-between gap-3">
+              <div>
+                <div className="text-xs font-semibold text-destructive">Delete Product Permanently</div>
+                <div className="text-[11px] text-muted-foreground">
+                  Removes product entirely from inventory, admin portal, and store.
+                </div>
+              </div>
+              <Button
+                type="button"
+                variant="destructive"
+                size="sm"
+                className="text-xs shrink-0"
+                onClick={() => handleDeleteProductCompletely(deleteStockModalProduct)}
+              >
+                Delete
+              </Button>
+            </div>
+
+            <div className="flex justify-end pt-2 border-t border-border">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => setDeleteStockModalProduct(null)}
+              >
+                Cancel
+              </Button>
+            </div>
           </div>
         </div>
       )}
