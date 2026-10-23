@@ -67,52 +67,54 @@ export function AdminLoginView({ onLoginSuccess }: { onLoginSuccess?: () => void
   };
 
   return (
-    <div className="min-h-screen bg-sand-50 dark:bg-background flex flex-col justify-center items-center px-4 py-12">
+    <div className="min-h-screen bg-[#FAF7F2] flex flex-col justify-center items-center px-4 py-12 select-none">
       <div className="w-full max-w-md">
         {/* Brand header */}
         <div className="text-center mb-8">
           <Link to="/" className="inline-flex items-center gap-3 group mb-4">
             <img
               src={typeof logo === "string" ? logo : (logo as any)?.url || "/padmanabha-logo.jpg"}
-              className="w-14 h-14 rounded-full object-cover shadow-sm ring-1 ring-border"
+              className="w-14 h-14 rounded-full object-cover shadow-md ring-2 ring-[#B8913A]/40"
               alt="Padmanabha Fabrics"
               width={56}
               height={56}
             />
             <div className="text-left">
-              <div className="font-display text-2xl font-semibold text-primary">Padmanabha</div>
-              <div className="text-[9px] uppercase tracking-widest text-muted-foreground">
+              <div className="font-['Cormorant_Garamond'] text-2xl font-semibold tracking-tight text-[#0E0E0E]">
+                Padmanabha
+              </div>
+              <div className="text-[9px] uppercase tracking-[0.2em] text-[#B8913A] font-medium">
                 Fabrics · Chennai
               </div>
             </div>
           </Link>
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-secondary text-primary rounded-full text-xs font-medium mt-2">
-            <ShieldCheck className="size-3.5 text-gold" />
-            <span>Private Admin Portal</span>
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-white/80 border border-[#B8913A]/30 text-[#0E0E0E] rounded-full text-[11px] font-medium shadow-2xs mt-2">
+            <ShieldCheck className="size-3.5 text-[#B8913A]" />
+            <span className="uppercase tracking-wider text-[10px] text-[#B8913A] font-semibold">Private Admin Portal</span>
           </div>
-          <h1 className="font-display text-3xl font-medium mt-4 text-foreground">
+          <h1 className="font-['Cormorant_Garamond'] text-3xl sm:text-4xl font-normal mt-4 text-[#0E0E0E]">
             Admin Sign In
           </h1>
-          <p className="text-xs text-muted-foreground mt-1.5">
+          <p className="text-xs text-[#0E0E0E]/60 font-light mt-1.5">
             Store management, customer orders, inventory, and analytics
           </p>
         </div>
 
         {/* Demo Credentials Helper Pill */}
-        <div className="mb-4 p-3 bg-primary/5 border border-primary/20 rounded-sm flex items-center justify-between text-xs text-foreground">
+        <div className="mb-4 p-3.5 bg-white/90 border border-[#B8913A]/30 rounded-xl flex items-center justify-between text-xs text-[#0E0E0E] shadow-2xs">
           <div className="space-y-0.5">
-            <span className="font-semibold text-primary flex items-center gap-1">
-              <KeyRound className="size-3 text-primary" /> Admin Login Credentials:
+            <span className="font-semibold text-[#0E0E0E] flex items-center gap-1.5 text-xs">
+              <KeyRound className="size-3.5 text-[#B8913A]" /> Admin Login Credentials:
             </span>
-            <div className="text-[11px] text-muted-foreground font-mono">
-              Username: <strong className="text-foreground">admin@gmail.com</strong> | Password: <strong className="text-foreground">admin123</strong>
+            <div className="text-[11px] text-[#0E0E0E]/70 font-mono">
+              Username: <strong className="text-[#0E0E0E]">admin@gmail.com</strong> | Password: <strong className="text-[#0E0E0E]">admin123</strong>
             </div>
           </div>
           <Button
             type="button"
             variant="outline"
             size="sm"
-            className="text-[11px] h-7 px-2 border-primary/30 text-primary hover:bg-primary/10"
+            className="text-[11px] h-7 px-3 rounded-full border-[#B8913A]/40 text-[#0E0E0E] hover:bg-[#B8913A]/10 cursor-pointer"
             onClick={handleFillDemo}
           >
             Auto-fill
@@ -120,10 +122,10 @@ export function AdminLoginView({ onLoginSuccess }: { onLoginSuccess?: () => void
         </div>
 
         {/* Login Card */}
-        <div className="bg-card border border-border p-8 shadow-sm">
+        <div className="bg-white border border-[rgba(14,14,14,0.08)] rounded-2xl p-7 sm:p-9 shadow-[0_20px_50px_rgba(14,14,14,0.05)]">
           {error && (
             <div
-              className="mb-6 p-3.5 bg-destructive/10 border border-destructive/20 text-destructive text-xs flex items-start gap-2.5 rounded-sm"
+              className="mb-6 p-3.5 bg-[#6B1E2E]/10 border border-[#6B1E2E]/25 text-[#6B1E2E] text-xs flex items-start gap-2.5 rounded-xl"
               role="alert"
             >
               <AlertCircle className="size-4 shrink-0 mt-0.5" />
@@ -132,8 +134,8 @@ export function AdminLoginView({ onLoginSuccess }: { onLoginSuccess?: () => void
           )}
 
           <form onSubmit={handleSubmit} className="space-y-5">
-            <div className="space-y-2">
-              <label htmlFor="email" className="text-xs font-medium text-foreground">
+            <div className="space-y-1.5">
+              <label htmlFor="email" className="text-xs font-medium text-[#0E0E0E] tracking-wide">
                 Username / Email Address
               </label>
               <Input
@@ -144,13 +146,13 @@ export function AdminLoginView({ onLoginSuccess }: { onLoginSuccess?: () => void
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="admin@gmail.com"
-                className="rounded-none border-border focus-visible:ring-primary text-xs h-10 font-mono"
+                className="rounded-xl border-[rgba(14,14,14,0.15)] bg-[#FAF7F2]/50 focus-visible:ring-1 focus-visible:ring-[#B8913A] focus-visible:border-[#B8913A] text-xs h-10 font-mono"
               />
             </div>
 
-            <div className="space-y-2">
+            <div className="space-y-1.5">
               <div className="flex justify-between items-center">
-                <label htmlFor="admin-password" className="text-xs font-medium text-foreground">
+                <label htmlFor="admin-password" className="text-xs font-medium text-[#0E0E0E] tracking-wide">
                   Password
                 </label>
               </div>
@@ -163,12 +165,12 @@ export function AdminLoginView({ onLoginSuccess }: { onLoginSuccess?: () => void
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="admin123"
-                  className="rounded-none border-border focus-visible:ring-primary text-xs h-10 pr-10 font-mono"
+                  className="rounded-xl border-[rgba(14,14,14,0.15)] bg-[#FAF7F2]/50 focus-visible:ring-1 focus-visible:ring-[#B8913A] focus-visible:border-[#B8913A] text-xs h-10 pr-10 font-mono"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground cursor-pointer"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-[#0E0E0E]/50 hover:text-[#0E0E0E] cursor-pointer"
                   aria-label={showPassword ? "Hide password" : "Show password"}
                 >
                   {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
@@ -176,16 +178,15 @@ export function AdminLoginView({ onLoginSuccess }: { onLoginSuccess?: () => void
               </div>
             </div>
 
-            <Button
+            <button
               type="submit"
-              variant="editorial"
-              className="w-full h-11 text-xs uppercase tracking-wider font-semibold cursor-pointer"
               disabled={isSubmitting}
+              className="w-full h-11 rounded-full bg-[#0E0E0E] hover:bg-[#6B1E2E] text-[#F4F0E8] text-xs uppercase tracking-[0.16em] font-medium flex items-center justify-center gap-2 transition-all shadow-md cursor-pointer active:scale-95 disabled:opacity-50"
             >
-              <Lock className="size-4 mr-2" />
-              {isSubmitting ? "Authenticating..." : "Sign In to Admin Portal"}
-              <ArrowRight className="size-4 ml-2" />
-            </Button>
+              <Lock className="size-3.5" />
+              <span>{isSubmitting ? "Authenticating..." : "Sign In to Admin Portal"}</span>
+              <ArrowRight className="size-3.5" />
+            </button>
           </form>
         </div>
 
@@ -193,7 +194,7 @@ export function AdminLoginView({ onLoginSuccess }: { onLoginSuccess?: () => void
         <div className="text-center mt-6">
           <Link
             to="/"
-            className="text-xs text-muted-foreground hover:text-primary transition-colors inline-flex items-center gap-1.5"
+            className="text-xs text-[#0E0E0E]/60 hover:text-[#B8913A] transition-colors inline-flex items-center gap-1.5 font-medium"
           >
             <ArrowLeft className="size-3.5" /> Return to Customer Storefront
           </Link>

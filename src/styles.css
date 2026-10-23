@@ -139,6 +139,160 @@
   scrollbar-width: none !important;
 }
 
+/* =========================================================================
+   ADMIN PORTAL — STOREFRONT BRAND AESTHETICS & ART DIRECTION
+   Translates all admin cards, sidebars, tables, buttons, inputs, and modals
+   to match Padmanabha Fabrics' luxury ivory, near-black ink, and antique gold identity.
+   ========================================================================= */
+.admin-portal {
+  --background: #FAF7F2 !important;
+  --foreground: #0E0E0E !important;
+  --card: #FFFFFF !important;
+  --card-foreground: #0E0E0E !important;
+  --popover: #FFFFFF !important;
+  --popover-foreground: #0E0E0E !important;
+  --primary: #0E0E0E !important;
+  --primary-foreground: #FAF7F2 !important;
+  --secondary: #F4EFEA !important;
+  --secondary-foreground: #0E0E0E !important;
+  --muted: #EBE6DC !important;
+  --muted-foreground: rgba(14, 14, 14, 0.6) !important;
+  --accent: #B8913A !important;
+  --accent-foreground: #0E0E0E !important;
+  --border: rgba(14, 14, 14, 0.08) !important;
+  --input: rgba(14, 14, 14, 0.15) !important;
+  --ring: #B8913A !important;
+  background-color: #FAF7F2 !important;
+  color: #0E0E0E !important;
+  font-family: var(--font-body) !important;
+}
+
+/* Sidebar in Luxury Ink */
+.admin-portal aside {
+  background-color: #0E0E0E !important;
+  border-right: 1px solid rgba(255, 255, 255, 0.08) !important;
+  color: #F4F0E8 !important;
+}
+
+.admin-portal aside * {
+  border-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+.admin-portal aside .text-primary {
+  color: #F4F0E8 !important;
+}
+
+.admin-portal aside .text-muted-foreground {
+  color: rgba(244, 240, 232, 0.6) !important;
+}
+
+.admin-portal aside button.bg-primary {
+  background-color: #1A1A1A !important;
+  color: #FFFFFF !important;
+  box-shadow: inset 3px 0 0 #B8913A !important;
+  border-left: 3px solid #B8913A !important;
+}
+
+.admin-portal aside button:not(.bg-primary):hover {
+  background-color: rgba(255, 255, 255, 0.06) !important;
+  color: #FFFFFF !important;
+}
+
+.admin-portal aside .bg-secondary {
+  background-color: rgba(184, 145, 58, 0.2) !important;
+  color: #B8913A !important;
+}
+
+.admin-portal aside .bg-secondary\/30 {
+  background-color: #141414 !important;
+}
+
+/* Main Cards & Panels */
+.admin-portal .bg-card {
+  background-color: #FFFFFF !important;
+  border: 1px solid rgba(14, 14, 14, 0.08) !important;
+  border-radius: 14px !important;
+  box-shadow: 0 2px 10px rgba(14, 14, 14, 0.03) !important;
+}
+
+.admin-portal h1,
+.admin-portal h2,
+.admin-portal .font-display {
+  font-family: 'Cormorant Garamond', Georgia, serif !important;
+  color: #0E0E0E;
+}
+
+/* Tables */
+.admin-portal table thead {
+  background-color: #F4EFEA !important;
+  border-bottom: 1px solid rgba(14, 14, 14, 0.08) !important;
+}
+
+.admin-portal table thead th {
+  color: rgba(14, 14, 14, 0.7) !important;
+  font-size: 11px !important;
+  letter-spacing: 0.1em !important;
+  text-transform: uppercase !important;
+  font-weight: 600 !important;
+}
+
+.admin-portal table tbody tr {
+  border-bottom: 1px solid rgba(14, 14, 14, 0.05) !important;
+  transition: background-color 0.15s ease !important;
+}
+
+.admin-portal table tbody tr:hover {
+  background-color: #FAF7F2 !important;
+}
+
+/* Form Controls & Inputs */
+.admin-portal input,
+.admin-portal select,
+.admin-portal textarea {
+  background-color: #FFFFFF !important;
+  color: #0E0E0E !important;
+  border: 1px solid rgba(14, 14, 14, 0.15) !important;
+  border-radius: 8px !important;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease !important;
+}
+
+.admin-portal input:focus,
+.admin-portal select:focus,
+.admin-portal textarea:focus {
+  border-color: #B8913A !important;
+  box-shadow: 0 0 0 1px #B8913A !important;
+  outline: none !important;
+}
+
+/* Buttons */
+.admin-portal button.btn-editorial,
+.admin-portal button[data-variant="editorial"] {
+  background-color: #0E0E0E !important;
+  color: #F4F0E8 !important;
+  border-radius: 9999px !important;
+  transition: all 0.2s ease !important;
+}
+
+.admin-portal button.btn-editorial:hover,
+.admin-portal button[data-variant="editorial"]:hover {
+  background-color: #6B1E2E !important;
+}
+
+.admin-portal button[data-variant="outline"] {
+  border-radius: 9999px !important;
+  border-color: rgba(14, 14, 14, 0.18) !important;
+  background-color: #FFFFFF !important;
+  color: #0E0E0E !important;
+  transition: all 0.2s ease !important;
+}
+
+.admin-portal button[data-variant="outline"]:hover {
+  border-color: #B8913A !important;
+  background-color: #FAF7F2 !important;
+  color: #0E0E0E !important;
+}
+
+
 html {
   font-size: 17.5px;
   scroll-behavior: smooth;

@@ -675,18 +675,20 @@ function AdminDashboardPage() {
   }
 
   return (
-    <div className="h-screen w-full bg-sand-50 dark:bg-background flex flex-col md:flex-row text-foreground overflow-hidden">
+    <div className="admin-portal h-screen w-full bg-[#FAF7F2] flex flex-col md:flex-row text-[#0E0E0E] overflow-hidden select-none font-['Inter']">
       {/* Mobile Top Header */}
-      <div className="md:hidden flex items-center justify-between p-4 bg-card border-b border-border shrink-0 z-30">
+      <div className="md:hidden flex items-center justify-between p-4 bg-[#0E0E0E] border-b border-white/10 shrink-0 z-30 text-[#F4F0E8]">
         <div className="flex items-center gap-2.5">
           <img
             src={typeof logo === "string" ? logo : (logo as any)?.url || "/padmanabha-logo.jpg"}
             alt="Logo"
-            className="w-8 h-8 rounded-full object-cover"
+            className="w-8 h-8 rounded-full object-cover ring-1 ring-[#B8913A]/50"
           />
-          <span className="font-display font-semibold text-lg text-primary">Padmanabha Admin</span>
+          <span className="font-['Cormorant_Garamond'] font-medium text-lg text-[#F4F0E8] tracking-tight">
+            Padmanabha Admin
+          </span>
         </div>
-        <Button variant="ghost" size="icon" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
+        <Button variant="ghost" size="icon" onClick={() => setMobileMenuOpen(!mobileMenuOpen)} className="text-[#F4F0E8] hover:bg-white/10">
           {mobileMenuOpen ? <X /> : <Menu />}
         </Button>
       </div>
@@ -694,21 +696,21 @@ function AdminDashboardPage() {
       {/* Sidebar Navigation */}
       <aside
         className={`${
-          mobileMenuOpen ? "fixed inset-0 top-[65px] z-40 bg-card flex" : "hidden"
-        } md:static md:flex w-full md:w-64 bg-card border-r border-border h-[calc(100vh-65px)] md:h-screen flex-col shrink-0 overflow-hidden z-20`}
+          mobileMenuOpen ? "fixed inset-0 top-[65px] z-40 bg-[#0E0E0E] flex" : "hidden"
+        } md:static md:flex w-full md:w-64 bg-[#0E0E0E] border-r border-white/10 h-[calc(100vh-65px)] md:h-screen flex-col shrink-0 overflow-hidden z-20`}
       >
         {/* Brand header */}
-        <div className="p-6 border-b border-border hidden md:flex items-center gap-3 shrink-0">
+        <div className="p-6 border-b border-white/10 hidden md:flex items-center gap-3 shrink-0">
           <img
             src={typeof logo === "string" ? logo : (logo as any)?.url || "/padmanabha-logo.jpg"}
-            className="w-10 h-10 rounded-full object-cover ring-1 ring-border"
+            className="w-11 h-11 rounded-full object-cover ring-2 ring-[#B8913A]/50 shadow-sm"
             alt="Padmanabha"
           />
           <div>
-            <div className="font-display font-semibold text-primary text-lg leading-tight">
+            <div className="font-['Cormorant_Garamond'] font-semibold text-[#F4F0E8] text-xl leading-tight tracking-tight">
               Padmanabha
             </div>
-            <div className="text-[9px] uppercase tracking-wider text-muted-foreground">
+            <div className="text-[9px] uppercase tracking-[0.2em] text-[#B8913A] font-medium">
               Admin Portal
             </div>
           </div>
@@ -957,12 +959,13 @@ function AdminDashboardPage() {
       {/* Main Content Area */}
       <main className="flex-1 min-w-0 h-full md:h-screen p-4 sm:p-6 md:p-8 overflow-y-auto overscroll-contain">
         {/* Top bar info */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-border mb-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-[rgba(14,14,14,0.08)] mb-6">
           <div>
-            <div className="text-[10px] uppercase tracking-wider text-gold font-medium mb-1">
-              Administration Portal · Padmanabha Fabrics
+            <div className="text-[10px] uppercase tracking-[0.2em] text-[#B8913A] font-semibold mb-1 flex items-center gap-1.5">
+              <Sparkles className="size-3 text-[#B8913A]" />
+              <span>Administration Portal · Padmanabha Fabrics</span>
             </div>
-            <h1 className="font-display text-2xl sm:text-3xl font-medium text-foreground">
+            <h1 className="font-['Cormorant_Garamond'] text-2xl sm:text-3xl md:text-4xl font-normal text-[#0E0E0E] tracking-tight">
               {activeTab === "dashboard"
                 ? "Overview Dashboard"
                 : activeTab === "products"
@@ -984,10 +987,10 @@ function AdminDashboardPage() {
           </div>
 
           <div className="flex items-center gap-3">
-            <span className="text-[10px] px-2.5 py-1 bg-secondary text-muted-foreground rounded-full border border-border">
+            <span className="text-[10px] uppercase tracking-wider px-3 py-1 bg-white border border-[#B8913A]/30 text-[#0E0E0E] rounded-full shadow-2xs font-medium">
               Live Website Sync
             </span>
-            <Button variant="outline" size="sm" asChild className="text-xs">
+            <Button variant="outline" size="sm" asChild className="text-xs rounded-full border-[rgba(14,14,14,0.18)] bg-white text-[#0E0E0E] hover:border-[#B8913A] hover:bg-[#FAF7F2] shadow-2xs">
               <Link
                 to={
                   activeTab === "home-content"
@@ -1017,63 +1020,63 @@ function AdminDashboardPage() {
         {activeTab === "dashboard" && (
           <div className="space-y-8">
             {/* Metric cards */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              <div className="bg-card border border-border p-5">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+              <div className="relative bg-white border border-[rgba(14,14,14,0.08)] rounded-2xl p-6 shadow-xs overflow-hidden before:absolute before:top-0 before:left-0 before:right-0 before:h-0.5 before:bg-[#B8913A]">
                 <div className="flex justify-between items-start">
-                  <span className="text-sm font-medium text-muted-foreground">Total Revenue</span>
-                  <div className="p-2 bg-primary/10 text-primary rounded-sm">
-                    <TrendingUp className="size-4.5" />
+                  <span className="text-xs font-semibold uppercase tracking-[0.14em] text-[#0E0E0E]/60">Total Revenue</span>
+                  <div className="p-2.5 bg-[#FAF7F2] text-[#B8913A] border border-[#B8913A]/20 rounded-xl">
+                    <TrendingUp className="size-4" />
                   </div>
                 </div>
-                <div className="font-sans font-bold text-3xl tracking-tight text-foreground mt-2 tabular-nums">
+                <div className="font-['Manrope'] font-bold text-3xl sm:text-4xl tracking-tight text-[#0E0E0E] mt-3 tabular-nums">
                   {money(totalRevenue)}
                 </div>
-                <span className="text-xs text-muted-foreground mt-1.5 block">
+                <span className="text-[11px] text-[#0E0E0E]/50 mt-1.5 block font-light">
                   Strictly verified paid orders
                 </span>
               </div>
 
-              <div className="bg-card border border-border p-5">
+              <div className="relative bg-white border border-[rgba(14,14,14,0.08)] rounded-2xl p-6 shadow-xs overflow-hidden before:absolute before:top-0 before:left-0 before:right-0 before:h-0.5 before:bg-[#0E0E0E]">
                 <div className="flex justify-between items-start">
-                  <span className="text-sm font-medium text-muted-foreground">Total Orders</span>
-                  <div className="p-2 bg-primary/10 text-primary rounded-sm">
-                    <ShoppingBag className="size-4.5" />
+                  <span className="text-xs font-semibold uppercase tracking-[0.14em] text-[#0E0E0E]/60">Total Orders</span>
+                  <div className="p-2.5 bg-[#FAF7F2] text-[#0E0E0E] border border-[rgba(14,14,14,0.1)] rounded-xl">
+                    <ShoppingBag className="size-4" />
                   </div>
                 </div>
-                <div className="font-sans font-bold text-3xl tracking-tight text-foreground mt-2 tabular-nums">
+                <div className="font-['Manrope'] font-bold text-3xl sm:text-4xl tracking-tight text-[#0E0E0E] mt-3 tabular-nums">
                   {orders.length}
                 </div>
-                <span className="text-xs text-muted-foreground mt-1.5 block">
+                <span className="text-[11px] text-[#0E0E0E]/50 mt-1.5 block font-light">
                   {orders.filter((o) => o.status === "Pending").length} pending processing
                 </span>
               </div>
 
-              <div className="bg-card border border-border p-5">
+              <div className="relative bg-white border border-[rgba(14,14,14,0.08)] rounded-2xl p-6 shadow-xs overflow-hidden before:absolute before:top-0 before:left-0 before:right-0 before:h-0.5 before:bg-[#6B1E2E]">
                 <div className="flex justify-between items-start">
-                  <span className="text-sm font-medium text-muted-foreground">Active Catalog</span>
-                  <div className="p-2 bg-primary/10 text-primary rounded-sm">
-                    <Package className="size-4.5" />
+                  <span className="text-xs font-semibold uppercase tracking-[0.14em] text-[#0E0E0E]/60">Active Catalog</span>
+                  <div className="p-2.5 bg-[#FAF7F2] text-[#6B1E2E] border border-[#6B1E2E]/20 rounded-xl">
+                    <Package className="size-4" />
                   </div>
                 </div>
-                <div className="font-sans font-bold text-3xl tracking-tight text-foreground mt-2 tabular-nums">
+                <div className="font-['Manrope'] font-bold text-3xl sm:text-4xl tracking-tight text-[#0E0E0E] mt-3 tabular-nums">
                   {activeProductsCount}
                 </div>
-                <span className="text-xs text-muted-foreground mt-1.5 block">
+                <span className="text-[11px] text-[#0E0E0E]/50 mt-1.5 block font-light">
                   of {productsList.length} total products
                 </span>
               </div>
 
-              <div className="bg-card border border-border p-5">
+              <div className="relative bg-white border border-[rgba(14,14,14,0.08)] rounded-2xl p-6 shadow-xs overflow-hidden before:absolute before:top-0 before:left-0 before:right-0 before:h-0.5 before:bg-amber-600">
                 <div className="flex justify-between items-start">
-                  <span className="text-sm font-medium text-muted-foreground">Stock Alerts</span>
-                  <div className="p-2 bg-amber-500/10 text-amber-600 rounded-sm">
-                    <AlertTriangle className="size-4.5" />
+                  <span className="text-xs font-semibold uppercase tracking-[0.14em] text-[#0E0E0E]/60">Stock Alerts</span>
+                  <div className="p-2.5 bg-amber-500/10 text-amber-600 border border-amber-500/20 rounded-xl">
+                    <AlertTriangle className="size-4" />
                   </div>
                 </div>
-                <div className="font-sans font-bold text-3xl tracking-tight text-foreground mt-2 tabular-nums">
+                <div className="font-['Manrope'] font-bold text-3xl sm:text-4xl tracking-tight text-[#0E0E0E] mt-3 tabular-nums">
                   {lowStockCount}
                 </div>
-                <span className="text-xs text-amber-600 font-medium mt-1.5 block">
+                <span className="text-[11px] text-amber-700 font-medium mt-1.5 block">
                   Products below 5 units
                 </span>
               </div>
@@ -1179,19 +1182,19 @@ function AdminDashboardPage() {
               <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto">
                 {/* Search */}
                 <div className="relative flex-1 sm:w-72">
-                  <Search className="size-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                  <Search className="size-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-[#0E0E0E]/40" />
                   <Input
                     placeholder="Search products, colours, SKU…"
                     value={productSearch}
                     onChange={(e) => setProductSearch(e.target.value)}
-                    className="pl-9 text-sm h-10 rounded-none border-border"
+                    className="pl-9.5 text-xs h-10 rounded-full border-[rgba(14,14,14,0.15)] bg-white focus-visible:ring-1 focus-visible:ring-[#B8913A] focus-visible:border-[#B8913A]"
                   />
                 </div>
                 {/* Category filter */}
                 <select
                   value={productCategoryFilter}
                   onChange={(e) => setProductCategoryFilter(e.target.value)}
-                  className="h-10 px-3 text-sm bg-background border border-border text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                  className="h-10 px-4 text-xs rounded-full bg-white border border-[rgba(14,14,14,0.15)] text-[#0E0E0E] focus:outline-none focus:ring-1 focus:ring-[#B8913A] focus:border-[#B8913A]"
                 >
                   {activeCategoriesList.map((c) => (
                     <option key={c} value={c}>
@@ -1201,28 +1204,33 @@ function AdminDashboardPage() {
                 </select>
               </div>
 
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2.5">
                 <Button
                   type="button"
                   variant="outline"
                   size="sm"
-                  className="h-10 text-sm font-medium border-border hover:bg-secondary/40"
+                  className="h-10 text-xs font-medium rounded-full border-[rgba(14,14,14,0.18)] bg-white text-[#0E0E0E] hover:border-[#B8913A] hover:bg-[#FAF7F2] shadow-2xs px-4"
                   onClick={() => {
                     setNewCatName("");
                     setNewCatDesc("");
                     setIsCategoryModalOpen(true);
                   }}
                 >
-                  <FolderPlus className="size-4 mr-1.5 text-primary" /> New Category
+                  <FolderPlus className="size-3.5 mr-1.5 text-[#B8913A]" /> New Category
                 </Button>
-                <Button variant="editorial" size="sm" className="h-10 text-sm font-medium" onClick={handleOpenAddProduct}>
-                  <Plus className="size-4 mr-1.5" /> Add Product
-                </Button>
+                <button
+                  type="button"
+                  onClick={handleOpenAddProduct}
+                  className="h-10 px-5 text-xs font-medium uppercase tracking-[0.14em] rounded-full bg-[#0E0E0E] hover:bg-[#6B1E2E] text-[#F4F0E8] flex items-center gap-1.5 transition-all shadow-sm cursor-pointer active:scale-95"
+                >
+                  <Plus className="size-3.5" />
+                  <span>Add Product</span>
+                </button>
               </div>
             </div>
 
             {/* Products Table */}
-            <div className="bg-card border border-border overflow-hidden">
+            <div className="bg-white rounded-2xl border border-[rgba(14,14,14,0.08)] shadow-xs overflow-hidden">
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-sm">
                   <thead className="bg-secondary/40 text-muted-foreground border-b border-border">
