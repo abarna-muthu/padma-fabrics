@@ -13,6 +13,7 @@ import {
   type StockLog,
 } from "@/lib/catalog";
 import { productApi, orderApi, inventoryApi } from "@/lib/api";
+import { toast } from "sonner";
 
 interface StoreContextType {
   // Public storefront catalog
@@ -59,6 +60,7 @@ interface StoreContextType {
   updateProduct: (id: string, updates: Partial<Product>) => Promise<void> | void;
   deleteProduct: (id: string) => void;
   toggleProductStatus: (id: string) => void;
+  syncCatalogToDatabase: (clearDefaults?: boolean) => Promise<{ success: boolean; message: string; count?: number }>;
 
   // Inventory & Stock adjustments
   adjustStock: (productId: string, newStock: number, reason: string) => void;
@@ -168,7 +170,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
     // Sync to backend database API
     try {
-      await productApi.createCategory({ name, description });
+      await productApi.createCategory({ name, ...(description ? { description } : {}) });
     } catch (err) {
       console.warn("Could not sync created category to backend API:", err);
     }
@@ -281,10 +283,47 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     // 4. Background sync with database API
     const syncWithBackend = async () => {
       try {
+        const currentLocal = localStorage.getItem(STORAGE_PRODUCTS_KEY);
+        let localList: Product[] = [];
+        try {
+          if (currentLocal) localList = JSON.parse(currentLocal);
+        } catch {}
+
+        // If user has products locally, automatically store them in TiDB Cloud & clean demo items
+        if (Array.isArray(localList) && localList.length > 0) {
+          const defaultDemoIds = [
+            "wine-silk",
+            "heritage-silk",
+            "sage-cotton",
+            "ivory-brocade",
+            "linen-shirt",
+            "navy-tee",
+            "maroon-anarkali",
+            "pattu-pavadai",
+            "pf-mvi2hcnc",
+            "pf-mvi2jlu8",
+          ];
+          const hasUserAddedProducts = localList.some((p) => !defaultDemoIds.includes(p.id));
+          if (hasUserAddedProducts) {
+            try {
+              console.log("[TiDB Auto-Sync] Automatically syncing user's products to TiDB Cloud...");
+              const syncRes = await productApi.bulkSync(localList, true);
+              console.log("[TiDB Auto-Sync] Products stored in TiDB Cloud successfully!");
+              if (syncRes && syncRes.success) {
+                toast.success(`TiDB Cloud: ${(syncRes as any)?.syncedCount || localList.length} products automatically saved to database!`, {
+                  id: "tidb-auto-sync",
+                  duration: 4000,
+                });
+              }
+            } catch (syncErr) {
+              console.warn("[TiDB Auto-Sync] Background sync notice:", syncErr);
+            }
+          }
+        }
+
         const prodRes = await productApi.getAll();
         const serverProds = (prodRes as any).products || prodRes.data;
         if (prodRes.success && Array.isArray(serverProds) && serverProds.length > 0) {
-          const currentLocal = localStorage.getItem(STORAGE_PRODUCTS_KEY);
           let deletedIds: string[] = [];
           try {
             deletedIds = JSON.parse(localStorage.getItem(STORAGE_DELETED_PRODUCTS_KEY) || "[]");
@@ -533,6 +572,40 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     }
 
     return product;
+  };
+
+  const syncCatalogToDatabase = async (clearDefaults: boolean = true) => {
+    try {
+      const localProducts = productsList;
+      if (!localProducts || localProducts.length === 0) {
+        return { success: false, message: "No local products found to sync." };
+      }
+
+      const res = await productApi.bulkSync(localProducts, clearDefaults);
+      if (res && res.success) {
+        // Refresh catalog from TiDB database
+        const prodRes = await productApi.getAll();
+        const serverProds = (prodRes as any).products || prodRes.data;
+        if (Array.isArray(serverProds)) {
+          saveProducts(serverProds.map(normalizeProduct));
+        }
+        const anyRes = res as any;
+        return {
+          success: true,
+          message: res.message || `Successfully synced ${anyRes.syncedCount || localProducts.length} products to TiDB Cloud!`,
+          count: anyRes.syncedCount,
+        };
+      }
+      return {
+        success: false,
+        message: res?.error || "Failed to sync products with database.",
+      };
+    } catch (err: any) {
+      return {
+        success: false,
+        message: err.message || "Network error while syncing to database.",
+      };
+    }
   };
 
   const updateProduct = async (id: string, updates: Partial<Product>) => {
@@ -881,6 +954,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         updateProduct,
         deleteProduct,
         toggleProductStatus,
+        syncCatalogToDatabase,
         adjustStock,
         stockLogs,
         orders,

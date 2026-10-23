@@ -1,92 +1,206 @@
-import { ArrowUpRight, Heart, Zap } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { money, type Product } from "@/lib/catalog";
+import { useState } from "react";
+import { Heart, Star, ShoppingBag, Eye } from "lucide-react";
+import { formatPrice } from "@/utils/formatters";
+import { useWishlist } from "@/context/WishlistContext";
+import { useCart } from "@/context/CartContext";
 import { useStore } from "@/context/StoreContext";
+import type { Product } from "@/lib/catalog";
 
-export function ProductCard({ product }: { product: Product }) {
-  const { favorites, toggleFavorite, openProduct, buyNow } = useStore();
-  const isFavorite = favorites.includes(product.id);
+interface ProductCardProps {
+  product: Product | any;
+  light?: boolean | undefined; // when rendered in dark sections
+  badgeText?: string | undefined;
+  onQuickView?: ((product: Product) => void) | undefined;
+}
+
+const DEFAULT_SWATCHES = ["#6B1E2E", "#B8913A", "#8A9A7B", "#2A2A2A"];
+
+export function ProductCard({ product, light = false, badgeText, onQuickView }: ProductCardProps) {
+  const { wishlist, toggleWishlist } = useWishlist();
+  const { addToCart } = useCart();
+  const { openProduct, buyNow } = useStore();
+
+  const isFavorite = wishlist.includes(String(product.id));
+
+  // Sizes available
+  const availableSizes: string[] =
+    Array.isArray(product.sizes) && product.sizes.length > 0
+      ? product.sizes
+      : product.category === "Saree"
+        ? ["Free Size"]
+        : ["S", "M", "L", "XL"];
+
+  const [selectedSize, setSelectedSize] = useState<string>(availableSizes[0] || "Standard");
+  const [selectedSwatch, setSelectedSwatch] = useState<number>(0);
+
+  const salePrice = Number(product.price) || 0;
+  const badge = badgeText || product.badge || "New";
+
+  const handleCardClick = () => {
+    if (onQuickView) {
+      onQuickView(product);
+    } else {
+      openProduct(product);
+    }
+  };
+
+  const handleAddToCart = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    addToCart(product, selectedSize, 1);
+  };
+
+  const handleWishlistClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    toggleWishlist(String(product.id), product.name);
+  };
 
   return (
-    <article className="min-w-0">
-      <div className="product-picture group relative">
+    <article
+      className={`group relative flex flex-col rounded-[2px] transition-all duration-300 select-none ${
+        light
+          ? "bg-[#141414] border border-[rgba(244,240,232,0.1)] text-[#F4F0E8]"
+          : "bg-white border border-[rgba(14,14,14,0.08)] text-[#0E0E0E]"
+      }`}
+    >
+      {/* 3:4 Aspect Ratio Image Container */}
+      <div
+        className="relative aspect-3/4 w-full rounded-[2px] overflow-hidden bg-[#EBE6DC] dark:bg-[#1E1E1E] cursor-pointer"
+        onClick={handleCardClick}
+      >
+        <img
+          src={product.image || "/placeholder.svg"}
+          alt={product.name}
+          loading="lazy"
+          className="w-full h-full object-cover object-center transition-transform duration-700 ease-[cubic-bezier(0.2,0.7,0.2,1)] group-hover:scale-104"
+          onError={(e) => {
+            (e.currentTarget as HTMLImageElement).src =
+              "https://images.unsplash.com/photo-1610030469983-98e550d6193c?auto=format&fit=crop&w=800&q=80";
+          }}
+        />
+
+        {/* Tiny Pill Badge Top-Left */}
+        {badge && (
+          <div className="absolute top-3 left-3 z-10">
+            <span
+              className={`inline-block px-2.5 py-0.5 rounded-full text-[10px] font-medium uppercase tracking-[0.15em] ${
+                badge.toLowerCase().includes("bestseller") || badge.toLowerCase().includes("trending")
+                  ? "bg-[#B8913A] text-[#0E0E0E]"
+                  : "bg-[#0E0E0E] text-[#F4F0E8] border border-[rgba(244,240,232,0.2)]"
+              }`}
+            >
+              {badge}
+            </span>
+          </div>
+        )}
+
+        {/* Minimal Heart Top-Right */}
         <button
           type="button"
-          className="w-full block text-left cursor-pointer border-none p-0 bg-transparent"
-          onClick={() => openProduct(product)}
-          aria-label={`View ${product.name}`}
-        >
-          <img
-            src={product.image || "/assets/burgundy-silk.jpg"}
-            alt={product.name}
-            width={768}
-            height={1024}
-            loading="lazy"
-            onError={(e) => {
-              (e.currentTarget as HTMLImageElement).src = "/assets/burgundy-silk.jpg";
-            }}
-          />
-        </button>
-        <span className="product-badge">{product.badge}</span>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="favorite size-8 bg-white/95 dark:bg-card/95 hover:bg-rose-50 shadow-sm border border-border/40 transition-all hover:scale-105"
-          title="Save fabric"
-          aria-label={`Save ${product.name}`}
-          aria-pressed={isFavorite}
-          onClick={() => toggleFavorite(product.id)}
+          onClick={handleWishlistClick}
+          aria-label={isFavorite ? "Remove from wishlist" : "Add to wishlist"}
+          className={`absolute top-3 right-3 z-10 size-8 rounded-full flex items-center justify-center transition-all ${
+            isFavorite
+              ? "bg-[#6B1E2E] text-white"
+              : "bg-black/20 hover:bg-black/50 text-white backdrop-blur-xs"
+          }`}
         >
           <Heart
-            className={`size-4 transition-colors ${
-              isFavorite ? "fill-[#9B2242] text-[#9B2242]" : "text-muted-foreground hover:text-[#9B2242]"
-            }`}
+            className={`size-3.5 ${isFavorite ? "fill-white" : ""}`}
+            strokeWidth={1.5}
           />
-        </Button>
+        </button>
 
-        {/* Buy Now Button at Bottom of the Photo */}
-        <div className="absolute inset-x-0 bottom-0 p-2 sm:p-2.5 bg-gradient-to-t from-black/85 via-black/45 to-transparent flex items-center justify-center z-10 transition-all">
-          <Button
+        {/* Hover Action Overlay: Size Chips & Add to Cart (always visible on mobile) */}
+        <div className="absolute inset-x-0 bottom-0 p-3 bg-gradient-to-t from-black/80 via-black/40 to-transparent z-10 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity duration-300 flex flex-col gap-2">
+          {/* Size Chips */}
+          <div className="flex items-center justify-center gap-1.5" onClick={(e) => e.stopPropagation()}>
+            {availableSizes.slice(0, 4).map((sz) => (
+              <button
+                key={sz}
+                type="button"
+                onClick={() => setSelectedSize(sz)}
+                className={`px-2 py-0.5 text-[10px] rounded-full uppercase tracking-wider font-medium transition-all ${
+                  selectedSize === sz
+                    ? "bg-[#F4F0E8] text-[#0E0E0E]"
+                    : "bg-black/40 text-white hover:bg-black/60 border border-white/20"
+                }`}
+              >
+                {sz}
+              </button>
+            ))}
+          </div>
+
+          {/* Add to Cart Pill Button */}
+          <button
             type="button"
-            size="sm"
-            onClick={(e) => {
-              e.stopPropagation();
-              buyNow(product);
-            }}
-            className="w-full h-8 sm:h-8.5 bg-[#9B2242] hover:bg-[#801630] text-white text-[11px] sm:text-xs font-semibold tracking-wider uppercase rounded-xs shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-1.5 active:scale-[0.98] border border-white/20 hover:border-white/40 cursor-pointer"
-            title={`Buy ${product.name} now`}
-            aria-label={`Buy ${product.name} now`}
+            onClick={handleAddToCart}
+            className="w-full py-2 rounded-full bg-[#F4F0E8] hover:bg-white text-[#0E0E0E] text-[11px] font-medium uppercase tracking-[0.14em] transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-sm active:scale-98"
           >
-            <Zap className="size-3.5 fill-amber-300 text-amber-300 shrink-0" />
-            <span>Buy Now</span>
-          </Button>
+            <ShoppingBag className="size-3" strokeWidth={1.5} />
+            <span>Add to Cart</span>
+          </button>
         </div>
       </div>
-      <h3 className="product-name">
-        <button
-          type="button"
-          className="text-left cursor-pointer hover:underline border-none p-0 bg-transparent text-inherit font-inherit"
-          onClick={() => openProduct(product)}
-        >
-          {product.name}
-        </button>
-      </h3>
-      <p className="product-type">{product.colour}</p>
-      <div className="product-footer">
-        <p className="product-price">
-          {money(product.price)} <span>/ {product.unit}</span>
-        </p>
-        <Button
-          size="sm"
-          variant="editorial"
-          className="h-8 px-3.5 text-xs rounded-full gap-1 shadow-sm font-medium tracking-normal capitalize"
-          title="View fabric"
-          aria-label={`Details for ${product.name}`}
-          onClick={() => openProduct(product)}
-        >
-          View <ArrowUpRight className="size-3.5" />
-        </Button>
+
+      {/* Product Details Below Image */}
+      <div className="p-3.5 sm:p-4 flex flex-col flex-1 justify-between gap-2.5">
+        <div>
+          {/* Name */}
+          <h3
+            onClick={handleCardClick}
+            className="font-['Manrope'] text-sm font-medium tracking-tight line-clamp-2 min-h-[2.5rem] leading-snug cursor-pointer hover:text-[#B8913A] transition-colors"
+            title={product.name}
+          >
+            {product.name}
+          </h3>
+
+          {/* Price with Tabular Numerals */}
+          <div className="flex items-baseline gap-1.5 mt-1.5">
+            <span className="font-['Manrope'] text-sm sm:text-[15px] font-semibold tabular-nums">
+              {formatPrice(salePrice)}
+            </span>
+            <span
+              className={`text-xs font-light ${
+                light ? "text-[#F4F0E8]/60" : "text-[#0E0E0E]/60"
+              }`}
+            >
+              / {product.unit || "piece"}
+            </span>
+          </div>
+        </div>
+
+        {/* Rating and Colour Swatch Dots */}
+        <div className="flex items-center justify-between pt-2 border-t border-current/10 text-xs">
+          {/* Star Rating with Count */}
+          <div className="flex items-center gap-1 text-[#B8913A]">
+            <Star className="size-3 fill-[#B8913A] text-[#B8913A]" />
+            <span className="text-[11px] font-medium tracking-tight text-inherit">
+              {product.rating || "4.9"} <span className="opacity-60">(42)</span>
+            </span>
+          </div>
+
+          {/* Colour Swatch Dots */}
+          <div className="flex items-center gap-1.5" title="Available Colourways">
+            {DEFAULT_SWATCHES.map((color, idx) => (
+              <button
+                key={color}
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setSelectedSwatch(idx);
+                }}
+                style={{ backgroundColor: color }}
+                className={`size-2.5 rounded-full transition-transform ${
+                  selectedSwatch === idx ? "ring-1 ring-offset-1 ring-[#B8913A] scale-125" : "opacity-75 hover:opacity-100"
+                }`}
+                aria-label={`Swatch ${idx + 1}`}
+              />
+            ))}
+          </div>
+        </div>
       </div>
     </article>
   );
 }
+
+export default ProductCard;

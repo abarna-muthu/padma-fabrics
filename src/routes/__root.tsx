@@ -17,6 +17,9 @@ import { StoreProvider, useStore } from "../context/StoreContext";
 import { AdminAuthProvider } from "../context/AdminAuthContext";
 import { SiteContentProvider } from "../context/SiteContentContext";
 import { CustomerAuthProvider } from "../context/CustomerAuthContext";
+import { CartProvider } from "../context/CartContext";
+import { WishlistProvider } from "../context/WishlistContext";
+import { AuthProvider } from "../context/AuthContext";
 import { Header } from "../components/Header";
 import { Footer } from "../components/Footer";
 import { ShopSheet } from "../components/ShopSheet";
@@ -104,7 +107,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { rel: "icon", href: "/favicon.png", type: "image/png" },
       {
         rel: "stylesheet",
-        href: "https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=DM+Sans:wght@400;500;600&display=swap",
+        href: "https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400;1,500&family=Inter:wght@300;400;500;600&family=Manrope:wght@400;500;600;700&display=swap",
       },
     ],
   }),
@@ -148,27 +151,33 @@ function RootComponent() {
   return (
     <QueryClientProvider client={queryClient}>
       <StoreProvider>
-        <AdminAuthProvider>
-          <SiteContentProvider>
-            <CustomerAuthProvider>
-              {isAdmin ? (
-                <Outlet />
-              ) : (
-                <div className="min-h-screen flex flex-col bg-background text-foreground">
-                  {!isPolicyPage && <Header />}
-                  <div className="flex-1">
-                    <Outlet />
-                  </div>
-                  <Footer />
-                  <ShopSheet />
-                  <GlobalCheckoutModal />
-                  <CustomerPortalModal />
-                </div>
-              )}
-              <Toaster position="top-right" richColors />
-            </CustomerAuthProvider>
-          </SiteContentProvider>
-        </AdminAuthProvider>
+        <CartProvider>
+          <WishlistProvider>
+            <AuthProvider>
+              <AdminAuthProvider>
+                <SiteContentProvider>
+                  <CustomerAuthProvider>
+                    {isAdmin ? (
+                      <Outlet />
+                    ) : (
+                      <div className="min-h-screen flex flex-col bg-background text-foreground">
+                        {!isPolicyPage && <Header />}
+                        <div className="flex-1">
+                          <Outlet />
+                        </div>
+                        <Footer />
+                        <ShopSheet />
+                        <GlobalCheckoutModal />
+                        <CustomerPortalModal />
+                      </div>
+                    )}
+                    <Toaster position="top-right" richColors />
+                  </CustomerAuthProvider>
+                </SiteContentProvider>
+              </AdminAuthProvider>
+            </AuthProvider>
+          </WishlistProvider>
+        </CartProvider>
       </StoreProvider>
     </QueryClientProvider>
   );

@@ -204,6 +204,19 @@ export const productApi = {
     });
     return res as any;
   },
+
+  async bulkSync(products: any[], clearDefaults: boolean = true) {
+    return apiRequest<any>("/api/admin/products/bulk-sync", {
+      method: "POST",
+      body: JSON.stringify({ products, clearDefaults }),
+    });
+  },
+
+  async removeDefaults() {
+    return apiRequest<any>("/api/admin/products/remove-defaults", {
+      method: "POST",
+    });
+  },
 };
 
 // ----------------------------------------------------

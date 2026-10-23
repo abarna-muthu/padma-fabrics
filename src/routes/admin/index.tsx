@@ -8,6 +8,7 @@ import {
   Check,
   CheckCircle2,
   ChevronDown,
+  Database,
   Edit,
   Eye,
   FileText,
@@ -145,12 +146,32 @@ function AdminDashboardPage() {
     updateProduct,
     deleteProduct,
     toggleProductStatus,
+    syncCatalogToDatabase,
     adjustStock,
     stockLogs,
     orders,
     updateOrderStatus,
     updatePaymentStatus,
   } = useStore();
+
+  const [isSyncingDb, setIsSyncingDb] = useState(false);
+
+  const handleSyncToTiDB = async (clearDefaults: boolean = true) => {
+    setIsSyncingDb(true);
+    toast.loading("Connecting to TiDB Cloud & syncing products...", { id: "tidb-sync" });
+    try {
+      const res = await syncCatalogToDatabase(clearDefaults);
+      if (res.success) {
+        toast.success(res.message || "All products synced to TiDB Cloud database successfully!", { id: "tidb-sync" });
+      } else {
+        toast.error(res.message || "Failed to sync to database. Ensure server is running (npm run dev).", { id: "tidb-sync" });
+      }
+    } catch (err: any) {
+      toast.error(err?.message || "TiDB sync error", { id: "tidb-sync" });
+    } finally {
+      setIsSyncingDb(false);
+    }
+  };
 
   const activeCategoriesList =
     categoriesList && categoriesList.length > 0

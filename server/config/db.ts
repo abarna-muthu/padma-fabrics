@@ -604,46 +604,16 @@ async function runMigrations(pool: mysql.Pool) {
         console.warn("[Database] Notice checking/seeding admin user:", adminErr.message);
       }
 
-      // Check if products and categories need initial seeding in MySQL / TiDB
+      // Ensure categories exist in MySQL / TiDB
       try {
-        const [existingProducts]: any = await pool.query("SELECT COUNT(*) as count FROM products");
-        if (existingProducts && existingProducts[0]?.count === 0) {
-          console.log("[Database] Seeding initial products & categories to MySQL/TiDB...");
-          for (const cat of INITIAL_CATEGORIES) {
-            await pool.execute(
-              "INSERT IGNORE INTO categories (id, name, slug, description, display_order) VALUES (?, ?, ?, ?, ?)",
-              [cat.id, cat.name, cat.slug, cat.description, cat.display_order],
-            );
-          }
-          for (const prod of INITIAL_PRODUCTS) {
-            await pool.execute(
-              `INSERT IGNORE INTO products (id, sku, name, slug, category_id, colour, price, original_price, unit, stock_quantity, low_stock_threshold, badge, description, image_url, is_active, is_featured, sizes)
-               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-              [
-                prod.id,
-                prod.sku,
-                prod.name,
-                prod.slug,
-                prod.category_id,
-                prod.colour,
-                prod.price,
-                prod.original_price,
-                prod.unit,
-                prod.stock_quantity,
-                prod.low_stock_threshold,
-                prod.badge,
-                prod.description,
-                prod.image_url,
-                prod.is_active,
-                prod.is_featured,
-                prod.sizes,
-              ],
-            );
-          }
-          console.log("[Database] Initial products & categories seeded successfully.");
+        for (const cat of INITIAL_CATEGORIES) {
+          await pool.execute(
+            "INSERT IGNORE INTO categories (id, name, slug, description, display_order) VALUES (?, ?, ?, ?, ?)",
+            [cat.id, cat.name, cat.slug, cat.description, cat.display_order],
+          );
         }
-      } catch (seedErr: any) {
-        console.warn("[Database] Notice checking/seeding initial products:", seedErr.message);
+      } catch (catErr: any) {
+        console.warn("[Database] Notice ensuring categories:", catErr.message);
       }
     }
   } catch (err: any) {

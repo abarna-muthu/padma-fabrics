@@ -258,6 +258,16 @@ export async function createProduct(req: Request, res: Response) {
     const finalImage = image_url || image || "/assets/burgundy-silk.jpg";
     const sizesJson = JSON.stringify(sizes);
 
+    // Ensure category exists in categories table to satisfy FOREIGN KEY constraint
+    const catCheck = await db.query("SELECT id FROM categories WHERE id = ?", [finalCategory]);
+    if (!catCheck || catCheck.length === 0) {
+      const catName = rawCat;
+      await db.execute(
+        "INSERT IGNORE INTO categories (id, name, slug, description, display_order) VALUES (?, ?, ?, ?, ?)",
+        [finalCategory, catName, finalCategory, `${catName} collection`, 99],
+      ).catch(() => {});
+    }
+
     await db.execute(
       `INSERT INTO products (id, sku, name, slug, category_id, colour, price, original_price, unit, stock_quantity, low_stock_threshold, badge, description, image_url, is_active, is_featured, sizes)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
@@ -551,3 +561,225 @@ export async function toggleProductStatus(req: Request, res: Response) {
     return res.status(500).json({ success: false, error: "Failed to toggle product status." });
   }
 }
+
+export const DEFAULT_PRODUCT_IDS = [
+  "wine-silk",
+  "heritage-silk",
+  "sage-cotton",
+  "ivory-brocade",
+  "linen-shirt",
+  "navy-tee",
+  "maroon-anarkali",
+  "pattu-pavadai",
+  "pf-mvi2hcnc",
+  "pf-mvi2jlu8",
+];
+
+export async function removeDefaultProducts(req: Request, res: Response) {
+  try {
+    const db = await getDb();
+    const placeholders = DEFAULT_PRODUCT_IDS.map(() => "?").join(",");
+
+    // Remove foreign references in order items or inventory logs
+    await db.execute(
+      `DELETE FROM inventory_logs WHERE product_id IN (${placeholders})`,
+      DEFAULT_PRODUCT_IDS,
+    ).catch(() => {});
+
+    await db.execute(
+      `DELETE FROM product_images WHERE product_id IN (${placeholders})`,
+      DEFAULT_PRODUCT_IDS,
+    ).catch(() => {});
+
+    await db.execute(
+      `DELETE FROM products WHERE id IN (${placeholders})`,
+      DEFAULT_PRODUCT_IDS,
+    );
+
+    const countRes = await db.query("SELECT COUNT(*) as count FROM products");
+    return res.status(200).json({
+      success: true,
+      message: "Default sample products removed from database successfully.",
+      remainingProductsCount: countRes[0]?.count || 0,
+    });
+  } catch (err: any) {
+    console.error("[ProductController] removeDefaultProducts error:", err);
+    return res.status(500).json({
+      success: false,
+      error: "Failed to remove default products: " + err.message,
+    });
+  }
+}
+
+export async function bulkSyncProducts(req: Request, res: Response) {
+  try {
+    const { products, clearDefaults = true } = req.body;
+    if (!Array.isArray(products) || products.length === 0) {
+      return res.status(400).json({
+        success: false,
+        error: "An array of products is required for bulk sync.",
+      });
+    }
+
+    const db = await getDb();
+
+    // Optionally remove default products first if requested
+    if (clearDefaults) {
+      const placeholders = DEFAULT_PRODUCT_IDS.map(() => "?").join(",");
+      await db.execute(
+        `DELETE FROM inventory_logs WHERE product_id IN (${placeholders})`,
+        DEFAULT_PRODUCT_IDS,
+      ).catch(() => {});
+      await db.execute(
+        `DELETE FROM product_images WHERE product_id IN (${placeholders})`,
+        DEFAULT_PRODUCT_IDS,
+      ).catch(() => {});
+      await db.execute(
+        `DELETE FROM products WHERE id IN (${placeholders})`,
+        DEFAULT_PRODUCT_IDS,
+      ).catch(() => {});
+    }
+
+    let syncedCount = 0;
+
+    for (const p of products) {
+      if (!p.name) continue;
+
+      const rawCat = p.category || p.categoryId || "Saree";
+      const catSlug =
+        CATEGORY_NAME_TO_ID[rawCat] ||
+        rawCat.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "") ||
+        "saree";
+
+      // Ensure category exists in categories table to satisfy FOREIGN KEY
+      const catCheck = await db.query("SELECT id FROM categories WHERE id = ?", [catSlug]);
+      if (!catCheck || catCheck.length === 0) {
+        const catName = rawCat;
+        await db.execute(
+          "INSERT IGNORE INTO categories (id, name, slug, description, display_order) VALUES (?, ?, ?, ?, ?)",
+          [catSlug, catName, catSlug, `${catName} collection`, 99],
+        ).catch(() => {});
+      }
+
+      const id = p.id || `pf-${Date.now().toString(36)}-${Math.floor(Math.random() * 1000)}`;
+      const sku = p.sku || `PF-${Math.floor(100 + Math.random() * 900)}`;
+      const slug =
+        (p.slug || p.name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "")) +
+        `-${id.slice(-6)}`;
+      const price = Number(p.price) || 0;
+      const originalPrice = p.original_price ? Number(p.original_price) : null;
+      const unit = p.unit || "piece";
+      const stock = Number(p.stock !== undefined ? p.stock : p.stock_quantity) || 0;
+      const badge = p.badge || "New arrival";
+      const description = p.description || "";
+      const image = p.image || p.image_url || "/assets/burgundy-silk.jpg";
+      const isActive = p.status === "inactive" || p.isActive === false ? 0 : 1;
+      const isFeatured = p.is_featured || p.isFeatured ? 1 : 0;
+      const sizesJson = JSON.stringify(
+        Array.isArray(p.sizes) ? p.sizes : typeof p.sizes === "string" ? JSON.parse(p.sizes) : [],
+      );
+      const colour = p.colour || "Custom";
+
+      // Check if product with this ID or SKU exists
+      const existing = await db.query("SELECT id FROM products WHERE id = ?", [id]);
+      if (existing && existing.length > 0) {
+        await db.execute(
+          `UPDATE products SET 
+            name = ?, category_id = ?, colour = ?, price = ?, original_price = ?,
+            unit = ?, stock_quantity = ?, badge = ?, description = ?, image_url = ?,
+            is_active = ?, is_featured = ?, sizes = ?, updated_at = CURRENT_TIMESTAMP
+           WHERE id = ?`,
+          [
+            p.name,
+            catSlug,
+            colour,
+            price,
+            originalPrice,
+            unit,
+            stock,
+            badge,
+            description,
+            image,
+            isActive,
+            isFeatured,
+            sizesJson,
+            id,
+          ],
+        );
+      } else {
+        await db.execute(
+          `INSERT INTO products (id, sku, name, slug, category_id, colour, price, original_price, unit, stock_quantity, low_stock_threshold, badge, description, image_url, is_active, is_featured, sizes)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          [
+            id,
+            sku,
+            p.name,
+            slug,
+            catSlug,
+            colour,
+            price,
+            originalPrice,
+            unit,
+            stock,
+            5,
+            badge,
+            description,
+            image,
+            isActive,
+            isFeatured,
+            sizesJson,
+          ],
+        ).catch(async (insertErr: any) => {
+          // If duplicate SKU error, append random suffix and retry
+          if (insertErr.code === "ER_DUP_ENTRY") {
+            const fallbackSku = `${sku}-${Math.floor(Math.random() * 1000)}`;
+            await db.execute(
+              `INSERT INTO products (id, sku, name, slug, category_id, colour, price, original_price, unit, stock_quantity, low_stock_threshold, badge, description, image_url, is_active, is_featured, sizes)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+              [
+                id,
+                fallbackSku,
+                p.name,
+                slug,
+                catSlug,
+                colour,
+                price,
+                originalPrice,
+                unit,
+                stock,
+                5,
+                badge,
+                description,
+                image,
+                isActive,
+                isFeatured,
+                sizesJson,
+              ],
+            );
+          } else {
+            throw insertErr;
+          }
+        });
+      }
+
+      syncedCount++;
+    }
+
+    const totalCountRes = await db.query("SELECT COUNT(*) as count FROM products");
+    const totalInDb = totalCountRes[0]?.count || 0;
+
+    return res.status(200).json({
+      success: true,
+      message: `Successfully synced ${syncedCount} products to TiDB Cloud database!`,
+      syncedCount,
+      totalInDatabase: totalInDb,
+    });
+  } catch (err: any) {
+    console.error("[ProductController] bulkSyncProducts error:", err);
+    return res.status(500).json({
+      success: false,
+      error: "Failed to bulk sync products: " + err.message,
+    });
+  }
+}
+

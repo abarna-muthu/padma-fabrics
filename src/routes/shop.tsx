@@ -1,14 +1,21 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { useEffect } from "react";
-import { ArrowUpRight } from "lucide-react";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
+import { ArrowUpRight, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { ALL, categories, collections, products } from "@/lib/catalog";
+import { ALL, categories, collections } from "@/lib/catalog";
 import { useStore } from "@/context/StoreContext";
 import { ProductCard } from "@/components/ProductCard";
+import { PATTERNS_DATA } from "@/components/ShopByPatternSection";
 
 export const Route = createFileRoute("/shop")({
-  validateSearch: (search: Record<string, unknown>): { category?: string } => {
-    return typeof search["category"] === "string" ? { category: search["category"] } : {};
+  validateSearch: (
+    search: Record<string, unknown>,
+  ): { category?: string | undefined; pattern?: string | undefined; search?: string | undefined } => {
+    return {
+      category: typeof search["category"] === "string" ? search["category"] : undefined,
+      pattern: typeof search["pattern"] === "string" ? search["pattern"] : undefined,
+      search: typeof search["search"] === "string" ? search["search"] : undefined,
+    };
   },
   head: () => ({
     meta: [
@@ -32,9 +39,17 @@ export const Route = createFileRoute("/shop")({
 });
 
 function ShopPage() {
-  const { category: queryCategory } = Route.useSearch();
+  const navigate = useNavigate();
+  const searchParams = Route.useSearch();
+  const queryCategory = searchParams.category;
+  const queryPattern = searchParams.pattern;
+
   const { filter, setFilter, activeProducts, categoriesList } = useStore();
-  const activeCats = categoriesList && categoriesList.length > 0 ? categoriesList : (categories as readonly string[]);
+  const activeCats =
+    categoriesList && categoriesList.length > 0 ? categoriesList : (categories as readonly string[]);
+
+  // Pattern Filter state
+  const [selectedPattern, setSelectedPattern] = useState<string | null>(queryPattern || null);
 
   useEffect(() => {
     if (queryCategory && activeCats.includes(queryCategory)) {
@@ -42,51 +57,90 @@ function ShopPage() {
     }
   }, [queryCategory, setFilter, activeCats]);
 
-  const visible = activeProducts.filter((p) => filter === ALL || p.category === filter);
+  useEffect(() => {
+    if (queryPattern) {
+      setSelectedPattern(queryPattern);
+    }
+  }, [queryPattern]);
+
+  /**
+   * TODO: Backend product schema currently does not have a dedicated 'pattern' field on the 'products' database table.
+   * Pattern filter UI is wired here to read ?pattern= query params and filter matching product keywords in name/description.
+   * Once backend migration adds 'pattern', update query to use dedicated API parameter.
+   */
+  const patternItem = selectedPattern ? PATTERNS_DATA.find((p) => p.slug === selectedPattern) : null;
+
+  const visible = activeProducts.filter((p) => {
+    const matchCategory = filter === ALL || p.category === filter;
+    if (!matchCategory) return false;
+
+    if (!selectedPattern || !patternItem) return true;
+
+    // Search keywords for pattern in name, description, colour, category
+    const query = patternItem.name.toLowerCase();
+    const searchSpace = `${p.name} ${p.description || ""} ${p.colour || ""} ${p.category || ""}`.toLowerCase();
+
+    if (selectedPattern === "solids") {
+      return searchSpace.includes("solid") || searchSpace.includes("plain") || searchSpace.includes("cotton") || searchSpace.includes("linen");
+    }
+    if (selectedPattern === "zari-brocade") {
+      return searchSpace.includes("zari") || searchSpace.includes("brocade") || searchSpace.includes("silk") || searchSpace.includes("kanjivaram");
+    }
+    if (selectedPattern === "embroidery") {
+      return searchSpace.includes("embroidery") || searchSpace.includes("embroidered") || searchSpace.includes("needlework") || searchSpace.includes("chudithar");
+    }
+    if (selectedPattern === "florals") {
+      return searchSpace.includes("floral") || searchSpace.includes("flower") || searchSpace.includes("botanical") || searchSpace.includes("print");
+    }
+    if (selectedPattern === "embellished") {
+      return searchSpace.includes("embellished") || searchSpace.includes("sequin") || searchSpace.includes("festive") || searchSpace.includes("lehenga");
+    }
+    if (selectedPattern === "prints") {
+      return searchSpace.includes("print") || searchSpace.includes("printed") || searchSpace.includes("block") || searchSpace.includes("pattern");
+    }
+    if (selectedPattern === "checks-stripes") {
+      return searchSpace.includes("check") || searchSpace.includes("stripe") || searchSpace.includes("textured") || searchSpace.includes("brocade");
+    }
+
+    return searchSpace.includes(query);
+  });
+
+  const clearPattern = () => {
+    setSelectedPattern(null);
+    navigate({
+      to: "/shop",
+      search: {
+        category: filter !== ALL ? filter : undefined,
+      } as any,
+    });
+  };
 
   return (
-    <main>
-      <section className="page-width pt-12 pb-6">
-        <div className="section-heading">
+    <main className="bg-[#FAF6EE] text-[#0E0E0E] min-h-screen">
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-12 pb-16">
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-8">
           <div>
-            <p className="section-kicker">The curated edit</p>
-            <h1 className="section-title">Shop the collection</h1>
+            <span className="text-[11px] uppercase tracking-[0.2em] text-[#B8913A] font-medium block mb-2">
+              The Curated Edit
+            </span>
+            <h1 className="font-['Manrope'] text-3xl sm:text-4xl md:text-5xl font-medium tracking-tight text-[#0E0E0E]">
+              Shop the Collection
+            </h1>
           </div>
-          <span className="text-[10px] text-muted-foreground uppercase tracking-wider">
-            Preview collection · Sample prices
+          <span className="text-xs text-[#0E0E0E]/60 uppercase tracking-wider font-light">
+            Menambedu, Ambattur · Retail & Wholesale Meterage
           </span>
         </div>
 
-        <div className="category-grid mb-12">
-          {collections.map((c) => (
-            <button
-              type="button"
-              key={c.name}
-              className={`category-card text-left cursor-pointer border-none p-0 bg-transparent transition-opacity ${
-                filter === c.name ? "ring-1 ring-primary" : ""
-              }`}
-              onClick={() => setFilter(c.name)}
-            >
-              <img
-                className="category-image"
-                src={c.image}
-                alt={`${c.name} collection`}
-                width={768}
-                height={1024}
-                loading="lazy"
-              />
-              <div className="category-label">
-                <div>
-                  <h3>{c.name}</h3>
-                  <p>{c.text}</p>
-                </div>
-                <ArrowUpRight className="size-4 text-primary" />
-              </div>
-            </button>
-          ))}
-        </div>
-
-        <div className="filter-tabs">
+        {/* Categories Bar */}
+        <div className="flex items-center gap-2 overflow-x-auto pb-3 mb-6 no-scrollbar">
+          <Button
+            variant="filter"
+            data-active={filter === ALL}
+            onClick={() => setFilter(ALL)}
+          >
+            All Categories
+          </Button>
           {activeCats.map((c) => (
             <Button
               key={c}
@@ -99,49 +153,148 @@ function ShopPage() {
           ))}
         </div>
 
-        <div className="flex justify-between items-center text-xs text-muted-foreground mb-6">
-          <span>
-            Showing {visible.length} of {activeProducts.length} fabrics{" "}
-            {filter !== ALL ? `in ${filter}` : ""}
-          </span>
-          {filter !== ALL && (
-            <Button
-              variant="ghost"
-              size="sm"
-              className="text-xs text-primary"
-              onClick={() => setFilter(ALL)}
+        {/* Pattern Filter Group */}
+        <div className="py-3 px-4 rounded-[2px] bg-white border border-[rgba(14,14,14,0.08)] mb-8 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="flex items-center gap-2 overflow-x-auto no-scrollbar">
+            <span className="text-[11px] uppercase tracking-wider font-semibold text-[#0E0E0E] shrink-0 mr-1">
+              Pattern:
+            </span>
+            <button
+              type="button"
+              onClick={clearPattern}
+              className={`px-3 py-1 rounded-full text-[11px] uppercase tracking-wider font-medium transition-all ${
+                !selectedPattern
+                  ? "bg-[#0E0E0E] text-[#F4F0E8]"
+                  : "bg-transparent text-[#0E0E0E]/70 hover:text-[#0E0E0E]"
+              }`}
             >
-              Clear filter
-            </Button>
+              All Patterns
+            </button>
+            {PATTERNS_DATA.map((pat) => (
+              <button
+                key={pat.slug}
+                type="button"
+                onClick={() => {
+                  setSelectedPattern(pat.slug);
+                  navigate({
+                    to: "/shop",
+                    search: {
+                      category: filter !== ALL ? filter : undefined,
+                      pattern: pat.slug,
+                    } as any,
+                  });
+                }}
+                className={`px-3 py-1 rounded-full text-[11px] uppercase tracking-wider font-medium whitespace-nowrap transition-all cursor-pointer ${
+                  selectedPattern === pat.slug
+                    ? "bg-[#0E0E0E] text-[#F4F0E8]"
+                    : "bg-transparent text-[#0E0E0E]/70 hover:text-[#0E0E0E]"
+                }`}
+              >
+                {pat.name}
+              </button>
+            ))}
+          </div>
+
+          {selectedPattern && patternItem && (
+            <div className="flex items-center gap-2 shrink-0">
+              <span className="text-xs text-[#0E0E0E]/70">
+                Active: <strong className="text-[#B8913A]">{patternItem.name}</strong>
+              </span>
+              <button
+                type="button"
+                onClick={clearPattern}
+                className="p-1 rounded-full hover:bg-black/5 text-[#0E0E0E]"
+                title="Clear pattern filter"
+              >
+                <X className="size-3.5" />
+              </button>
+            </div>
           )}
         </div>
 
-        <div className="product-grid">
-          {visible.map((p) => (
-            <ProductCard key={p.id} product={p} />
-          ))}
+        {/* Counter and Clear Filters */}
+        <div className="flex justify-between items-center text-xs text-[#0E0E0E]/60 mb-6">
+          <span>
+            Showing <strong>{visible.length}</strong> of {activeProducts.length} fabrics{" "}
+            {filter !== ALL ? `in ${filter}` : ""}{" "}
+            {selectedPattern && patternItem ? `with ${patternItem.name} pattern` : ""}
+          </span>
+          {(filter !== ALL || selectedPattern) && (
+            <button
+              type="button"
+              className="text-xs font-semibold text-[#6B1E2E] hover:underline"
+              onClick={() => {
+                setFilter(ALL);
+                clearPattern();
+              }}
+            >
+              Reset All Filters
+            </button>
+          )}
         </div>
+
+        {/* Products Grid */}
+        {visible.length === 0 ? (
+          <div className="p-16 rounded-[2px] bg-white border border-dashed border-[rgba(14,14,14,0.15)] text-center my-6">
+            <h3 className="font-['Manrope'] text-lg font-medium text-[#0E0E0E]">
+              No fabrics matching your selection
+            </h3>
+            <p className="text-xs text-[#0E0E0E]/60 mt-1 mb-4">
+              Try adjusting the pattern or category filters above.
+            </p>
+            <button
+              type="button"
+              onClick={() => {
+                setFilter(ALL);
+                clearPattern();
+              }}
+              className="px-5 py-2 rounded-full bg-[#0E0E0E] text-[#F4F0E8] text-xs uppercase tracking-wider font-medium"
+            >
+              Reset Filters
+            </button>
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
+            {visible.map((p) => (
+              <ProductCard key={p.id} product={p} />
+            ))}
+          </div>
+        )}
       </section>
 
-      <section className="contact-section page-width border-t border-border mt-16" id="wholesale">
-        <div>
-          <p className="section-kicker">Custom & Wholesale Orders</p>
-          <h2 className="section-title">Need custom yardage or bulk orders?</h2>
-          <p className="text-xs text-muted-foreground mt-3">
-            Preview fabric imagery and sample pricing. Our team confirms exact yardage, wholesale
-            pricing, and worldwide delivery.
-          </p>
-        </div>
-        <Button variant="whatsapp" className="h-11 px-6 text-xs uppercase tracking-wider font-semibold" asChild>
-          <a
-            href="https://wa.me/919940145700?text=Hello%20Padmanabha%20Fabrics%2C%20I%20would%20like%20to%20enquire%20about%20wholesale%20fabrics."
-            target="_blank"
-            rel="noreferrer"
+      {/* Contact & Wholesale Section */}
+      <section className="bg-white border-t border-[rgba(14,14,14,0.08)] py-16" id="wholesale">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row md:items-center justify-between gap-6">
+          <div>
+            <span className="text-[11px] uppercase tracking-[0.2em] text-[#B8913A] font-medium block mb-1">
+              Custom & Wholesale Orders
+            </span>
+            <h2 className="font-['Manrope'] text-2xl sm:text-3xl font-medium tracking-tight text-[#0E0E0E]">
+              Need custom yardage or bulk orders?
+            </h2>
+            <p className="text-xs sm:text-sm font-light text-[#0E0E0E]/70 mt-2 max-w-xl">
+              Preview fabric imagery and sample pricing. Our Ambattur Chennai depot team confirms exact meterage, wholesale pricing, and worldwide freight dispatch.
+            </p>
+          </div>
+          <Button
+            variant="whatsapp"
+            size="lg"
+            asChild
+            className="shrink-0"
           >
-            Enquire on WhatsApp <ArrowUpRight className="ml-4" />
-          </a>
-        </Button>
+            <a
+              href="https://wa.me/919940145700?text=Hello%20Padmanabha%20Fabrics%2C%20I%20would%20like%20to%20enquire%20about%20wholesale%20fabrics."
+              target="_blank"
+              rel="noreferrer"
+            >
+              <span>Enquire on WhatsApp</span>
+              <ArrowUpRight className="size-4 ml-1.5" />
+            </a>
+          </Button>
+        </div>
       </section>
     </main>
   );
 }
+
+export default ShopPage;

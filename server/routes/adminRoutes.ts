@@ -8,6 +8,8 @@ import {
   deleteProduct,
   toggleProductStatus,
   createCategory,
+  bulkSyncProducts,
+  removeDefaultProducts,
 } from "../controllers/productController";
 import { getInventory, adjustStock, getInventoryLogs } from "../controllers/inventoryController";
 import {
@@ -39,6 +41,8 @@ router.get("/products", (req, res) => {
   return getProducts(req, res);
 });
 router.post("/products", createProduct);
+router.post("/products/bulk-sync", bulkSyncProducts);
+router.post("/products/remove-defaults", removeDefaultProducts);
 router.put("/products/:id", updateProduct);
 router.delete("/products/:id", deleteProduct);
 router.patch("/products/:id/toggle", toggleProductStatus);
