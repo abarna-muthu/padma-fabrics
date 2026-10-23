@@ -20,8 +20,8 @@ export function AdminLoginView({ onLoginSuccess }: { onLoginSuccess?: () => void
   const { isAuthenticated, login } = useAdminAuth();
   const navigate = useNavigate();
 
-  const [email, setEmail] = useState("admin@gmail.com");
-  const [password, setPassword] = useState("admin123");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -60,12 +60,6 @@ export function AdminLoginView({ onLoginSuccess }: { onLoginSuccess?: () => void
     }
   };
 
-  const handleFillDemo = () => {
-    setEmail("admin@gmail.com");
-    setPassword("admin123");
-    setError(null);
-  };
-
   return (
     <div className="min-h-screen bg-[#FAF7F2] flex flex-col justify-center items-center px-4 py-12 select-none">
       <div className="w-full max-w-md">
@@ -98,27 +92,6 @@ export function AdminLoginView({ onLoginSuccess }: { onLoginSuccess?: () => void
           <p className="text-xs text-[#0E0E0E]/60 font-light mt-1.5">
             Store management, customer orders, inventory, and analytics
           </p>
-        </div>
-
-        {/* Demo Credentials Helper Pill */}
-        <div className="mb-4 p-3.5 bg-white/90 border border-[#B8913A]/30 rounded-xl flex items-center justify-between text-xs text-[#0E0E0E] shadow-2xs">
-          <div className="space-y-0.5">
-            <span className="font-semibold text-[#0E0E0E] flex items-center gap-1.5 text-xs">
-              <KeyRound className="size-3.5 text-[#B8913A]" /> Admin Login Credentials:
-            </span>
-            <div className="text-[11px] text-[#0E0E0E]/70 font-mono">
-              Username: <strong className="text-[#0E0E0E]">admin@gmail.com</strong> | Password: <strong className="text-[#0E0E0E]">admin123</strong>
-            </div>
-          </div>
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            className="text-[11px] h-7 px-3 rounded-full border-[#B8913A]/40 text-[#0E0E0E] hover:bg-[#B8913A]/10 cursor-pointer"
-            onClick={handleFillDemo}
-          >
-            Auto-fill
-          </Button>
         </div>
 
         {/* Login Card */}

@@ -1,6 +1,13 @@
 import { Request, Response } from "express";
 import { getDb, INITIAL_PRODUCTS } from "../config/db";
 
+function formatDate(val: any): string {
+  if (!val) return new Date().toISOString().split("T")[0]!;
+  if (val instanceof Date) return val.toISOString().split("T")[0]!;
+  const str = String(val);
+  return str.includes("T") ? str.split("T")[0]! : str.split(" ")[0]!;
+}
+
 export async function createCheckoutOrder(req: Request, res: Response) {
   try {
     const customer_name = req.body.customer_name || req.body.customerName;
@@ -268,7 +275,8 @@ export async function getOrders(req: Request, res: Response) {
           paymentMethod: o.payment_method,
           paymentStatus: o.payment_status,
           notes: o.notes,
-          date: o.created_at ? o.created_at.split("T")[0] || o.created_at.split(" ")[0] : "",
+          date: formatDate(o.created_at),
+          createdAt: o.created_at instanceof Date ? o.created_at.toISOString() : String(o.created_at || ""),
           items: items.map((i) => ({
             id: i.id,
             productId: i.product_id,
@@ -326,7 +334,8 @@ export async function getOrderById(req: Request, res: Response) {
         paymentMethod: o.payment_method,
         paymentStatus: o.payment_status,
         notes: o.notes,
-        date: o.created_at,
+        date: formatDate(o.created_at),
+        createdAt: o.created_at instanceof Date ? o.created_at.toISOString() : String(o.created_at || ""),
         items: items.map((i) => ({
           productId: i.product_id,
           productName: i.product_name,
@@ -469,7 +478,7 @@ export async function getCustomers(req: Request, res: Response) {
         ordersCount: 0,
         totalSpent: 0,
         lastOrderDate: "",
-        createdAt: c.created_at ? c.created_at.split("T")[0] : "",
+        createdAt: formatDate(c.created_at),
       });
     }
 
@@ -486,7 +495,7 @@ export async function getCustomers(req: Request, res: Response) {
           ordersCount: 0,
           totalSpent: 0,
           lastOrderDate: "",
-          createdAt: o.created_at ? o.created_at.split("T")[0] : "",
+          createdAt: formatDate(o.created_at),
         });
       }
       const entry = customerMap.get(email);
@@ -497,7 +506,7 @@ export async function getCustomers(req: Request, res: Response) {
       if (!entry.address && o.shipping_address) {
         entry.address = o.shipping_address;
       }
-      const orderDate = o.created_at ? o.created_at.split("T")[0] : "";
+      const orderDate = formatDate(o.created_at);
       if (orderDate && (!entry.lastOrderDate || orderDate > entry.lastOrderDate)) {
         entry.lastOrderDate = orderDate;
       }

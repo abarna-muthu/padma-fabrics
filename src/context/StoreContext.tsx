@@ -105,9 +105,19 @@ const CATEGORY_MIGRATION: Record<string, string> = {
 
 export function normalizeProduct(p: any): Product {
   const cat = CATEGORY_MIGRATION[p.category] || p.category || "Saree";
+  let img = p.image || p.imageUrl || p.image_url;
+  if (!img || img === "New arrival" || typeof img !== "string" || img.trim() === "" || img === "undefined") {
+    img = (p.image_url && p.image_url !== "New arrival")
+      ? p.image_url
+      : (p.imageUrl && p.imageUrl !== "New arrival")
+        ? p.imageUrl
+        : "/assets/burgundy-silk.jpg";
+  }
   return {
     ...p,
     category: cat,
+    image: img,
+    imageUrl: img,
   };
 }
 
@@ -364,7 +374,14 @@ export function StoreProvider({ children }: { children: ReactNode }) {
                     mergedMap.set(lp.id, lp);
                     productApi.create(lp).catch(() => {});
                   } else {
-                    // Both exist: check timestamps so local admin edits are NEVER overwritten
+                    // Both exist: preserve the valid image URL (especially Cloudinary)
+                    const validImg =
+                      (sp.image && sp.image.startsWith("http"))
+                        ? sp.image
+                        : (lp.image && lp.image.startsWith("http"))
+                          ? lp.image
+                          : sp.image || lp.image;
+
                     const lpTime = lp.updatedAt ? new Date(lp.updatedAt).getTime() : 0;
                     const spTime =
                       (sp as any).updatedAt || (sp as any).updated_at
@@ -372,11 +389,11 @@ export function StoreProvider({ children }: { children: ReactNode }) {
                         : 0;
 
                     if (lpTime >= spTime) {
-                      mergedMap.set(lp.id, { ...sp, ...lp });
+                      mergedMap.set(lp.id, { ...sp, ...lp, image: validImg, imageUrl: validImg });
                       // Synchronize latest admin edit to backend
-                      productApi.update(lp.id, lp).catch(() => {});
+                      productApi.update(lp.id, { ...lp, image: validImg }).catch(() => {});
                     } else {
-                      mergedMap.set(lp.id, { ...lp, ...sp });
+                      mergedMap.set(lp.id, { ...lp, ...sp, image: validImg, imageUrl: validImg });
                     }
                   }
                 }
@@ -790,6 +807,65 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         // Clear bag on successful server-side checkout
         clearBag();
 
+        const resolvedOrderId = orderPayload.orderId || orderPayload.id || `PF-${Date.now().toString().slice(-4)}`;
+        const resolvedOrderNumber = orderPayload.orderNumber || orderPayload.id || resolvedOrderId;
+
+        // Immediately record in admin orders with current date
+        const newAdminOrder: Order = {
+          id: resolvedOrderId,
+          orderNumber: resolvedOrderNumber,
+          customerName: details.customerName,
+          customerEmail: details.customerEmail,
+          customerPhone: details.customerPhone,
+          date: new Date().toISOString().split("T")[0] || "",
+          shippingAddress: details.shippingAddress || "Ambattur, Chennai",
+          items:
+            details.items && details.items.length > 0
+              ? details.items.map((it) => {
+                  const prod = productsList.find((p) => p.id === it.productId);
+                  const unitPrice = it.price ?? prod?.price ?? 0;
+                  return {
+                    id: `oi-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+                    orderId: resolvedOrderId,
+                    productId: it.productId,
+                    productName: it.name || prod?.name || it.productId,
+                    productSku: prod?.sku,
+                    price: unitPrice,
+                    unitPrice: unitPrice,
+                    quantity: it.quantity,
+                    unit: prod?.unit || "piece",
+                    totalPrice: unitPrice * it.quantity,
+                  };
+                })
+              : bag.map((b) => {
+                  const prod = productsList.find((p) => p.id === b.id);
+                  return {
+                    id: `oi-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+                    orderId: resolvedOrderId,
+                    productId: b.id,
+                    productName: prod?.name || b.id,
+                    productSku: prod?.sku,
+                    price: prod?.price || 0,
+                    unitPrice: prod?.price || 0,
+                    quantity: b.quantity,
+                    unit: prod?.unit || "piece",
+                    totalPrice: (prod?.price || 0) * b.quantity,
+                  };
+                }),
+          subtotal: Number(orderPayload.subtotal || orderPayload.totalAmount || 0),
+          shippingFee: 0,
+          discountAmount: 0,
+          total: Number(orderPayload.totalAmount || orderPayload.subtotal || 0),
+          totalAmount: Number(orderPayload.totalAmount || orderPayload.subtotal || 0),
+          status: "Pending",
+          orderStatus: "Pending",
+          paymentMethod: details.paymentMethod === "online" ? "Online UPI" : "COD",
+          paymentStatus: details.paymentMethod === "online" ? "Paid" : "Pending",
+          createdAt: new Date().toISOString(),
+        };
+
+        saveOrders([newAdminOrder, ...orders.filter((o) => o.id !== resolvedOrderId)]);
+
         // Refresh orders list from backend if available
         try {
           const refreshedOrders = await orderApi.getAll();
@@ -802,8 +878,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
         return {
           success: true,
-          orderId: orderPayload.orderId || orderPayload.id,
-          orderNumber: orderPayload.orderNumber || orderPayload.id,
+          orderId: resolvedOrderId,
+          orderNumber: resolvedOrderNumber,
         };
       }
 

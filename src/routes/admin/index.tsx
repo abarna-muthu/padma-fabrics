@@ -1553,7 +1553,9 @@ function AdminDashboardPage() {
                           <div className="text-xs font-sans tabular-nums text-muted-foreground mt-0.5">{o.customerPhone}</div>
                           <div className="text-xs text-muted-foreground">{o.customerEmail}</div>
                         </td>
-                        <td className="p-3.5 font-sans tabular-nums text-sm text-muted-foreground">{o.date}</td>
+                        <td className="p-3.5 font-sans tabular-nums text-xs font-semibold text-foreground">
+                          {o.date || (o.createdAt ? o.createdAt.split("T")[0] : new Date().toISOString().split("T")[0])}
+                        </td>
                         <td className="p-3.5 text-sm text-muted-foreground">
                           {o.items.map((i) => `${i.quantity}x ${i.productName}`).join(", ")}
                         </td>

@@ -6,6 +6,7 @@ import shirt from "@/assets/mens-shirt.jpg";
 import tee from "@/assets/tshirt.jpg";
 import dress from "@/assets/womens-dress.jpg";
 import kids from "@/assets/kids-dress.jpg";
+import fallbackProductsRaw from "@/data/fallbackProducts.json";
 
 export const ALL = "All";
 export const categories = [
@@ -52,7 +53,25 @@ export type Item = {
 const adult = ["S", "M", "L", "XL", "XXL"] as const;
 const child = ["2-3Y", "4-5Y", "6-7Y", "8-9Y", "10-12Y"] as const;
 
+const realCatalogProducts: Item[] = (fallbackProductsRaw as any[]).map((p) => ({
+  id: String(p.id),
+  name: p.name,
+  category: p.category || "Chudithar Top",
+  colour: p.colour || "Custom",
+  price: Number(p.price) || 0,
+  image: p.image || p.imageUrl || p.image_url || "/placeholder.svg",
+  badge: p.badge || "New arrival",
+  description: p.description || "",
+  unit: p.unit || "piece",
+  stock: Number(p.stock !== undefined ? p.stock : p.stockQuantity || p.stock_quantity) || 10,
+  status: (p.status === "inactive" || p.isActive === false ? "inactive" : "active") as "active" | "inactive",
+  sku: p.sku || `PF-${p.id}`,
+  sizes: Array.isArray(p.sizes) ? p.sizes : typeof p.sizes === "string" ? JSON.parse(p.sizes) : ["S", "M", "L", "XL"],
+  isActive: p.isActive !== false,
+}));
+
 export const products: readonly Item[] = [
+  ...realCatalogProducts,
   {
     id: "wine-silk",
     name: "The Wine Zari Silk Saree",

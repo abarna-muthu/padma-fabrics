@@ -65,7 +65,11 @@ export async function getEnquiries(req: Request, res: Response) {
         enquiryType: e.enquiry_type,
         message: e.message,
         status: e.status,
-        date: e.created_at ? e.created_at.split("T")[0] || e.created_at.split(" ")[0] : "",
+        date: e.created_at
+          ? typeof e.created_at === "string"
+            ? e.created_at.split("T")[0] || e.created_at.split(" ")[0]
+            : new Date(e.created_at).toISOString().split("T")[0]
+          : "",
       })),
     });
   } catch (err: any) {
