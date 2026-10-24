@@ -17,7 +17,7 @@ import { useStore } from "@/context/StoreContext";
 import { toast } from "sonner";
 
 // Local imagery from src/assets
-import womensDress from "@/assets/womens-dress.jpg";
+import newsletterFabrics from "@/assets/newsletter-fabrics.jpg";
 import everydayEleganceBanner from "@/assets/everyday-elegance-banner.jpg";
 import newStylesBanner from "@/assets/new-styles-banner.jpg";
 import silkSareesCategory from "@/assets/silk-sarees-category.jpg";
@@ -481,12 +481,12 @@ export function HomePage() {
             {/* LEFT: Fashion photograph */}
             <div className="lg:col-span-5 relative aspect-4/3 lg:aspect-auto min-h-[300px]">
               <img
-                src={womensDress}
-                alt="Padmanabha Fabrics newsletter fashion editorial"
+                src={newsletterFabrics}
+                alt="Padmanabha Fabrics Chennai artisan weaves and brocades"
                 className="w-full h-full object-cover object-center"
                 loading="lazy"
               />
-              <div className="absolute inset-0 bg-black/15 pointer-events-none" />
+              <div className="absolute inset-0 bg-black/5 pointer-events-none" />
             </div>
 
             {/* RIGHT: Content & Subscription Form */}
