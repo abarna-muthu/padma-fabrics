@@ -18,11 +18,12 @@ import { toast } from "sonner";
 
 // Local imagery from src/assets
 import womensDress from "@/assets/womens-dress.jpg";
-import burgundySilk from "@/assets/burgundy-silk.jpg";
 import everydayEleganceBanner from "@/assets/everyday-elegance-banner.jpg";
 import newStylesBanner from "@/assets/new-styles-banner.jpg";
-import sageFabric from "@/assets/sage-fabric.jpg";
-import fabricHero from "@/assets/fabric-hero.jpg";
+import silkSareesCategory from "@/assets/silk-sarees-category.jpg";
+import chuditharCategory from "@/assets/chudithar-ensembles-category.jpg";
+import coordsetsCategory from "@/assets/artisanal-coordsets-category.jpg";
+import maxisCategory from "@/assets/flowing-maxis-category.jpg";
 
 
 // =========================================================================
@@ -32,25 +33,25 @@ const EDITORIAL_COLLECTIONS = [
   {
     title: "Silk Sarees & Brocades",
     slug: "Saree",
-    image: burgundySilk,
+    image: silkSareesCategory,
     tag: "Loom Heritage",
   },
   {
     title: "Chudithar Ensembles",
     slug: "Chudithar",
-    image: womensDress,
+    image: chuditharCategory,
     tag: "Everyday & Festive",
   },
   {
     title: "Artisanal Coordsets",
     slug: "Coordset",
-    image: sageFabric,
+    image: coordsetsCategory,
     tag: "Contemporary Fit",
   },
   {
     title: "Flowing Maxis & Silhouettes",
     slug: "Maxi",
-    image: fabricHero,
+    image: maxisCategory,
     tag: "Relaxed Grace",
   },
 ];
