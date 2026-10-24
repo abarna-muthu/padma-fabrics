@@ -19,8 +19,8 @@ import { toast } from "sonner";
 // Local imagery from src/assets
 import womensDress from "@/assets/womens-dress.jpg";
 import burgundySilk from "@/assets/burgundy-silk.jpg";
-import girlsHero from "@/assets/girls-hero.jpg";
-import storePhoto from "@/assets/padmanabha-store.jpg";
+import everydayEleganceBanner from "@/assets/everyday-elegance-banner.jpg";
+import newStylesBanner from "@/assets/new-styles-banner.jpg";
 import sageFabric from "@/assets/sage-fabric.jpg";
 import fabricHero from "@/assets/fabric-hero.jpg";
 
@@ -298,71 +298,49 @@ export function HomePage() {
           Banner A ("Everyday Elegance") & Banner B ("New Styles, Fresh Looks")
           Soft cream/beige background, refined black CTA buttons, balanced layout.
          =================================================================== */}
-      <section className="w-full py-16 sm:py-20 bg-[#FAF7F2] border-b border-[rgba(14,14,14,0.06)]">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            {/* BANNER A: Everyday Elegance */}
-            <div className="relative rounded-[2px] overflow-hidden bg-[#EBE6DC] border border-[rgba(14,14,14,0.08)] flex flex-col justify-between min-h-[380px] sm:min-h-[440px] p-8 sm:p-10">
-              <div className="relative z-10 space-y-3 max-w-sm">
-                <MicroLabel className="text-[#B8913A]">SPECIAL COLLECTION</MicroLabel>
-                <h3 className="font-['Cormorant_Garamond'] text-3xl sm:text-4xl font-medium tracking-tight text-[#0E0E0E]">
-                  Everyday Elegance
-                </h3>
-                <p className="text-xs sm:text-sm text-[#0E0E0E]/70 font-light leading-relaxed">
-                  Discover styles you'll love wearing. Pure mulmuls, breathable cottons, and relaxed silhouettes crafted for daily poise.
-                </p>
-                <div className="pt-2">
-                  <Link
-                    to="/shop"
-                    className="inline-flex items-center justify-center px-6 py-3 rounded-full bg-[#0E0E0E] text-[#F4F0E8] hover:bg-[#B8913A] transition-colors text-xs uppercase tracking-[0.16em] font-medium"
-                  >
-                    Shop Collection
-                  </Link>
-                </div>
-              </div>
+      <section className="w-full py-16 sm:py-20 bg-[#FAF7F2] border-b border-[rgba(14,14,14,0.06)] relative overflow-hidden">
+        {/* Soft atmospheric background lighting / shadow gradient */}
+        <div className="absolute top-1/2 left-1/4 -translate-y-1/2 w-96 h-96 bg-[#D8BE9A]/20 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute top-1/2 right-1/4 -translate-y-1/2 w-96 h-96 bg-[#D8BE9A]/20 rounded-full blur-3xl pointer-events-none" />
 
-              {/* Background fashion imagery accent */}
-              <div className="absolute right-0 bottom-0 top-0 w-1/2 opacity-90 pointer-events-none hidden sm:block">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 lg:gap-10">
+            {/* BANNER A: Everyday Elegance */}
+            <Link
+              to="/shop"
+              aria-label="Special Collection - Everyday Elegance - Shop Collection"
+              className="group relative block rounded-2xl overflow-hidden bg-[#FAF7F2] border border-[rgba(14,14,14,0.08)] shadow-[0_16px_40px_-10px_rgba(30,22,12,0.18),0_6px_20px_rgba(30,22,12,0.08)] hover:shadow-[0_28px_56px_-12px_rgba(30,22,12,0.28),0_12px_28px_rgba(30,22,12,0.14)] transition-all duration-500 hover:-translate-y-1.5 focus:outline-none focus:ring-2 focus:ring-[#B8913A]/50"
+            >
+              <div className="relative w-full aspect-[1024/705] overflow-hidden">
                 <img
-                  src={girlsHero}
-                  alt="Everyday Elegance fashion collection"
-                  className="w-full h-full object-cover object-center"
+                  src={everydayEleganceBanner}
+                  alt="Special Collection - Everyday Elegance - Shop Collection"
+                  className="w-full h-full object-cover object-center transform transition-transform duration-700 ease-out group-hover:scale-[1.03]"
+                  loading="lazy"
                 />
-                <div className="absolute inset-0 bg-gradient-to-r from-[#EBE6DC] via-[#EBE6DC]/40 to-transparent" />
+                {/* Subtle soft sheen highlight on hover */}
+                <div className="absolute inset-0 bg-gradient-to-t from-black/15 via-transparent to-white/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
               </div>
-            </div>
+            </Link>
 
             {/* BANNER B: New Styles, Fresh Looks */}
-            <div className="relative rounded-[2px] overflow-hidden bg-[#EBE6DC] border border-[rgba(14,14,14,0.08)] flex flex-col justify-between min-h-[380px] sm:min-h-[440px] p-8 sm:p-10">
-              <div className="relative z-10 space-y-3 max-w-sm">
-                <MicroLabel className="text-[#B8913A]">JUST ARRIVED</MicroLabel>
-                <h3 className="font-['Cormorant_Garamond'] text-3xl sm:text-4xl font-medium tracking-tight text-[#0E0E0E]">
-                  New Styles, Fresh Looks
-                </h3>
-                <p className="text-xs sm:text-sm text-[#0E0E0E]/70 font-light leading-relaxed">
-                  Explore the latest additions to our collection. Seasonal hand-block prints, festive zari weaves, and modern coordinates.
-                </p>
-                <div className="pt-2">
-                  <Link
-                    to="/shop"
-                    search={{ filter: "new" } as any}
-                    className="inline-flex items-center justify-center px-6 py-3 rounded-full bg-[#0E0E0E] text-[#F4F0E8] hover:bg-[#B8913A] transition-colors text-xs uppercase tracking-[0.16em] font-medium"
-                  >
-                    Explore New Arrivals
-                  </Link>
-                </div>
-              </div>
-
-              {/* Background fashion imagery accent */}
-              <div className="absolute right-0 bottom-0 top-0 w-1/2 opacity-90 pointer-events-none hidden sm:block">
+            <Link
+              to="/shop"
+              search={{ filter: "new" } as any}
+              aria-label="Just Arrived - New Styles, Fresh Looks - Explore New Arrivals"
+              className="group relative block rounded-2xl overflow-hidden bg-[#FAF7F2] border border-[rgba(14,14,14,0.08)] shadow-[0_16px_40px_-10px_rgba(30,22,12,0.18),0_6px_20px_rgba(30,22,12,0.08)] hover:shadow-[0_28px_56px_-12px_rgba(30,22,12,0.28),0_12px_28px_rgba(30,22,12,0.14)] transition-all duration-500 hover:-translate-y-1.5 focus:outline-none focus:ring-2 focus:ring-[#B8913A]/50"
+            >
+              <div className="relative w-full aspect-[1024/705] overflow-hidden">
                 <img
-                  src={storePhoto}
-                  alt="New Styles, Fresh Looks showroom collection"
-                  className="w-full h-full object-cover object-center"
+                  src={newStylesBanner}
+                  alt="Just Arrived - New Styles, Fresh Looks - Explore New Arrivals"
+                  className="w-full h-full object-cover object-center transform transition-transform duration-700 ease-out group-hover:scale-[1.03]"
+                  loading="lazy"
                 />
-                <div className="absolute inset-0 bg-gradient-to-r from-[#EBE6DC] via-[#EBE6DC]/40 to-transparent" />
+                {/* Subtle soft sheen highlight on hover */}
+                <div className="absolute inset-0 bg-gradient-to-t from-black/15 via-transparent to-white/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
               </div>
-            </div>
+            </Link>
           </div>
         </div>
       </section>
