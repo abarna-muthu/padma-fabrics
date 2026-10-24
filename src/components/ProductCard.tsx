@@ -118,8 +118,8 @@ export function ProductCard({ product, light = false, badgeText, onQuickView }: 
                 onClick={() => setSelectedSize(sz)}
                 className={`px-2 py-0.5 text-[10px] rounded-full uppercase tracking-wider font-medium transition-all ${
                   selectedSize === sz
-                    ? "bg-[#F4F0E8] text-[#0E0E0E]"
-                    : "bg-black/40 text-white hover:bg-black/60 border border-white/20"
+                    ? "bg-[#6B1E2E] text-white ring-1 ring-[#B8913A] shadow-xs"
+                    : "bg-black/50 text-white/90 hover:bg-black/70 border border-white/20"
                 }`}
               >
                 {sz}
@@ -131,9 +131,9 @@ export function ProductCard({ product, light = false, badgeText, onQuickView }: 
           <button
             type="button"
             onClick={handleAddToCart}
-            className="w-full py-2 rounded-full bg-[#F4F0E8] hover:bg-white text-[#0E0E0E] text-[11px] font-medium uppercase tracking-[0.14em] transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-sm active:scale-98"
+            className="w-full py-2 rounded-full bg-[#6B1E2E] hover:bg-[#832638] text-white text-[11px] font-semibold uppercase tracking-[0.14em] transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-md active:scale-98 border border-[#B8913A]/40"
           >
-            <ShoppingBag className="size-3" strokeWidth={1.5} />
+            <ShoppingBag className="size-3 text-[#FAF6EE]" strokeWidth={1.5} />
             <span>Add to Cart</span>
           </button>
         </div>

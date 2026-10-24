@@ -9,12 +9,18 @@ import { PATTERNS_DATA } from "@/components/ShopByPatternSection";
 
 export const Route = createFileRoute("/shop")({
   validateSearch: (
-    search: Record<string, unknown>,
-  ): { category?: string | undefined; pattern?: string | undefined; search?: string | undefined } => {
+    search: Record<string, unknown> = {},
+  ): {
+    category?: string | undefined;
+    pattern?: string | undefined;
+    search?: string | undefined;
+    filter?: string | undefined;
+  } => {
     return {
-      category: typeof search["category"] === "string" ? search["category"] : undefined,
-      pattern: typeof search["pattern"] === "string" ? search["pattern"] : undefined,
-      search: typeof search["search"] === "string" ? search["search"] : undefined,
+      category: typeof search?.["category"] === "string" ? search["category"] : undefined,
+      pattern: typeof search?.["pattern"] === "string" ? search["pattern"] : undefined,
+      search: typeof search?.["search"] === "string" ? search["search"] : undefined,
+      filter: typeof search?.["filter"] === "string" ? search["filter"] : undefined,
     };
   },
   head: () => ({
@@ -40,22 +46,47 @@ export const Route = createFileRoute("/shop")({
 
 function ShopPage() {
   const navigate = useNavigate();
-  const searchParams = Route.useSearch();
-  const queryCategory = searchParams.category;
-  const queryPattern = searchParams.pattern;
 
-  const { filter, setFilter, activeProducts, categoriesList } = useStore();
-  const activeCats =
-    categoriesList && categoriesList.length > 0 ? categoriesList : (categories as readonly string[]);
+  // Safely extract search params
+  let searchParams: any = {};
+  try {
+    searchParams = Route.useSearch() || {};
+  } catch {
+    if (typeof window !== "undefined") {
+      const sp = new URLSearchParams(window.location.search);
+      searchParams = {
+        category: sp.get("category") || undefined,
+        pattern: sp.get("pattern") || undefined,
+        search: sp.get("search") || undefined,
+        filter: sp.get("filter") || undefined,
+      };
+    }
+  }
+
+  const queryCategory = searchParams?.category;
+  const queryPattern = searchParams?.pattern;
+  const querySearch = searchParams?.search;
+  const queryFilter = searchParams?.filter;
+
+  const { filter, setFilter, activeProducts = [], categoriesList = [] } = useStore();
+  const rawCats = categoriesList && categoriesList.length > 0 ? categoriesList : (categories as readonly string[]);
+  const activeCats = rawCats.map((c: any) => (typeof c === "string" ? c : c?.name || String(c)));
 
   // Pattern Filter state
   const [selectedPattern, setSelectedPattern] = useState<string | null>(queryPattern || null);
 
   useEffect(() => {
-    if (queryCategory && activeCats.includes(queryCategory)) {
-      setFilter(queryCategory);
+    if (queryCategory) {
+      const matched = activeCats.find((c) => c.toLowerCase() === queryCategory.toLowerCase());
+      if (matched) {
+        setFilter(matched);
+      } else {
+        setFilter(queryCategory);
+      }
+    } else if (!queryPattern && !queryFilter && !querySearch) {
+      setFilter(ALL);
     }
-  }, [queryCategory, setFilter, activeCats]);
+  }, [queryCategory, queryPattern, queryFilter, querySearch, activeCats]);
 
   useEffect(() => {
     if (queryPattern) {
@@ -63,22 +94,33 @@ function ShopPage() {
     }
   }, [queryPattern]);
 
-  /**
-   * TODO: Backend product schema currently does not have a dedicated 'pattern' field on the 'products' database table.
-   * Pattern filter UI is wired here to read ?pattern= query params and filter matching product keywords in name/description.
-   * Once backend migration adds 'pattern', update query to use dedicated API parameter.
-   */
   const patternItem = selectedPattern ? PATTERNS_DATA.find((p) => p.slug === selectedPattern) : null;
 
-  const visible = activeProducts.filter((p) => {
+  const visible = (activeProducts || []).filter((p) => {
+    if (!p) return false;
+
+    // Filter by new arrivals
+    if (queryFilter === "new") {
+      const isNew = p.badge?.toLowerCase().includes("new") || (p as any).isNew;
+      if (p.badge && !isNew) return false;
+    }
+
+    // Category match
     const matchCategory = filter === ALL || p.category === filter;
     if (!matchCategory) return false;
+
+    // Search query match
+    if (querySearch && querySearch.trim()) {
+      const q = querySearch.trim().toLowerCase();
+      const searchSpace = `${p.name || ""} ${p.description || ""} ${p.colour || ""} ${p.category || ""}`.toLowerCase();
+      if (!searchSpace.includes(q)) return false;
+    }
 
     if (!selectedPattern || !patternItem) return true;
 
     // Search keywords for pattern in name, description, colour, category
-    const query = patternItem.name.toLowerCase();
-    const searchSpace = `${p.name} ${p.description || ""} ${p.colour || ""} ${p.category || ""}`.toLowerCase();
+    const query = patternItem.name ? patternItem.name.toLowerCase() : "";
+    const searchSpace = `${p.name || ""} ${p.description || ""} ${p.colour || ""} ${p.category || ""}`.toLowerCase();
 
     if (selectedPattern === "solids") {
       return searchSpace.includes("solid") || searchSpace.includes("plain") || searchSpace.includes("cotton") || searchSpace.includes("linen");
@@ -112,6 +154,15 @@ function ShopPage() {
       search: {
         category: filter !== ALL ? filter : undefined,
       } as any,
+    });
+  };
+
+  const resetAllFilters = () => {
+    setFilter(ALL);
+    setSelectedPattern(null);
+    navigate({
+      to: "/shop",
+      search: {} as any,
     });
   };
 
@@ -219,14 +270,11 @@ function ShopPage() {
             {filter !== ALL ? `in ${filter}` : ""}{" "}
             {selectedPattern && patternItem ? `with ${patternItem.name} pattern` : ""}
           </span>
-          {(filter !== ALL || selectedPattern) && (
+          {(filter !== ALL || selectedPattern || queryFilter || querySearch) && (
             <button
               type="button"
-              className="text-xs font-semibold text-[#6B1E2E] hover:underline"
-              onClick={() => {
-                setFilter(ALL);
-                clearPattern();
-              }}
+              className="text-xs font-semibold text-[#6B1E2E] hover:underline cursor-pointer"
+              onClick={resetAllFilters}
             >
               Reset All Filters
             </button>
@@ -244,11 +292,8 @@ function ShopPage() {
             </p>
             <button
               type="button"
-              onClick={() => {
-                setFilter(ALL);
-                clearPattern();
-              }}
-              className="px-5 py-2 rounded-full bg-[#0E0E0E] text-[#F4F0E8] text-xs uppercase tracking-wider font-medium"
+              onClick={resetAllFilters}
+              className="px-5 py-2 rounded-full bg-[#0E0E0E] text-[#F4F0E8] text-xs uppercase tracking-wider font-medium cursor-pointer hover:bg-[#B8913A] transition-colors"
             >
               Reset Filters
             </button>
