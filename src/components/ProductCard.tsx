@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Heart, Star, ShoppingBag, Eye } from "lucide-react";
+import { Heart, ShoppingBag } from "lucide-react";
 import { formatPrice } from "@/utils/formatters";
 import { useWishlist } from "@/context/WishlistContext";
 import { useCart } from "@/context/CartContext";
@@ -12,8 +12,6 @@ interface ProductCardProps {
   badgeText?: string | undefined;
   onQuickView?: ((product: Product) => void) | undefined;
 }
-
-const DEFAULT_SWATCHES = ["#6B1E2E", "#B8913A", "#8A9A7B", "#2A2A2A"];
 
 export function ProductCard({ product, light = false, badgeText, onQuickView }: ProductCardProps) {
   const { wishlist, toggleWishlist } = useWishlist();
@@ -31,7 +29,6 @@ export function ProductCard({ product, light = false, badgeText, onQuickView }: 
         : ["S", "M", "L", "XL"];
 
   const [selectedSize, setSelectedSize] = useState<string>(availableSizes[0] || "Standard");
-  const [selectedSwatch, setSelectedSwatch] = useState<number>(0);
 
   const salePrice = Number(product.price) || 0;
   const badge = badgeText || product.badge || "New";
@@ -166,36 +163,6 @@ export function ProductCard({ product, light = false, badgeText, onQuickView }: 
             >
               / {product.unit || "piece"}
             </span>
-          </div>
-        </div>
-
-        {/* Rating and Colour Swatch Dots */}
-        <div className="flex items-center justify-between pt-2 border-t border-current/10 text-xs">
-          {/* Star Rating with Count */}
-          <div className="flex items-center gap-1 text-[#B8913A]">
-            <Star className="size-3 fill-[#B8913A] text-[#B8913A]" />
-            <span className="text-[11px] font-medium tracking-tight text-inherit">
-              {product.rating || "4.9"} <span className="opacity-60">(42)</span>
-            </span>
-          </div>
-
-          {/* Colour Swatch Dots */}
-          <div className="flex items-center gap-1.5" title="Available Colourways">
-            {DEFAULT_SWATCHES.map((color, idx) => (
-              <button
-                key={color}
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setSelectedSwatch(idx);
-                }}
-                style={{ backgroundColor: color }}
-                className={`size-2.5 rounded-full transition-transform ${
-                  selectedSwatch === idx ? "ring-1 ring-offset-1 ring-[#B8913A] scale-125" : "opacity-75 hover:opacity-100"
-                }`}
-                aria-label={`Swatch ${idx + 1}`}
-              />
-            ))}
           </div>
         </div>
       </div>

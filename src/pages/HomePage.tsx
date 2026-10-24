@@ -24,7 +24,7 @@ import silkSareesCategory from "@/assets/silk-sarees-category.jpg";
 import chuditharCategory from "@/assets/chudithar-ensembles-category.jpg";
 import coordsetsCategory from "@/assets/artisanal-coordsets-category.jpg";
 import maxisCategory from "@/assets/flowing-maxis-category.jpg";
-import heroFashionBanner from "@/assets/hero-fashion-models.png";
+import heroEthnicBanner from "@/assets/hero-ethnic-collection.jpg";
 
 
 // =========================================================================
@@ -210,10 +210,10 @@ export function HomePage() {
 
             {/* RIGHT SIDE: Large fashion photograph */}
             <div className="lg:col-span-6 flex items-center justify-center">
-              <div className="relative aspect-square w-full max-w-[560px] rounded-2xl overflow-hidden bg-[#FAF7F2] border border-[rgba(14,14,14,0.08)] shadow-[0_16px_40px_-10px_rgba(30,22,12,0.18),0_6px_20px_rgba(30,22,12,0.08)] group">
+              <div className="relative aspect-[4/5] w-full max-w-[480px] lg:max-w-[500px] rounded-2xl overflow-hidden bg-[#FAF7F2] border border-[rgba(14,14,14,0.08)] shadow-[0_16px_40px_-10px_rgba(30,22,12,0.18),0_6px_20px_rgba(30,22,12,0.08)] group">
                 <img
-                  src={heroFashionBanner}
-                  alt="Padmanabha Fabrics contemporary fashion collection"
+                  src={heroEthnicBanner}
+                  alt="Padmanabha Fabrics contemporary ethnic collection"
                   className="w-full h-full object-cover object-center transition-transform duration-700 ease-out group-hover:scale-[1.02]"
                   loading="eager"
                 />
