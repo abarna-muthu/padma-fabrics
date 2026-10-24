@@ -223,6 +223,10 @@ export type Order = {
   paymentStatus: "Paid" | "Pending" | "Failed";
   shippingAddress: string;
   notes?: string;
+  deliveryDays?: number; // e.g. 5 or 6 days
+  manualStatusOverride?: boolean;
+  courierName?: string;
+  trackingNumber?: string;
 };
 
 export type StockLog = {
@@ -243,6 +247,7 @@ export const initialOrders: Order[] = [
     customerEmail: "kavitha.n@gmail.com",
     customerPhone: "+91 98401 22819",
     date: "2026-10-14",
+    deliveryDays: 5,
     items: [
       {
         productId: "heritage-silk",
@@ -263,6 +268,7 @@ export const initialOrders: Order[] = [
     customerEmail: "contact@smtextiles.co.in",
     customerPhone: "+91 94440 98112",
     date: "2026-10-15",
+    deliveryDays: 6,
     items: [
       {
         productId: "ivory-brocade",
@@ -291,6 +297,7 @@ export const initialOrders: Order[] = [
     customerEmail: "ananya.rao@yahoo.com",
     customerPhone: "+91 97890 33451",
     date: "2026-10-15",
+    deliveryDays: 5,
     items: [
       {
         productId: "linen-shirt",
@@ -318,6 +325,7 @@ export const initialOrders: Order[] = [
     customerEmail: "rajesh.siva@outlook.com",
     customerPhone: "+91 99620 44102",
     date: "2026-10-15",
+    deliveryDays: 5,
     items: [
       {
         productId: "wine-silk",
@@ -339,6 +347,7 @@ export const initialOrders: Order[] = [
     customerEmail: "priya.bala@gmail.com",
     customerPhone: "+91 98840 77123",
     date: "2026-10-13",
+    deliveryDays: 6,
     items: [
       {
         productId: "maroon-anarkali",

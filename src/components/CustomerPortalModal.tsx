@@ -27,6 +27,8 @@ import { Input } from "@/components/ui/input";
 import { useCustomerAuth } from "@/context/CustomerAuthContext";
 import { useStore } from "@/context/StoreContext";
 import { money, type Order } from "@/lib/catalog";
+import { OrderTrackingModal } from "@/components/OrderTrackingModal";
+import { computeOrderTracking } from "@/lib/orderTracking";
 
 export function CustomerPortalModal() {
   const {
@@ -48,6 +50,10 @@ export function CustomerPortalModal() {
   const [loginPassword, setLoginPassword] = useState("customer123");
   const [loginError, setLoginError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Live order tracking modal states
+  const [trackingModalOrder, setTrackingModalOrder] = useState<Order | null>(null);
+  const [trackingModalProduct, setTrackingModalProduct] = useState<any | null>(null);
 
   // Filter orders for the logged-in customer
   const customerOrders = customer
@@ -389,53 +395,121 @@ export function CustomerPortalModal() {
                             </div>
                           </div>
 
-                          {/* Items List */}
+                          {/* Items List - Clickable for live tracking */}
                           <div className="space-y-2 text-xs">
-                            <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider block">
-                              Items Ordered:
-                            </span>
+                            <div className="flex items-center justify-between">
+                              <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider block">
+                                Items Ordered:
+                              </span>
+                              <span className="text-[10px] text-primary font-medium flex items-center gap-1">
+                                <Truck className="size-3" /> Click item to view live shipment tracking
+                              </span>
+                            </div>
                             <div className="divide-y divide-border/60">
-                              {order.items.map((item, idx) => (
-                                <div key={idx} className="py-1.5 flex justify-between items-center">
-                                  <div className="flex items-center gap-2">
-                                    <span className="font-bold font-sans tabular-nums text-primary">
-                                      {item.quantity}x
-                                    </span>
-                                    <span className="font-medium text-foreground">{item.productName}</span>
-                                    <span className="text-[10px] text-muted-foreground">({item.unit})</span>
+                              {order.items.map((item, idx) => {
+                                const matchedProd = productsList.find(
+                                  (p) =>
+                                    p.id === item.productId ||
+                                    p.name.toLowerCase() === item.productName.toLowerCase(),
+                                );
+                                const prodImg = matchedProd?.images?.[0] || matchedProd?.image;
+
+                                return (
+                                  <div
+                                    key={idx}
+                                    onClick={() => {
+                                      setTrackingModalOrder(order);
+                                      setTrackingModalProduct({
+                                        name: item.productName,
+                                        quantity: item.quantity,
+                                        unit: item.unit,
+                                        price: item.price,
+                                        image: prodImg,
+                                      });
+                                    }}
+                                    className="py-2.5 px-2.5 -mx-1 rounded-sm hover:bg-primary/5 cursor-pointer transition-colors flex justify-between items-center group border border-transparent hover:border-primary/20"
+                                    title="Click to view live tracking details"
+                                  >
+                                    <div className="flex items-center gap-3 min-w-0">
+                                      <div className="size-10 rounded bg-secondary/50 border border-border flex items-center justify-center shrink-0 overflow-hidden">
+                                        {prodImg ? (
+                                          <img
+                                            src={prodImg}
+                                            alt={item.productName}
+                                            className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                                          />
+                                        ) : (
+                                          <Package className="size-5 text-gold/70" />
+                                        )}
+                                      </div>
+                                      <div className="min-w-0">
+                                        <div className="flex items-center gap-1.5">
+                                          <span className="font-bold font-sans tabular-nums text-primary text-xs">
+                                            {item.quantity}x
+                                          </span>
+                                          <span className="font-medium text-foreground text-xs group-hover:text-primary transition-colors truncate">
+                                            {item.productName}
+                                          </span>
+                                        </div>
+                                        <span className="text-[10px] text-muted-foreground block">
+                                          {item.unit} · Click to track shipment
+                                        </span>
+                                      </div>
+                                    </div>
+
+                                    <div className="text-right shrink-0 flex items-center gap-2.5">
+                                      <span className="font-sans tabular-nums font-semibold text-foreground text-xs">
+                                        {money(item.price * item.quantity)}
+                                      </span>
+                                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-semibold bg-primary/10 text-primary group-hover:bg-primary group-hover:text-primary-foreground transition-all">
+                                        <Truck className="size-3" /> Track
+                                      </span>
+                                    </div>
                                   </div>
-                                  <span className="font-sans tabular-nums text-foreground">
-                                    {money(item.price * item.quantity)}
-                                  </span>
-                                </div>
-                              ))}
+                                );
+                              })}
                             </div>
                           </div>
 
-                          {/* Shipping address & WhatsApp update button */}
+                          {/* Shipping address & Live Tracking / WhatsApp buttons */}
                           <div className="pt-2 border-t border-border/80 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 text-xs">
                             <div className="text-muted-foreground text-[11px] max-w-sm">
                               <span className="font-medium text-foreground">Delivery To: </span>
                               {order.shippingAddress || "Chennai, Tamil Nadu"}
                             </div>
 
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className="h-8 text-xs text-[#25D366] hover:text-[#25D366] hover:bg-emerald-50 border-emerald-300 dark:border-emerald-800 shrink-0 cursor-pointer"
-                              asChild
-                            >
-                              <a
-                                href={`https://wa.me/919940145700?text=${encodeURIComponent(
-                                  `Hi Padmanabha Fabrics, I would like to check the tracking status of my Order #${order.id}. Current status shown: ${order.status}.`,
-                                )}`}
-                                target="_blank"
-                                rel="noreferrer"
+                            <div className="flex items-center gap-2 shrink-0">
+                              <Button
+                                variant="default"
+                                size="sm"
+                                className="h-8 text-xs bg-primary hover:bg-primary/90 text-primary-foreground font-semibold flex items-center gap-1.5 cursor-pointer"
+                                onClick={() => {
+                                  setTrackingModalOrder(order);
+                                  setTrackingModalProduct(null);
+                                }}
                               >
-                                <MessageCircle className="size-3.5 mr-1 text-[#25D366]" />
-                                Track Order on WhatsApp
-                              </a>
-                            </Button>
+                                <Truck className="size-3.5" />
+                                <span>Track Shipment</span>
+                              </Button>
+
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="h-8 text-xs text-[#25D366] hover:text-[#25D366] hover:bg-emerald-50 border-emerald-300 dark:border-emerald-800 shrink-0 cursor-pointer"
+                                asChild
+                              >
+                                <a
+                                  href={`https://wa.me/919940145700?text=${encodeURIComponent(
+                                    `Hi Padmanabha Fabrics, I would like to check the tracking status of my Order #${order.id}. Current status shown: ${order.status}.`,
+                                  )}`}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                >
+                                  <MessageCircle className="size-3.5 mr-1 text-[#25D366]" />
+                                  WhatsApp
+                                </a>
+                              </Button>
+                            </div>
                           </div>
                         </div>
                       );
@@ -586,6 +660,17 @@ export function CustomerPortalModal() {
           </div>
         )}
       </DialogContent>
+
+      {/* Live Order Tracking Modal */}
+      <OrderTrackingModal
+        order={trackingModalOrder}
+        isOpen={!!trackingModalOrder}
+        onClose={() => {
+          setTrackingModalOrder(null);
+          setTrackingModalProduct(null);
+        }}
+        clickedProduct={trackingModalProduct}
+      />
     </Dialog>
   );
 }

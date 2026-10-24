@@ -69,8 +69,11 @@ interface StoreContextType {
 
   // Orders & Sales management
   orders: Order[];
-  updateOrderStatus: (orderId: string, status: Order["status"]) => void;
+  updateOrderStatus: (orderId: string, status: Order["status"], manualOverride?: boolean) => void;
   updatePaymentStatus: (orderId: string, paymentStatus: Order["paymentStatus"]) => void;
+  updateOrderDays: (orderId: string, days: number) => void;
+  updateOrderDetails: (orderId: string, updates: Partial<Order>) => void;
+  deleteOrder: (orderId: string) => void;
   createCheckoutOrder: (details: {
     customerName: string;
     customerEmail: string;
@@ -767,8 +770,16 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   };
 
   // Orders actions
-  const updateOrderStatus = (orderId: string, status: Order["status"]) => {
-    const updated = orders.map((o) => (o.id === orderId ? { ...o, status } : o));
+  const updateOrderStatus = (orderId: string, status: Order["status"], manualOverride: boolean = true) => {
+    const updated = orders.map((o) =>
+      o.id === orderId
+        ? {
+            ...o,
+            status,
+            manualStatusOverride: manualOverride,
+          }
+        : o,
+    );
     saveOrders(updated);
 
     // Persist to backend database API
@@ -785,6 +796,29 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     orderApi.updatePaymentStatus(orderId, paymentStatus).catch((err) => {
       console.warn("Could not sync payment status to backend API:", err);
     });
+  };
+
+  const updateOrderDays = (orderId: string, days: number) => {
+    const val = Math.max(1, Number(days) || 5);
+    const updated = orders.map((o) => (o.id === orderId ? { ...o, deliveryDays: val } : o));
+    saveOrders(updated);
+  };
+
+  const updateOrderDetails = (orderId: string, updates: Partial<Order>) => {
+    const updated = orders.map((o) => (o.id === orderId ? { ...o, ...updates } : o));
+    saveOrders(updated);
+
+    if (updates.status) {
+      orderApi.updateStatus(orderId, updates.status).catch(() => {});
+    }
+    if (updates.paymentStatus) {
+      orderApi.updatePaymentStatus(orderId, updates.paymentStatus).catch(() => {});
+    }
+  };
+
+  const deleteOrder = (orderId: string) => {
+    const updated = orders.filter((o) => o.id !== orderId);
+    saveOrders(updated);
   };
 
   // Checkout action with backend stock validation & order creation
@@ -1094,6 +1128,9 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         orders,
         updateOrderStatus,
         updatePaymentStatus,
+        updateOrderDays,
+        updateOrderDetails,
+        deleteOrder,
         createCheckoutOrder,
       }}
     >

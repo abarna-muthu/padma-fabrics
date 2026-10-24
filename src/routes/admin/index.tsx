@@ -45,6 +45,7 @@ import {
   RotateCcw,
   Upload,
   Image as ImageIcon,
+  Truck,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
@@ -56,6 +57,8 @@ import { useAdminAuth } from "@/context/AdminAuthContext";
 import { useStore } from "@/context/StoreContext";
 import { useSiteContent } from "@/context/SiteContentContext";
 import { ALL, categories, money, type Product, type Order } from "@/lib/catalog";
+import { computeOrderTracking } from "@/lib/orderTracking";
+import { OrderTrackingModal } from "@/components/OrderTrackingModal";
 import { customerApi, productApi } from "@/lib/api";
 import { AdminLoginView } from "./login";
 
@@ -159,6 +162,9 @@ function AdminDashboardPage() {
     orders,
     updateOrderStatus,
     updatePaymentStatus,
+    updateOrderDays,
+    updateOrderDetails,
+    deleteOrder,
   } = useStore();
 
   const [isRestoring, setIsRestoring] = useState(false);
@@ -440,6 +446,9 @@ function AdminDashboardPage() {
 
   // Order detail view modal
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
+  const [editingOrder, setEditingOrder] = useState<Order | null>(null);
+  const [deleteOrderConfirm, setDeleteOrderConfirm] = useState<Order | null>(null);
+  const [trackingOrderModal, setTrackingOrderModal] = useState<Order | null>(null);
   const [orderSearch, setOrderSearch] = useState("");
   const [orderStatusFilter, setOrderStatusFilter] = useState("All");
 
@@ -2237,6 +2246,7 @@ function AdminDashboardPage() {
                       <th className="p-3.5 text-xs font-semibold uppercase tracking-wider">Order ID</th>
                       <th className="p-3.5 text-xs font-semibold uppercase tracking-wider">Customer Details</th>
                       <th className="p-3.5 text-xs font-semibold uppercase tracking-wider">Date</th>
+                      <th className="p-3.5 text-xs font-semibold uppercase tracking-wider">Days</th>
                       <th className="p-3.5 text-xs font-semibold uppercase tracking-wider">Items Summary</th>
                       <th className="p-3.5 text-xs font-semibold uppercase tracking-wider">Total Amount</th>
                       <th className="p-3.5 text-xs font-semibold uppercase tracking-wider">Payment</th>
@@ -2245,70 +2255,139 @@ function AdminDashboardPage() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-border">
-                    {filteredOrders.map((o) => (
-                      <tr key={o.id} className="hover:bg-secondary/20 transition-colors">
-                        <td className="p-3.5 font-sans font-bold text-sm tracking-tight text-foreground">{o.id}</td>
-                        <td className="p-3.5">
-                          <div className="font-medium text-foreground">{o.customerName}</div>
-                          <div className="text-xs font-sans tabular-nums text-muted-foreground mt-0.5">{o.customerPhone}</div>
-                          <div className="text-xs text-muted-foreground">{o.customerEmail}</div>
-                        </td>
-                        <td className="p-3.5 font-sans tabular-nums text-xs font-semibold text-foreground">
-                          {o.date || (o.createdAt ? o.createdAt.split("T")[0] : new Date().toISOString().split("T")[0])}
-                        </td>
-                        <td className="p-3.5 text-sm text-muted-foreground">
-                          {o.items.map((i) => `${i.quantity}x ${i.productName}`).join(", ")}
-                        </td>
-                        <td className="p-3.5 font-sans font-bold tabular-nums text-sm text-primary">{money(o.total)}</td>
-                        <td className="p-3.5">
-                          <select
-                            value={o.paymentStatus}
-                            onChange={(e) =>
-                              updatePaymentStatus(o.id, e.target.value as Order["paymentStatus"])
-                            }
-                            className={`px-2.5 py-1 text-xs font-medium border border-border focus:outline-none ${
-                              o.paymentStatus === "Paid"
-                                ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300"
-                                : o.paymentStatus === "Pending"
-                                  ? "bg-amber-500/10 text-amber-700 dark:text-amber-300"
-                                  : "bg-destructive/10 text-destructive"
-                            }`}
-                          >
-                            <option value="Paid">Paid</option>
-                            <option value="Pending">Pending</option>
-                            <option value="Failed">Failed</option>
-                          </select>
-                        </td>
-                        <td className="p-3.5">
-                          <select
-                            value={o.status}
-                            onChange={(e) =>
-                              updateOrderStatus(o.id, e.target.value as Order["status"])
-                            }
-                            className="px-2.5 py-1 text-xs font-medium border border-border bg-background text-foreground focus:outline-none"
-                          >
-                            <option value="Pending">Pending</option>
-                            <option value="Processing">Processing</option>
-                            <option value="Shipped">Shipped</option>
-                            <option value="Delivered">Delivered</option>
-                            <option value="Cancelled">Cancelled</option>
-                          </select>
-                        </td>
-                        <td className="p-3.5 text-right">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="text-xs h-8"
-                            onClick={() => setSelectedOrder(o)}
-                          >
-                            <Eye className="size-3.5 mr-1" /> View Details
-                          </Button>
-                        </td>
-                      </tr>
-                    ))}
+                    {filteredOrders.map((o) => {
+                      const tracking = computeOrderTracking(o);
+                      const currentDays = o.deliveryDays || 5;
+
+                      return (
+                        <tr key={o.id} className="hover:bg-secondary/20 transition-colors">
+                          <td className="p-3.5 font-sans font-bold text-sm tracking-tight text-foreground">
+                            {o.id}
+                          </td>
+                          <td className="p-3.5">
+                            <div className="font-medium text-foreground">{o.customerName}</div>
+                            <div className="text-xs font-sans tabular-nums text-muted-foreground mt-0.5">{o.customerPhone}</div>
+                            <div className="text-xs text-muted-foreground">{o.customerEmail}</div>
+                          </td>
+                          <td className="p-3.5 font-sans tabular-nums text-xs font-semibold text-foreground">
+                            {o.date || (o.createdAt ? o.createdAt.split("T")[0] : new Date().toISOString().split("T")[0])}
+                          </td>
+
+                          {/* DAYS COLUMN: Editable delivery duration (e.g. 5, 6 days) */}
+                          <td className="p-3.5 whitespace-nowrap">
+                            <div className="inline-flex items-center gap-1.5 bg-background border border-border px-2 py-1 rounded shadow-2xs">
+                              <input
+                                type="number"
+                                min="1"
+                                max="30"
+                                value={currentDays}
+                                onChange={(e) => {
+                                  const val = parseInt(e.target.value, 10);
+                                  if (!isNaN(val) && val > 0) {
+                                    updateOrderDays(o.id, val);
+                                  }
+                                }}
+                                className="w-10 h-6 text-xs text-center font-bold font-sans tabular-nums bg-transparent border-0 focus:outline-none focus:ring-1 focus:ring-primary rounded"
+                                title="Set Delivery Days (e.g. 5, 6)"
+                              />
+                              <span className="text-[11px] font-sans text-muted-foreground">days</span>
+                            </div>
+                          </td>
+
+                          <td className="p-3.5 text-sm text-muted-foreground">
+                            {o.items.map((i) => `${i.quantity}x ${i.productName}`).join(", ")}
+                          </td>
+                          <td className="p-3.5 font-sans font-bold tabular-nums text-sm text-primary">{money(o.total)}</td>
+                          <td className="p-3.5">
+                            <select
+                              value={o.paymentStatus}
+                              onChange={(e) =>
+                                updatePaymentStatus(o.id, e.target.value as Order["paymentStatus"])
+                              }
+                              className={`px-2.5 py-1 text-xs font-medium border border-border focus:outline-none ${
+                                o.paymentStatus === "Paid"
+                                  ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300"
+                                  : o.paymentStatus === "Pending"
+                                    ? "bg-amber-500/10 text-amber-700 dark:text-amber-300"
+                                    : "bg-destructive/10 text-destructive"
+                              }`}
+                            >
+                              <option value="Paid">Paid</option>
+                              <option value="Pending">Pending</option>
+                              <option value="Failed">Failed</option>
+                            </select>
+                          </td>
+
+                          {/* FULFILLMENT COLUMN: Automatic step progression unless admin overrides */}
+                          <td className="p-3.5">
+                            <select
+                              value={tracking.effectiveStatus}
+                              onChange={(e) =>
+                                updateOrderStatus(o.id, e.target.value as Order["status"], true)
+                              }
+                              className={`px-2.5 py-1 text-xs font-medium border border-border focus:outline-none ${
+                                tracking.effectiveStatus === "Delivered"
+                                  ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-emerald-500/30"
+                                  : tracking.effectiveStatus === "Shipped"
+                                    ? "bg-indigo-500/15 text-indigo-700 dark:text-indigo-300 border-indigo-500/30 font-semibold"
+                                    : tracking.effectiveStatus === "Processing"
+                                      ? "bg-blue-500/15 text-blue-700 dark:text-blue-300 border-blue-500/30"
+                                      : tracking.effectiveStatus === "Cancelled"
+                                        ? "bg-destructive/15 text-destructive border-destructive/30"
+                                        : "bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-500/30"
+                              }`}
+                            >
+                              <option value="Pending">Pending (Day 1)</option>
+                              <option value="Processing">Processing (Day 2)</option>
+                              <option value="Shipped">Shipped (Day 3+)</option>
+                              <option value="Delivered">Delivered</option>
+                              <option value="Cancelled">Cancelled</option>
+                            </select>
+                          </td>
+
+                          {/* ACTION COLUMN: ICON BUTTONS (EDIT, VIEW, DELETE) */}
+                          <td className="p-3.5 text-right whitespace-nowrap">
+                            <div className="flex items-center justify-end gap-1.5">
+                              {/* EDIT ORDER ICON BUTTON */}
+                              <button
+                                type="button"
+                                onClick={() => setEditingOrder(o)}
+                                className="size-8 rounded flex items-center justify-center border border-border bg-background hover:border-gold hover:bg-gold/15 text-gold transition-colors"
+                                title="Edit Order & Delivery Days"
+                                aria-label="Edit Order"
+                              >
+                                <Edit className="size-3.5" />
+                              </button>
+
+                              {/* VIEW ORDER ICON BUTTON */}
+                              <button
+                                type="button"
+                                onClick={() => setSelectedOrder(o)}
+                                className="size-8 rounded flex items-center justify-center border border-border bg-background hover:bg-secondary text-foreground hover:text-primary transition-colors"
+                                title="View Order Details & Tracking"
+                                aria-label="View Order"
+                              >
+                                <Eye className="size-3.5" />
+                              </button>
+
+                              {/* DELETE ORDER ICON BUTTON */}
+                              <button
+                                type="button"
+                                onClick={() => setDeleteOrderConfirm(o)}
+                                className="size-8 rounded flex items-center justify-center border border-border bg-background hover:border-destructive/40 hover:bg-destructive/10 text-destructive transition-colors"
+                                title="Delete Order"
+                                aria-label="Delete Order"
+                              >
+                                <Trash2 className="size-3.5" />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
                     {filteredOrders.length === 0 && (
                       <tr>
-                        <td colSpan={8} className="p-8 text-center text-muted-foreground text-sm">
+                        <td colSpan={9} className="p-8 text-center text-muted-foreground text-sm">
                           No orders found matching the filter.
                         </td>
                       </tr>
@@ -4285,10 +4364,15 @@ function AdminDashboardPage() {
       {/* ----------------- MODAL: VIEW ORDER DETAILS ----------------- */}
       {selectedOrder && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-card border border-border w-full max-w-md max-h-[90vh] overflow-y-auto p-6 shadow-xl">
+          <div className="bg-card border border-border w-full max-w-lg max-h-[90vh] overflow-y-auto p-6 shadow-xl rounded-md">
             <div className="flex justify-between items-center pb-3 border-b border-border">
               <div>
-                <h3 className="font-sans font-bold text-lg tabular-nums tracking-tight">{selectedOrder.id}</h3>
+                <div className="flex items-center gap-2">
+                  <h3 className="font-sans font-bold text-lg tabular-nums tracking-tight">{selectedOrder.id}</h3>
+                  <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-gold/15 text-gold border border-gold/30">
+                    {selectedOrder.deliveryDays || 5} Days Delivery
+                  </span>
+                </div>
                 <span className="text-xs font-sans tabular-nums text-muted-foreground">{selectedOrder.date}</span>
               </div>
               <Button
@@ -4307,6 +4391,30 @@ function AdminDashboardPage() {
                 <div className="text-xs font-sans tabular-nums text-muted-foreground">{selectedOrder.customerPhone}</div>
                 <div className="text-xs text-muted-foreground">{selectedOrder.customerEmail}</div>
                 <div className="text-xs text-muted-foreground pt-1">{selectedOrder.shippingAddress}</div>
+              </div>
+
+              {/* Live Tracking Quick Action */}
+              <div className="p-3 bg-primary/5 border border-primary/20 rounded flex items-center justify-between gap-3">
+                <div className="space-y-0.5">
+                  <span className="text-xs font-semibold text-foreground flex items-center gap-1.5">
+                    <Truck className="size-3.5 text-primary" />
+                    <span>Meesho-Style Live Stepper Tracking</span>
+                  </span>
+                  <p className="text-[11px] text-muted-foreground font-sans">
+                    View customer tracking progress, courier AWB & milestones
+                  </p>
+                </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    setTrackingOrderModal(selectedOrder);
+                  }}
+                  className="text-xs h-7 px-3 shrink-0 border-primary/40 hover:bg-primary/10 text-primary font-semibold"
+                >
+                  Open Tracker &rarr;
+                </Button>
               </div>
 
               <div>
@@ -4351,7 +4459,7 @@ function AdminDashboardPage() {
                     value={selectedOrder.status}
                     onChange={(e) => {
                       const updated = e.target.value as Order["status"];
-                      updateOrderStatus(selectedOrder.id, updated);
+                      updateOrderStatus(selectedOrder.id, updated, true);
                       setSelectedOrder({ ...selectedOrder, status: updated });
                     }}
                     className="w-full h-9 px-2.5 text-xs bg-background border border-border"
@@ -4372,7 +4480,19 @@ function AdminDashboardPage() {
               )}
             </div>
 
-            <div className="pt-4 mt-4 border-t border-border flex justify-end">
+            <div className="pt-4 mt-4 border-t border-border flex justify-between items-center">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  const target = selectedOrder;
+                  setSelectedOrder(null);
+                  setEditingOrder(target);
+                }}
+                className="text-xs h-8"
+              >
+                <Edit className="size-3.5 mr-1" /> Edit Order Details
+              </Button>
               <Button variant="outline" size="sm" onClick={() => setSelectedOrder(null)}>
                 Close
               </Button>
@@ -4380,6 +4500,221 @@ function AdminDashboardPage() {
           </div>
         </div>
       )}
+
+      {/* ----------------- MODAL: EDIT ORDER & DELIVERY DAYS ----------------- */}
+      {editingOrder && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-card border border-border w-full max-w-lg max-h-[90vh] overflow-y-auto p-6 shadow-xl rounded-md">
+            <div className="flex justify-between items-center pb-3 border-b border-border">
+              <div>
+                <h3 className="font-display font-semibold text-lg">Edit Order #{editingOrder.id}</h3>
+                <span className="text-xs text-muted-foreground font-sans">
+                  Update estimated delivery days, fulfillment status & courier tracking
+                </span>
+              </div>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="size-8"
+                onClick={() => setEditingOrder(null)}
+              >
+                <X className="size-4" />
+              </Button>
+            </div>
+
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                const formData = new FormData(e.currentTarget);
+                const days = parseInt(formData.get("deliveryDays") as string, 10) || 5;
+                const status = formData.get("status") as Order["status"];
+                const paymentStatus = formData.get("paymentStatus") as Order["paymentStatus"];
+                const courierName = (formData.get("courierName") as string) || "ST Courier / DTDC Express";
+                const trackingNumber = (formData.get("trackingNumber") as string) || `PF-TRK-${editingOrder.id}`;
+                const shippingAddress = formData.get("shippingAddress") as string;
+                const notes = formData.get("notes") as string;
+
+                updateOrderDetails(editingOrder.id, {
+                  deliveryDays: days,
+                  status,
+                  paymentStatus,
+                  courierName,
+                  trackingNumber,
+                  shippingAddress,
+                  notes,
+                  manualStatusOverride: true,
+                });
+                toast.success(`Order #${editingOrder.id} updated successfully!`);
+                setEditingOrder(null);
+              }}
+              className="space-y-4 mt-4 text-xs"
+            >
+              {/* Delivery Days Field */}
+              <div className="space-y-1.5 p-3.5 rounded bg-primary/5 border border-primary/20">
+                <label className="font-semibold text-foreground flex items-center justify-between">
+                  <span className="flex items-center gap-1.5">
+                    <Calendar className="size-3.5 text-primary" />
+                    <span>Estimated Delivery Days (e.g. 5, 6 Days):</span>
+                  </span>
+                  <span className="text-primary font-mono font-bold">Auto-advances step</span>
+                </label>
+                <div className="flex items-center gap-2">
+                  <Input
+                    name="deliveryDays"
+                    type="number"
+                    min="1"
+                    max="30"
+                    defaultValue={editingOrder.deliveryDays || 5}
+                    required
+                    className="h-9 font-bold font-sans text-sm w-32"
+                  />
+                  <span className="text-muted-foreground text-xs">
+                    Days (Day 1: Pending &rarr; Day 2: Processing &rarr; Day 3: Shipped &rarr; Day {editingOrder.deliveryDays || 5}: Delivered)
+                  </span>
+                </div>
+              </div>
+
+              {/* Status and Payment Status */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <label className="font-medium text-foreground">Fulfillment Status</label>
+                  <select
+                    name="status"
+                    defaultValue={editingOrder.status}
+                    className="w-full h-9 px-2.5 bg-background border border-border text-foreground"
+                  >
+                    <option value="Pending">Pending (Order Placed)</option>
+                    <option value="Processing">Processing (Packing)</option>
+                    <option value="Shipped">Shipped (In Transit)</option>
+                    <option value="Delivered">Delivered</option>
+                    <option value="Cancelled">Cancelled</option>
+                  </select>
+                </div>
+
+                <div className="space-y-1">
+                  <label className="font-medium text-foreground">Payment Status</label>
+                  <select
+                    name="paymentStatus"
+                    defaultValue={editingOrder.paymentStatus}
+                    className="w-full h-9 px-2.5 bg-background border border-border text-foreground"
+                  >
+                    <option value="Paid">Paid</option>
+                    <option value="Pending">Pending</option>
+                    <option value="Failed">Failed</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Courier Partner & Tracking Number */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <label className="font-medium text-foreground">Courier Partner</label>
+                  <Input
+                    name="courierName"
+                    defaultValue={editingOrder.courierName || "ST Courier / DTDC Express"}
+                    placeholder="e.g. ST Courier, DTDC, BlueDart"
+                    className="h-9"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="font-medium text-foreground">Tracking AWB ID</label>
+                  <Input
+                    name="trackingNumber"
+                    defaultValue={editingOrder.trackingNumber || `PF-TRK-${editingOrder.id}`}
+                    placeholder="e.g. ST123456789IN"
+                    className="h-9 font-mono"
+                  />
+                </div>
+              </div>
+
+              {/* Shipping Address */}
+              <div className="space-y-1">
+                <label className="font-medium text-foreground">Shipping / Delivery Address</label>
+                <Textarea
+                  name="shippingAddress"
+                  defaultValue={editingOrder.shippingAddress}
+                  rows={2}
+                  className="text-xs"
+                />
+              </div>
+
+              {/* Internal Notes */}
+              <div className="space-y-1">
+                <label className="font-medium text-foreground">Admin / Order Notes</label>
+                <Input
+                  name="notes"
+                  defaultValue={editingOrder.notes || ""}
+                  placeholder="e.g. Special packing request, gift wrap, etc."
+                  className="h-9"
+                />
+              </div>
+
+              <div className="pt-3 border-t border-border flex justify-end gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setEditingOrder(null)}
+                >
+                  Cancel
+                </Button>
+                <Button type="submit" size="sm" className="bg-primary text-primary-foreground font-semibold">
+                  Save Order Changes
+                </Button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ----------------- MODAL: DELETE ORDER CONFIRMATION ----------------- */}
+      {deleteOrderConfirm && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-card border border-destructive/30 w-full max-w-sm p-6 shadow-xl rounded-md space-y-4">
+            <div className="flex items-start gap-3">
+              <div className="size-10 rounded-full bg-destructive/15 border border-destructive/30 flex items-center justify-center shrink-0 text-destructive">
+                <Trash2 className="size-5" />
+              </div>
+              <div className="space-y-1">
+                <h3 className="font-display font-semibold text-base text-foreground">Delete Order?</h3>
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                  Are you sure you want to delete order <strong className="text-foreground">#{deleteOrderConfirm.id}</strong> for <strong className="text-foreground">{deleteOrderConfirm.customerName}</strong>? This action cannot be undone.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-2 pt-2 border-t border-border">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => setDeleteOrderConfirm(null)}
+              >
+                Cancel
+              </Button>
+              <Button
+                type="button"
+                variant="destructive"
+                size="sm"
+                onClick={() => {
+                  deleteOrder(deleteOrderConfirm.id);
+                  toast.success(`Order #${deleteOrderConfirm.id} has been deleted.`);
+                  setDeleteOrderConfirm(null);
+                }}
+              >
+                Delete Order
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ----------------- MODAL: MEESHO-STYLE ORDER TRACKING MODAL ----------------- */}
+      <OrderTrackingModal
+        order={trackingOrderModal}
+        isOpen={!!trackingOrderModal}
+        onClose={() => setTrackingOrderModal(null)}
+      />
     </div>
   );
 }
