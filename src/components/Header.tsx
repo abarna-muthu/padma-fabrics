@@ -12,6 +12,7 @@ import { useCart } from "@/context/CartContext";
 import { useWishlist } from "@/context/WishlistContext";
 import { useCustomerAuth } from "@/context/CustomerAuthContext";
 import { useStore } from "@/context/StoreContext";
+import logo from "@/assets/padmanabha-logo.jpg";
 
 export function Header() {
   const navigate = useNavigate();
@@ -79,15 +80,24 @@ export function Header() {
             {/* BRAND LOGO / WORDMARK */}
             <Link
               to="/"
-              className="flex flex-col group select-none shrink-0"
+              className="flex items-center gap-3 sm:gap-3.5 group select-none shrink-0"
               aria-label="Padmanabha Fabrics Home"
             >
-              <span className="font-['Manrope'] text-xl sm:text-2xl font-semibold tracking-[0.25em] text-[#0E0E0E] group-hover:text-[#B8913A] transition-colors leading-none">
-                PADMANABHA
-              </span>
-              <span className="text-[9px] font-medium uppercase tracking-[0.35em] text-[#B8913A] mt-1.5 opacity-90">
-                FABRICS · CHENNAI
-              </span>
+              <img
+                src={typeof logo === "string" ? logo : (logo as any)?.url || "/padmanabha-logo.jpg"}
+                alt="Padmanabha Fabrics"
+                className="w-11 h-11 sm:w-12 sm:h-12 rounded-full object-cover ring-2 ring-[#B8913A]/50 shadow-xs transition-transform duration-300 group-hover:scale-105 shrink-0"
+                width={48}
+                height={48}
+              />
+              <div className="flex flex-col">
+                <span className="font-['Manrope'] text-lg sm:text-2xl font-semibold tracking-[0.22em] text-[#0E0E0E] group-hover:text-[#B8913A] transition-colors leading-none">
+                  PADMANABHA
+                </span>
+                <span className="text-[8.5px] sm:text-[9px] font-medium uppercase tracking-[0.32em] text-[#B8913A] mt-1 sm:mt-1.5 opacity-90">
+                  FABRICS · CHENNAI
+                </span>
+              </div>
             </Link>
 
             {/* DESKTOP NAVIGATION: Home, Shop, About, Contact only */}
@@ -258,13 +268,22 @@ export function Header() {
 
           <aside className="fixed inset-y-0 right-0 max-w-xs w-full bg-[#FAF7F2] text-[#0E0E0E] border-l border-[rgba(14,14,14,0.1)] p-6 flex flex-col z-50 animate-in slide-in-from-right duration-300">
             <div className="flex items-center justify-between pb-4 border-b border-[rgba(14,14,14,0.08)]">
-              <div>
-                <span className="font-['Manrope'] text-lg font-semibold tracking-[0.2em] block">
-                  PADMANABHA
-                </span>
-                <span className="text-[9px] font-medium uppercase tracking-[0.3em] text-[#B8913A]">
-                  FABRICS · CHENNAI
-                </span>
+              <div className="flex items-center gap-2.5">
+                <img
+                  src={typeof logo === "string" ? logo : (logo as any)?.url || "/padmanabha-logo.jpg"}
+                  alt="Padmanabha Fabrics"
+                  className="w-9 h-9 rounded-full object-cover ring-1 ring-[#B8913A]/50 shrink-0"
+                  width={36}
+                  height={36}
+                />
+                <div>
+                  <span className="font-['Manrope'] text-base font-semibold tracking-[0.2em] block leading-none">
+                    PADMANABHA
+                  </span>
+                  <span className="text-[8.5px] font-medium uppercase tracking-[0.28em] text-[#B8913A] mt-1 block">
+                    FABRICS · CHENNAI
+                  </span>
+                </div>
               </div>
               <button
                 type="button"

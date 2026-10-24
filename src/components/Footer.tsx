@@ -2,6 +2,7 @@ import { Link } from "@tanstack/react-router";
 import { ArrowUp, ArrowRight, MapPin, Phone, Mail } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
+import logo from "@/assets/padmanabha-logo.jpg";
 
 export function Footer() {
   const [email, setEmail] = useState("");
@@ -27,12 +28,23 @@ export function Footer() {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 pb-16 border-b border-[rgba(244,240,232,0.1)]">
           {/* Brand Wordmark & Mission */}
           <div className="lg:col-span-5 space-y-4">
-            <span className="font-['Manrope'] text-2xl sm:text-3xl font-semibold tracking-[0.25em] text-[#F4F0E8] block">
-              PADMANABHA
-            </span>
-            <span className="text-[10px] font-light uppercase tracking-[0.35em] text-[#B8913A] block">
-              FABRICS · CHENNAI
-            </span>
+            <div className="flex items-center gap-3.5">
+              <img
+                src={typeof logo === "string" ? logo : (logo as any)?.url || "/padmanabha-logo.jpg"}
+                alt="Padmanabha Fabrics"
+                className="w-12 h-12 rounded-full object-cover ring-2 ring-[#B8913A]/50 shadow-sm shrink-0"
+                width={48}
+                height={48}
+              />
+              <div>
+                <span className="font-['Manrope'] text-2xl sm:text-3xl font-semibold tracking-[0.25em] text-[#F4F0E8] block leading-none">
+                  PADMANABHA
+                </span>
+                <span className="text-[10px] font-light uppercase tracking-[0.35em] text-[#B8913A] block mt-1.5">
+                  FABRICS · CHENNAI
+                </span>
+              </div>
+            </div>
             <p className="text-xs sm:text-sm font-light text-[#F4F0E8]/70 leading-relaxed max-w-sm pt-2">
               Artisanal South Indian textiles, handloom silks, and contemporary ready-to-wear silhouettes. Serving retail, bespoke ateliers, and international garment exporters.
             </p>
