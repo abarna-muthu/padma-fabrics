@@ -2192,49 +2192,6 @@ function AdminDashboardPage() {
               )}
             </div>
 
-            {/* Stock history logs */}
-            <div className="bg-card border border-border p-6">
-              <div className="flex items-center gap-2 mb-4">
-                <History className="size-4 text-gold" />
-                <h2 className="font-display text-lg font-medium">Stock Adjustment History</h2>
-              </div>
-              <div className="overflow-x-auto">
-                <table className="w-full text-left text-sm">
-                  <thead className="bg-secondary/40 text-muted-foreground border-b border-border">
-                    <tr>
-                      <th className="p-3.5 text-xs font-semibold uppercase tracking-wider">Log ID</th>
-                      <th className="p-3.5 text-xs font-semibold uppercase tracking-wider">Date</th>
-                      <th className="p-3.5 text-xs font-semibold uppercase tracking-wider">Product</th>
-                      <th className="p-3.5 text-xs font-semibold uppercase tracking-wider">Adjustment</th>
-                      <th className="p-3.5 text-xs font-semibold uppercase tracking-wider">Previous &rarr; New</th>
-                      <th className="p-3.5 text-xs font-semibold uppercase tracking-wider">Reason</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-border">
-                    {stockLogs.map((log) => (
-                      <tr key={log.id} className="hover:bg-secondary/20">
-                        <td className="p-3.5 font-sans tabular-nums text-xs text-muted-foreground">
-                          {log.id}
-                        </td>
-                        <td className="p-3.5 text-sm font-sans tabular-nums text-muted-foreground">{log.date}</td>
-                        <td className="p-3.5 font-medium text-foreground">{log.productName}</td>
-                        <td className="p-3.5 font-sans font-bold tabular-nums">
-                          <span
-                            className={log.change >= 0 ? "text-emerald-600" : "text-destructive"}
-                          >
-                            {log.change >= 0 ? `+${log.change}` : log.change}
-                          </span>
-                        </td>
-                        <td className="p-3.5 font-sans tabular-nums text-muted-foreground">
-                          {log.previousStock} &rarr; {log.newStock}
-                        </td>
-                        <td className="p-3.5 text-muted-foreground italic text-xs">{log.reason}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
           </div>
         )}
 
