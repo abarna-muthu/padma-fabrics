@@ -24,6 +24,7 @@ import silkSareesCategory from "@/assets/silk-sarees-category.jpg";
 import chuditharCategory from "@/assets/chudithar-ensembles-category.jpg";
 import coordsetsCategory from "@/assets/artisanal-coordsets-category.jpg";
 import maxisCategory from "@/assets/flowing-maxis-category.jpg";
+import heroFashionBanner from "@/assets/hero-fashion-models.png";
 
 
 // =========================================================================
@@ -208,17 +209,17 @@ export function HomePage() {
             </div>
 
             {/* RIGHT SIDE: Large fashion photograph */}
-            <div className="lg:col-span-6">
-              <div className="relative aspect-4/5 w-full rounded-[2px] overflow-hidden bg-[#EBE6DC] border border-[rgba(14,14,14,0.08)] shadow-sm">
+            <div className="lg:col-span-6 flex items-center justify-center">
+              <div className="relative aspect-square w-full max-w-[560px] rounded-2xl overflow-hidden bg-[#FAF7F2] border border-[rgba(14,14,14,0.08)] shadow-[0_16px_40px_-10px_rgba(30,22,12,0.18),0_6px_20px_rgba(30,22,12,0.08)] group">
                 <img
-                  src={womensDress}
+                  src={heroFashionBanner}
                   alt="Padmanabha Fabrics contemporary fashion collection"
-                  className="w-full h-full object-cover object-center transition-transform duration-1000 ease-out hover:scale-102"
+                  className="w-full h-full object-cover object-center transition-transform duration-700 ease-out group-hover:scale-[1.02]"
                   loading="eager"
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent pointer-events-none" />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/35 via-transparent to-transparent pointer-events-none" />
 
-                <div className="absolute bottom-4 left-4 right-4 z-10 flex items-center justify-between text-white text-xs tracking-wider uppercase font-medium bg-black/40 backdrop-blur-xs px-4 py-2.5 rounded-[2px]">
+                <div className="absolute bottom-4 left-4 right-4 z-10 flex items-center justify-between text-white text-xs tracking-wider uppercase font-medium bg-black/45 backdrop-blur-xs px-4 py-2.5 rounded-lg border border-white/10">
                   <span>Contemporary Ready-to-Wear</span>
                   <span className="text-[#B8913A]">Edition 2026</span>
                 </div>
