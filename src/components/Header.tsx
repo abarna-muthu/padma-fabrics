@@ -188,9 +188,9 @@ export function Header() {
                 <span className="text-[11px] sm:text-xs font-semibold tabular-nums">{cartCount}</span>
               </Link>
 
-              {/* CUSTOMER LOGIN / NAME DISPLAY */}
+              {/* CUSTOMER LOGIN / NAME DISPLAY (DESKTOP & TABLET ONLY) */}
               {isLoggedIn && customer ? (
-                <div className="relative group shrink-0">
+                <div className="hidden md:block relative group shrink-0">
                   <button
                     type="button"
                     onClick={() => setIsCustomerPortalOpen(true)}
@@ -233,7 +233,7 @@ export function Header() {
                 <button
                   type="button"
                   onClick={() => setIsCustomerPortalOpen(true)}
-                  className="flex items-center gap-1.5 p-1.5 sm:px-2.5 sm:py-1.5 rounded-full hover:bg-black/5 dark:hover:bg-white/5 text-[#0E0E0E] hover:text-[#B8913A] transition-colors cursor-pointer text-xs font-medium shrink-0"
+                  className="hidden md:flex items-center gap-1.5 p-1.5 sm:px-2.5 sm:py-1.5 rounded-full hover:bg-black/5 dark:hover:bg-white/5 text-[#0E0E0E] hover:text-[#B8913A] transition-colors cursor-pointer text-xs font-medium shrink-0"
                   title="Sign In / Register"
                 >
                   <User className="size-4" strokeWidth={1.5} />
@@ -241,25 +241,25 @@ export function Header() {
                 </button>
               )}
 
-              {/* MY ORDERS BUTTON (Visible right next to Profile) */}
+              {/* MY ORDERS BUTTON (DESKTOP & TABLET ONLY) */}
               <Link
                 to="/orders"
-                className="flex items-center gap-1.5 p-1.5 sm:px-3 sm:py-1.5 rounded-full bg-[#6B1E2E]/10 hover:bg-[#6B1E2E]/20 text-[#6B1E2E] dark:text-[#E7C880] border border-[#6B1E2E]/30 hover:border-[#6B1E2E] transition-all cursor-pointer text-xs font-semibold shadow-2xs shrink-0"
+                className="hidden md:flex items-center gap-1.5 p-1.5 sm:px-3 sm:py-1.5 rounded-full bg-[#6B1E2E]/10 hover:bg-[#6B1E2E]/20 text-[#6B1E2E] dark:text-[#E7C880] border border-[#6B1E2E]/30 hover:border-[#6B1E2E] transition-all cursor-pointer text-xs font-semibold shadow-2xs shrink-0"
                 title="My Orders & Live Shipment Tracking"
               >
                 <Truck className="size-3.5 text-[#6B1E2E] dark:text-[#B8913A]" strokeWidth={1.8} />
                 <span className="hidden sm:inline">My Orders</span>
               </Link>
 
-              {/* MOBILE HAMBURGER MENU (3-Line Icon ☰) */}
+              {/* MOBILE HAMBURGER MENU (3-Line Icon ☰ - PROMINENT ON MOBILE) */}
               <button
                 type="button"
                 onClick={() => setIsMobileMenuOpen(true)}
-                className="lg:hidden p-1.5 sm:p-2 text-[#0E0E0E] hover:text-[#B8913A] transition-colors cursor-pointer rounded-md focus:outline-none focus:ring-1 focus:ring-[#B8913A] shrink-0"
+                className="lg:hidden p-1.5 sm:p-2 text-[#0E0E0E] hover:text-[#B8913A] transition-colors cursor-pointer rounded-lg hover:bg-black/5 active:bg-black/10 focus:outline-none focus:ring-1 focus:ring-[#B8913A] shrink-0 flex items-center justify-center ml-0.5"
                 aria-label="Open navigation menu"
                 title="Open Navigation Menu"
               >
-                <Menu className="size-5" strokeWidth={1.75} />
+                <Menu className="size-5.5 sm:size-6" strokeWidth={2} />
               </button>
             </div>
           </div>
@@ -296,7 +296,8 @@ export function Header() {
             onClick={() => setIsMobileMenuOpen(false)}
           />
 
-          <aside className="fixed inset-y-0 right-0 max-w-[280px] xs:max-w-xs w-full bg-[#FAF7F2] text-[#0E0E0E] border-l border-[rgba(14,14,14,0.1)] p-5 sm:p-6 flex flex-col z-50 animate-in slide-in-from-right duration-300 shadow-2xl">
+          <aside className="fixed inset-y-0 right-0 max-w-[320px] w-[88vw] bg-[#FAF7F2] text-[#0E0E0E] border-l border-[rgba(14,14,14,0.1)] p-5 flex flex-col z-50 animate-in slide-in-from-right duration-300 shadow-2xl overflow-y-auto">
+            {/* Drawer Header with Logo & Close */}
             <div className="flex items-center justify-between pb-4 border-b border-[rgba(14,14,14,0.08)]">
               <div className="flex items-center gap-2.5">
                 <img
@@ -326,100 +327,153 @@ export function Header() {
               </button>
             </div>
 
-            <div className="flex-1 overflow-y-auto py-6 space-y-4 text-xs uppercase tracking-[0.16em] font-medium">
-              <Link
-                to="/"
-                onClick={() => setIsMobileMenuOpen(false)}
-                className="block py-1.5 hover:text-[#B8913A]"
-              >
-                Home
-              </Link>
-              <Link
-                to="/shop"
-                onClick={() => setIsMobileMenuOpen(false)}
-                className="block py-1.5 hover:text-[#B8913A]"
-              >
-                Shop
-              </Link>
-              <Link
-                to="/about"
-                onClick={() => setIsMobileMenuOpen(false)}
-                className="block py-1.5 hover:text-[#B8913A]"
-              >
-                About
-              </Link>
-              <Link
-                to="/contact"
-                onClick={() => setIsMobileMenuOpen(false)}
-                className="block py-1.5 hover:text-[#B8913A]"
-              >
-                Contact
-              </Link>
-
-              <div className="pt-4 border-t border-[rgba(14,14,14,0.08)] space-y-3">
-                <Link
-                  to="/cart"
-                  onClick={() => setIsMobileMenuOpen(false)}
-                  className="flex items-center justify-between py-1 hover:text-[#B8913A]"
-                >
-                  <span>Shopping Bag</span>
-                  <span className="text-[#B8913A] font-semibold">({cartCount})</span>
-                </Link>
-                <Link
-                  to="/wishlist"
-                  onClick={() => setIsMobileMenuOpen(false)}
-                  className="flex items-center justify-between py-1 hover:text-[#B8913A]"
-                >
-                  <span>Wishlist</span>
-                  <span className="text-[#B8913A] font-semibold">({wishlistCount})</span>
-                </Link>
-                <Link
-                  to="/orders"
-                  onClick={() => setIsMobileMenuOpen(false)}
-                  className="flex items-center justify-between py-1 text-[#6B1E2E] dark:text-[#E7C880] font-semibold hover:text-[#B8913A]"
-                >
-                  <span className="flex items-center gap-1.5">
-                    <Truck className="size-3.5 text-[#6B1E2E] dark:text-[#B8913A]" />
-                    <span>My Orders & Tracking</span>
-                  </span>
-                  <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded bg-[#6B1E2E]/10">
-                    Live
-                  </span>
-                </Link>
-                {isLoggedIn && customer ? (
-                  <div className="pt-2 border-t border-[rgba(14,14,14,0.08)] flex items-center justify-between py-1">
-                    <span className="font-semibold text-xs text-[#6B1E2E] dark:text-[#FAF6EE] truncate max-w-[180px]">
-                      👤 {customer.name}
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        logoutCustomer();
-                        setIsMobileMenuOpen(false);
-                      }}
-                      className="text-xs text-rose-600 hover:underline cursor-pointer"
-                    >
-                      Sign Out
-                    </button>
+            {/* Customer Account Pill (Top of Drawer) */}
+            <div className="py-3 border-b border-[rgba(14,14,14,0.08)]">
+              {isLoggedIn && customer ? (
+                <div className="p-3 rounded-xl bg-white/70 border border-[#B8913A]/30 flex items-center justify-between">
+                  <div className="min-w-0 pr-2">
+                    <p className="text-[11px] text-muted-foreground uppercase tracking-wider">Signed in as</p>
+                    <p className="font-bold text-xs text-[#0E0E0E] truncate">{customer.name}</p>
                   </div>
-                ) : (
                   <button
                     type="button"
                     onClick={() => {
+                      logoutCustomer();
                       setIsMobileMenuOpen(false);
-                      setIsCustomerPortalOpen(true);
                     }}
-                    className="block w-full text-left py-1 hover:text-[#B8913A] cursor-pointer"
+                    className="text-[11px] font-semibold text-rose-600 hover:underline shrink-0"
                   >
-                    Sign In / Register
+                    Sign Out
                   </button>
-                )}
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsMobileMenuOpen(false);
+                    setIsCustomerPortalOpen(true);
+                  }}
+                  className="w-full p-2.5 rounded-xl bg-[#6B1E2E] text-white hover:bg-[#852538] transition-colors text-xs font-semibold flex items-center justify-center gap-2 shadow-2xs cursor-pointer"
+                >
+                  <User className="size-3.5" />
+                  <span>Sign In / Create Account</span>
+                </button>
+              )}
+            </div>
+
+            {/* Navigation Links */}
+            <div className="flex-1 py-4 space-y-4 text-xs uppercase tracking-[0.16em] font-medium">
+              <div className="space-y-1">
+                <Link
+                  to="/"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className="flex items-center justify-between py-2 px-2.5 rounded-lg hover:bg-black/5 hover:text-[#B8913A] transition-colors"
+                >
+                  <span>Home</span>
+                </Link>
+                <Link
+                  to="/shop"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className="flex items-center justify-between py-2 px-2.5 rounded-lg hover:bg-black/5 hover:text-[#B8913A] transition-colors"
+                >
+                  <span>Shop All Collections</span>
+                </Link>
+
+                {/* Categories quick chips */}
+                <div className="pl-2.5 pr-1 py-1.5 flex flex-wrap gap-1.5">
+                  {["Saree", "Chudithar", "Coordset", "Maxi", "Nighty", "Chudithar Top"].map((cat) => (
+                    <Link
+                      key={cat}
+                      to="/shop"
+                      search={{ category: cat } as any}
+                      onClick={() => setIsMobileMenuOpen(false)}
+                      className="px-2.5 py-1 rounded-md text-[10px] font-sans font-medium tracking-normal capitalize bg-white/80 border border-border/80 hover:border-[#B8913A] hover:text-[#6B1E2E] transition-colors"
+                    >
+                      {cat}
+                    </Link>
+                  ))}
+                </div>
+
+                <Link
+                  to="/about"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className="flex items-center justify-between py-2 px-2.5 rounded-lg hover:bg-black/5 hover:text-[#B8913A] transition-colors"
+                >
+                  <span>About Us</span>
+                </Link>
+                <Link
+                  to="/contact"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className="flex items-center justify-between py-2 px-2.5 rounded-lg hover:bg-black/5 hover:text-[#B8913A] transition-colors"
+                >
+                  <span>Contact</span>
+                </Link>
+              </div>
+
+              {/* Shopping & Orders Section */}
+              <div className="pt-3 border-t border-[rgba(14,14,14,0.08)] space-y-1">
+                <Link
+                  to="/orders"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className="flex items-center justify-between py-2 px-2.5 rounded-lg bg-[#6B1E2E]/10 text-[#6B1E2E] dark:text-[#E7C880] font-semibold hover:bg-[#6B1E2E]/20 transition-colors"
+                >
+                  <span className="flex items-center gap-2">
+                    <Truck className="size-4 text-[#6B1E2E]" />
+                    <span>My Orders & Tracking</span>
+                  </span>
+                  <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded bg-[#6B1E2E] text-white">
+                    Live
+                  </span>
+                </Link>
+
+                <Link
+                  to="/cart"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className="flex items-center justify-between py-2 px-2.5 rounded-lg hover:bg-black/5 hover:text-[#B8913A] transition-colors"
+                >
+                  <span className="flex items-center gap-2">
+                    <ShoppingBag className="size-4" />
+                    <span>Shopping Bag</span>
+                  </span>
+                  <span className="text-[#B8913A] font-semibold">({cartCount})</span>
+                </Link>
+
+                <Link
+                  to="/wishlist"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className="flex items-center justify-between py-2 px-2.5 rounded-lg hover:bg-black/5 hover:text-[#B8913A] transition-colors"
+                >
+                  <span className="flex items-center gap-2">
+                    <Heart className="size-4" />
+                    <span>Wishlist</span>
+                  </span>
+                  <span className="text-[#B8913A] font-semibold">({wishlistCount})</span>
+                </Link>
               </div>
             </div>
 
-            <div className="pt-4 border-t border-[rgba(14,14,14,0.08)] text-[11px] text-[#0E0E0E]/60 space-y-1">
-              <p>Ambattur, Chennai – 600053</p>
-              <p className="text-[#B8913A] font-medium">+91 99401 35700</p>
+            {/* Drawer Footer with Showroom Address & Contact */}
+            <div className="pt-4 border-t border-[rgba(14,14,14,0.08)] text-[11px] text-[#0E0E0E]/70 space-y-2 mt-auto">
+              <p className="font-sans">
+                <strong>Showroom:</strong> Menambedu, Ambattur, Chennai - 600053
+              </p>
+              <div className="flex items-center gap-3 pt-1">
+                <a
+                  href="tel:+919940135700"
+                  className="text-xs font-semibold text-[#B8913A] hover:underline flex items-center gap-1"
+                >
+                  📞 +91 99401 35700
+                </a>
+                <span className="text-muted-foreground/40">·</span>
+                <a
+                  href="https://wa.me/919940135700"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-xs font-semibold text-[#25D366] hover:underline"
+                >
+                  WhatsApp
+                </a>
+              </div>
             </div>
           </aside>
         </div>
@@ -429,3 +483,4 @@ export function Header() {
 }
 
 export default Header;
+
