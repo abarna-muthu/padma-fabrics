@@ -98,6 +98,19 @@ const STORAGE_ORDERS_KEY = "pf_admin_orders";
 const STORAGE_STOCK_LOGS_KEY = "pf_admin_stock_logs";
 const STORAGE_DELETED_PRODUCTS_KEY = "pf_admin_deleted_product_ids";
 
+export const DEMO_PRODUCT_IDS = new Set([
+  "wine-silk",
+  "heritage-silk",
+  "sage-cotton",
+  "ivory-brocade",
+  "linen-shirt",
+  "navy-tee",
+  "maroon-anarkali",
+  "pattu-pavadai",
+  "pf-mvi2hcnc",
+  "pf-mvi2jlu8",
+]);
+
 const CATEGORY_MIGRATION: Record<string, string> = {
   Sarees: "Saree",
   Fabrics: "Coordset",
@@ -216,18 +229,26 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     try {
       const storedProducts = localStorage.getItem(STORAGE_PRODUCTS_KEY);
       let loadedProds: Product[] = [];
+      const masterOriginals = (staticProducts as Product[]).filter((p) => !DEMO_PRODUCT_IDS.has(p.id)).map(normalizeProduct);
+
       if (storedProducts) {
         const parsed = JSON.parse(storedProducts);
-        if (Array.isArray(parsed) && parsed.length >= 41) {
-          loadedProds = parsed.map(normalizeProduct);
+        if (Array.isArray(parsed)) {
+          // Evict all mock/demo products from local storage
+          loadedProds = parsed
+            .filter((p: any) => !DEMO_PRODUCT_IDS.has(p.id))
+            .map(normalizeProduct);
         }
       }
 
-      // Self-heal: If local storage has fewer than 41 products (e.g. from earlier testing),
-      // restore all 41 master products with photos, descriptions and categories
-      if (loadedProds.length < 41) {
+      // If local storage has fewer than 41 products or was empty, seed with the 41 original products
+      // while preserving any custom products the user added in admin
+      if (loadedProds.length < masterOriginals.length) {
         localStorage.removeItem(STORAGE_DELETED_PRODUCTS_KEY);
-        loadedProds = (staticProducts as Product[]).map(normalizeProduct);
+        const userAddedOnly = loadedProds.filter((lp) => !masterOriginals.some((mo) => mo.id === lp.id));
+        loadedProds = [...userAddedOnly, ...masterOriginals];
+        saveProducts(loadedProds);
+      } else {
         saveProducts(loadedProds);
       }
       setProductsList(loadedProds);
@@ -370,8 +391,10 @@ export function StoreProvider({ children }: { children: ReactNode }) {
             } catch {}
           }
 
-          // Filter out deleted items from server response
-          const activeServerProds = serverProds.filter((sp: any) => !deletedIds.includes(sp.id)).map(normalizeProduct);
+          // Filter out deleted items and demo items from server response
+          const activeServerProds = serverProds
+            .filter((sp: any) => !deletedIds.includes(sp.id) && !DEMO_PRODUCT_IDS.has(sp.id))
+            .map(normalizeProduct);
           let merged: Product[] = activeServerProds;
 
           if (currentLocal) {
@@ -385,8 +408,9 @@ export function StoreProvider({ children }: { children: ReactNode }) {
                   mergedMap.set(sp.id, sp);
                 }
 
-                // Intelligently overlay local products
+                // Intelligently overlay local products (ignoring demo items)
                 for (const rawLp of localList) {
+                  if (DEMO_PRODUCT_IDS.has(rawLp.id)) continue;
                   const lp = normalizeProduct(rawLp);
                   if (deletedIds.includes(lp.id)) continue;
 

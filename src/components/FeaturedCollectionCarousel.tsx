@@ -50,12 +50,15 @@ export function FeaturedCollectionCarousel() {
       setLoading(true);
       setError(null);
       try {
+        const DEMO_IDS = new Set(["wine-silk", "heritage-silk", "sage-cotton", "ivory-brocade", "linen-shirt", "navy-tee", "maroon-anarkali", "pattu-pavadai"]);
         let rawList: any[] = [];
-        const res = await productServices.getAllProducts();
-        if (res.success && Array.isArray(res.data) && res.data.length > 0) {
-          rawList = res.data;
-        } else if (activeProducts && activeProducts.length > 0) {
-          rawList = activeProducts;
+        if (activeProducts && activeProducts.length > 0) {
+          rawList = activeProducts.filter((p) => !DEMO_IDS.has(p.id));
+        } else {
+          const res = await productServices.getAllProducts();
+          if (res.success && Array.isArray(res.data) && res.data.length > 0) {
+            rawList = res.data.filter((p) => !DEMO_IDS.has(p.id));
+          }
         }
 
         // Filter exclusively for women's clothing items
