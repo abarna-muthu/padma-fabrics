@@ -1,35 +1,46 @@
 import { useState } from "react";
 import { Breadcrumb } from "@/components/Breadcrumb";
-import { SectionHeading } from "@/components/SectionHeading";
 import { useCustomerAuth } from "@/context/CustomerAuthContext";
 import { useStore } from "@/context/StoreContext";
+import { useCart } from "@/context/CartContext";
 import { money, type Order } from "@/lib/catalog";
 import { computeOrderTracking } from "@/lib/orderTracking";
 import { OrderTrackingModal } from "@/components/OrderTrackingModal";
 import {
   Package,
-  ArrowRight,
   Truck,
   Search,
   CheckCircle2,
   Clock,
-  MapPin,
-  Calendar,
+  RotateCw,
+  Eye,
+  Star,
+  X,
+  ChevronDown,
+  Download,
   AlertCircle,
-  MessageCircle,
+  FileText,
 } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
 
 export function OrdersPage() {
   const { customer, isLoggedIn } = useCustomerAuth();
   const { orders, productsList, setIsCustomerPortalOpen, setCustomerPortalTab } = useStore();
+  const { addToCart, setIsCartOpen } = useCart();
 
   const [orderQuery, setOrderQuery] = useState("");
   const [trackedOrder, setTrackedOrder] = useState<Order | null>(null);
   const [trackedProduct, setTrackedProduct] = useState<any | null>(null);
   const [searchError, setSearchError] = useState<string | null>(null);
+  const [showSearchBox, setShowSearchBox] = useState(false);
+
+  // Tab & Timeframe state matching reference UI
+  const [orderTab, setOrderTab] = useState<"all" | "not-shipped" | "cancelled">("all");
+  const [timeframe, setTimeframe] = useState<"1-year" | "6-months" | "3-months" | "all">("1-year");
+  const [dismissedBanners, setDismissedBanners] = useState<Record<string, boolean>>({});
 
   // Match orders for customer via:
   // 1. Logged in customer email / phone
@@ -71,7 +82,29 @@ export function OrdersPage() {
     return false;
   });
 
-  const customerOrders = matchedOrders.length > 0 ? matchedOrders : (orders || []).slice(0, 4);
+  const baseOrders = matchedOrders.length > 0 ? matchedOrders : (orders || []).slice(0, 6);
+
+  // Apply tab & timeframe filters
+  const filteredOrders = baseOrders.filter((order) => {
+    const tracking = computeOrderTracking(order);
+
+    if (orderTab === "not-shipped") {
+      if (tracking.effectiveStatus === "Delivered" || tracking.isCancelled) return false;
+    } else if (orderTab === "cancelled") {
+      if (!tracking.isCancelled && order.status !== "Cancelled") return false;
+    }
+
+    if (timeframe !== "all") {
+      const orderDate = new Date(order.date || order.createdAt || Date.now()).getTime();
+      const now = Date.now();
+      const daysDiff = (now - orderDate) / (1000 * 60 * 60 * 24);
+      if (timeframe === "3-months" && daysDiff > 90) return false;
+      if (timeframe === "6-months" && daysDiff > 180) return false;
+      if (timeframe === "1-year" && daysDiff > 365) return false;
+    }
+
+    return true;
+  });
 
   const handleSearchOrder = (e: React.FormEvent) => {
     e.preventDefault();
@@ -84,7 +117,7 @@ export function OrdersPage() {
         o.id.toLowerCase() === q ||
         o.id.toLowerCase().includes(q) ||
         (o.orderNumber && o.orderNumber.toLowerCase().includes(q)) ||
-        o.customerPhone.replace(/\D/g, "").includes(q.replace(/\D/g, "")),
+        (o.customerPhone && o.customerPhone.replace(/\D/g, "").includes(q.replace(/\D/g, ""))),
     );
 
     if (found) {
@@ -95,274 +128,531 @@ export function OrdersPage() {
     }
   };
 
+  const handleDownloadInvoice = (order: Order) => {
+    const tracking = computeOrderTracking(order);
+    const dateStr = order.date || (order.createdAt ? order.createdAt.split("T")[0] : new Date().toISOString().split("T")[0]);
+    const items = getOrderItems(order);
+    const itemsHtml = items
+      .map(
+        (it: any) => `
+        <tr>
+          <td style="padding: 10px; border-bottom: 1px solid #eee;">${it.productName || it.name || "Product"}</td>
+          <td style="padding: 10px; border-bottom: 1px solid #eee; text-align: center;">${it.size || "Standard"}</td>
+          <td style="padding: 10px; border-bottom: 1px solid #eee; text-align: center;">${it.quantity || 1}</td>
+          <td style="padding: 10px; border-bottom: 1px solid #eee; text-align: right;">₹${(it.price || 0).toLocaleString("en-IN")}</td>
+          <td style="padding: 10px; border-bottom: 1px solid #eee; text-align: right; font-weight: bold;">₹${((it.price || 0) * (it.quantity || 1)).toLocaleString("en-IN")}</td>
+        </tr>
+      `
+      )
+      .join("");
+
+    const invoiceHtml = `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Invoice - ${order.id} - Padmanabha Fabrics</title>
+  <style>
+    body { font-family: 'Poppins', Arial, sans-serif; margin: 0; padding: 20px; background: #fff; color: #111; }
+    .invoice-box { max-width: 800px; margin: auto; padding: 30px; border: 1px solid #eee; border-radius: 8px; }
+    .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #B8913A; padding-bottom: 15px; margin-bottom: 25px; }
+    .title { font-size: 24px; font-weight: bold; color: #6B1E2E; letter-spacing: 2px; }
+    .subtitle { font-size: 11px; color: #B8913A; letter-spacing: 1px; }
+    .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 25px; font-size: 13px; line-height: 1.6; }
+    .table { width: 100%; border-collapse: collapse; margin-bottom: 25px; font-size: 13px; }
+    .table th { background: #FAF7F2; padding: 10px; text-align: left; border-bottom: 2px solid #ddd; }
+    .total-box { text-align: right; margin-top: 15px; font-size: 15px; }
+    .total-amount { font-size: 20px; color: #6B1E2E; font-weight: bold; }
+    .footer { text-align: center; margin-top: 30px; font-size: 11px; color: #777; border-top: 1px solid #eee; padding-top: 15px; }
+    @media print { body { padding: 0; } .invoice-box { border: none; padding: 0; } }
+  </style>
+</head>
+<body>
+  <div class="invoice-box">
+    <div class="header">
+      <div>
+        <div class="title">PADMANABHA FABRICS</div>
+        <div class="subtitle">CHENNAI · RETAIL & WHOLESALE</div>
+      </div>
+      <div style="text-align: right;">
+        <h2 style="margin: 0; font-size: 18px; color: #333;">ORDER INVOICE</h2>
+        <div style="font-size: 13px; color: #666;">Order #${order.id}</div>
+        <div style="font-size: 12px; color: #888;">Date: ${dateStr}</div>
+      </div>
+    </div>
+
+    <div class="info-grid">
+      <div>
+        <strong>Customer Details:</strong><br />
+        ${order.customerName || "Customer"}<br />
+        Phone: ${order.customerPhone || "N/A"}<br />
+        Email: ${order.customerEmail || "N/A"}<br />
+        Address: ${order.shippingAddress || "Ambattur, Chennai"}
+      </div>
+      <div style="text-align: right;">
+        <strong>Order Summary:</strong><br />
+        Fulfillment Status: <span style="font-weight: bold; color: #6B1E2E;">${tracking.effectiveStatus}</span><br />
+        Estimated Delivery: ${order.deliveryDays || 5} Days<br />
+        Payment Status: ${order.paymentStatus || "Paid"}<br />
+        Payment Method: ${order.paymentMethod || "Online / COD"}
+      </div>
+    </div>
+
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Item Description</th>
+          <th style="text-align: center;">Size</th>
+          <th style="text-align: center;">Qty</th>
+          <th style="text-align: right;">Unit Price</th>
+          <th style="text-align: right;">Total</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${itemsHtml}
+      </tbody>
+    </table>
+
+    <div class="total-box">
+      <div>Subtotal: ₹${Number(order.total || 0).toLocaleString("en-IN")}</div>
+      <div>Delivery: ₹0 (Free Delivery)</div>
+      <div style="margin-top: 8px;">
+        Grand Total: <span class="total-amount">₹${Number(order.total || 0).toLocaleString("en-IN")}</span>
+      </div>
+    </div>
+
+    <div class="footer">
+      Padmanabha Fabrics · Menambedu, Ambattur, Chennai - 600053 · Phone: +91 99401 35700<br />
+      Thank you for your order! Handcrafted Weaves & Fine Indian Apparel.
+    </div>
+  </div>
+</body>
+</html>`;
+
+    const blob = new Blob([invoiceHtml], { type: "text/html;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `Invoice-${order.id}.html`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    toast.success(`Invoice for #${order.id} downloaded!`);
+  };
+
+  const handleBuyAgain = (item: any, matchedProd: any) => {
+    const prod = matchedProd || {
+      id: item.productId || `prod-${Date.now()}`,
+      name: item.productName,
+      price: item.price || 999,
+      image: item.image || "/images/placeholder.jpg",
+      category: "Fabrics",
+    };
+    addToCart(prod, item.size || "Standard", 1);
+    setIsCartOpen(true);
+    toast.success(`Added "${item.productName}" back to your bag!`);
+  };
+
+  const formatOrderDate = (dateVal?: string) => {
+    if (!dateVal) return "Recent";
+    const d = new Date(dateVal);
+    if (isNaN(d.getTime())) return dateVal;
+    return d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+  };
+
+  const formatDeliveryDisplay = (tracking: any, orderDate?: string) => {
+    if (tracking.isCancelled) return "Order Cancelled";
+    if (tracking.effectiveStatus === "Delivered") {
+      return `Delivered ${tracking.estimatedDeliveryDate || "May 10"}`;
+    }
+    if (tracking.effectiveStatus === "Shipped") {
+      return `Expected Delivery by ${tracking.estimatedDeliveryDate || "May 10"}`;
+    }
+    return `Arriving by ${tracking.estimatedDeliveryDate || "in 3-5 days"}`;
+  };
+
+  const formatEligibleDate = (dateVal?: string) => {
+    const d = dateVal ? new Date(dateVal) : new Date();
+    d.setDate(d.getDate() + 14);
+    return d.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
+  };
+
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
-      <Breadcrumb items={[{ label: "My Orders & Tracking" }]} className="mb-2" />
+    <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+      <Breadcrumb items={[{ label: "Your Orders" }]} className="mb-1" />
 
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 pb-4 border-b border-border">
-        <SectionHeading
-          kicker="Fulfillment & Dispatch"
-          title="My Orders & Live Tracking"
-          description="Track your textile orders with live milestone progress from our Ambattur, Chennai showroom."
-        />
+      {/* Page Title & Search Button */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="font-display text-2xl sm:text-3xl font-bold tracking-tight text-foreground">
+            Your Orders
+          </h1>
+          <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">
+            View orders, download invoices, and track live deliveries.
+          </p>
+        </div>
 
-        {!isLoggedIn && (
+        <div className="flex items-center gap-2 self-start sm:self-auto">
           <Button
             type="button"
             variant="outline"
             size="sm"
-            onClick={() => {
-              setCustomerPortalTab("orders");
-              setIsCustomerPortalOpen(true);
-            }}
-            className="text-xs h-9 font-semibold text-primary border-primary/40 hover:bg-primary/10 self-start md:self-auto"
+            onClick={() => setShowSearchBox(!showSearchBox)}
+            className="text-xs h-9 border-border/80 hover:bg-muted/40 font-medium flex items-center gap-1.5"
           >
-            Sign In to View All Your Orders &rarr;
+            <Search className="size-3.5" />
+            <span>Search Order ID</span>
           </Button>
-        )}
+
+          {!isLoggedIn && (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                setCustomerPortalTab("orders");
+                setIsCustomerPortalOpen(true);
+              }}
+              className="text-xs h-9 font-semibold text-primary border-primary/40 hover:bg-primary/10"
+            >
+              Sign In
+            </Button>
+          )}
+        </div>
       </div>
 
-      {/* Instant Order Search / Tracking Lookup Bar */}
-      <div className="p-6 rounded-lg bg-card border border-border shadow-xs max-w-2xl mx-auto space-y-3">
-        <div className="flex items-center gap-2">
-          <Truck className="size-5 text-gold" />
-          <h3 className="font-display text-base font-semibold text-foreground">
-            Quick Shipment Tracking
-          </h3>
+      {/* Optional Search / Lookup Box */}
+      {showSearchBox && (
+        <div className="p-4 rounded-xl bg-card border border-border shadow-2xs space-y-3 transition-all animate-in fade-in">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Truck className="size-4 text-gold" />
+              <h3 className="font-display text-sm font-semibold text-foreground">
+                Quick Order Lookup
+              </h3>
+            </div>
+            <button
+              onClick={() => setShowSearchBox(false)}
+              className="text-muted-foreground hover:text-foreground text-xs"
+            >
+              <X className="size-4" />
+            </button>
+          </div>
+          <form onSubmit={handleSearchOrder} className="flex gap-2">
+            <div className="relative flex-1">
+              <Search className="size-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                type="text"
+                placeholder="Enter Order ID (e.g. PF-1081) or phone number..."
+                value={orderQuery}
+                onChange={(e) => setOrderQuery(e.target.value)}
+                className="pl-9 text-xs h-9 bg-background"
+              />
+            </div>
+            <Button type="submit" size="sm" className="h-9 px-4 text-xs bg-primary text-primary-foreground font-semibold">
+              Track
+            </Button>
+          </form>
+          {searchError && (
+            <div className="p-2.5 bg-destructive/10 border border-destructive/20 text-destructive text-xs rounded-lg flex items-center gap-2">
+              <AlertCircle className="size-4 shrink-0" />
+              <span>{searchError}</span>
+            </div>
+          )}
         </div>
-        <p className="text-xs text-muted-foreground">
-          Enter your Order ID (e.g. <strong className="text-foreground">PF-1081</strong>) or registered phone number to view live Meesho-style milestone delivery tracking.
-        </p>
+      )}
 
-        <form onSubmit={handleSearchOrder} className="flex gap-2 pt-1">
-          <div className="relative flex-1">
-            <Search className="size-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              type="text"
-              placeholder="Enter Order ID (e.g. PF-1081)..."
-              value={orderQuery}
-              onChange={(e) => setOrderQuery(e.target.value)}
-              className="pl-9 text-xs h-10 bg-background"
-            />
-          </div>
-          <Button type="submit" className="h-10 px-5 text-xs bg-primary text-primary-foreground font-semibold">
-            Track Now
-          </Button>
-        </form>
+      {/* Filter Tabs & Timeframe Dropdown (Matches Screenshot Exactly) */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-2 pb-1 border-b border-border/80">
+        {/* Left Tabs */}
+        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0 scrollbar-none">
+          <button
+            type="button"
+            onClick={() => setOrderTab("all")}
+            className={`px-4 py-1.5 rounded-lg text-xs sm:text-sm font-semibold transition-all ${
+              orderTab === "all"
+                ? "bg-[#6B1E2E]/10 text-[#6B1E2E] dark:bg-white/10 dark:text-white"
+                : "text-muted-foreground hover:text-foreground hover:bg-muted/40 font-medium"
+            }`}
+          >
+            Order
+          </button>
+          <button
+            type="button"
+            onClick={() => setOrderTab("not-shipped")}
+            className={`px-4 py-1.5 rounded-lg text-xs sm:text-sm font-semibold transition-all ${
+              orderTab === "not-shipped"
+                ? "bg-[#6B1E2E]/10 text-[#6B1E2E] dark:bg-white/10 dark:text-white"
+                : "text-muted-foreground hover:text-foreground hover:bg-muted/40 font-medium"
+            }`}
+          >
+            Not Yet Shipped
+          </button>
+          <button
+            type="button"
+            onClick={() => setOrderTab("cancelled")}
+            className={`px-4 py-1.5 rounded-lg text-xs sm:text-sm font-semibold transition-all ${
+              orderTab === "cancelled"
+                ? "bg-[#6B1E2E]/10 text-[#6B1E2E] dark:bg-white/10 dark:text-white"
+                : "text-muted-foreground hover:text-foreground hover:bg-muted/40 font-medium"
+            }`}
+          >
+            Cancelled Orders
+          </button>
+        </div>
 
-        {searchError && (
-          <div className="p-3 bg-destructive/10 border border-destructive/20 text-destructive text-xs rounded flex items-center gap-2">
-            <AlertCircle className="size-4 shrink-0" />
-            <span>{searchError}</span>
+        {/* Right Dropdown */}
+        <div className="flex items-center gap-2 shrink-0 self-end sm:self-auto">
+          <div className="relative">
+            <select
+              value={timeframe}
+              onChange={(e) => setTimeframe(e.target.value as any)}
+              className="appearance-none bg-card text-foreground border border-border/80 rounded-lg pl-3 pr-8 py-1.5 text-xs sm:text-sm font-medium hover:border-gold/60 focus:outline-none focus:ring-1 focus:ring-gold cursor-pointer"
+            >
+              <option value="1-year">Past 1 Years</option>
+              <option value="6-months">Past 6 Months</option>
+              <option value="3-months">Past 3 Months</option>
+              <option value="all">All Orders</option>
+            </select>
+            <ChevronDown className="size-3.5 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none text-muted-foreground" />
           </div>
-        )}
+        </div>
       </div>
 
-      {/* Orders List */}
-      <div className="space-y-4 max-w-4xl mx-auto">
-        <div className="flex items-center justify-between pb-2 border-b border-border">
-          <h3 className="font-display text-lg font-semibold text-foreground">
-            {isLoggedIn && customer ? `Orders for ${customer.name}` : "Recent Orders & Shipments"}
-          </h3>
-          <span className="text-xs text-muted-foreground font-sans">
-            Showing {customerOrders.length} orders
-          </span>
-        </div>
-
-        {customerOrders.length === 0 ? (
-          <div className="p-10 text-center bg-card border border-dashed border-border rounded-lg space-y-3">
-            <Package className="size-10 text-muted-foreground/60 mx-auto" />
-            <h4 className="font-display text-base font-semibold">No Orders Found</h4>
-            <p className="text-xs text-muted-foreground max-w-sm mx-auto">
-              You haven't placed any orders yet, or they are associated with a different phone or email.
+      {/* Orders List Container */}
+      <div className="space-y-6 pt-2">
+        {filteredOrders.length === 0 ? (
+          <div className="p-12 text-center bg-card border border-dashed border-border rounded-2xl space-y-4">
+            <Package className="size-12 text-muted-foreground/50 mx-auto" />
+            <h3 className="font-display text-base sm:text-lg font-semibold text-foreground">
+              No orders found
+            </h3>
+            <p className="text-xs sm:text-sm text-muted-foreground max-w-md mx-auto">
+              {orderTab === "cancelled"
+                ? "You have no cancelled orders."
+                : orderTab === "not-shipped"
+                  ? "All your placed orders have already been shipped or delivered."
+                  : "You have not placed any orders yet or they belong to another account."}
             </p>
             <Button asChild variant="outline" size="sm" className="text-xs">
               <Link to="/shop">Explore Collections</Link>
             </Button>
           </div>
         ) : (
-          customerOrders.map((order) => {
+          filteredOrders.map((order) => {
             const tracking = computeOrderTracking(order);
+            const items = getOrderItems(order);
+            const deliveryHeading = formatDeliveryDisplay(tracking, order.date || order.createdAt);
+            const orderDateStr = formatOrderDate(order.date || order.createdAt);
+            const shippingDest = order.shippingAddress
+              ? order.shippingAddress.split(",").slice(-2).join(",").trim() || order.shippingAddress
+              : order.customerName
+                ? `${order.customerName}, India`
+                : "Chennai, India";
 
             return (
               <div
                 key={order.id}
-                className="p-5 rounded-lg border border-border bg-card shadow-xs space-y-4 hover:border-gold/50 transition-colors"
+                className="rounded-2xl border border-border/80 dark:border-white/10 bg-card overflow-hidden shadow-xs hover:border-gold/40 transition-colors"
               >
-                {/* Header */}
-                <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-2 pb-3 border-b border-border">
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-2.5">
-                      <span className="font-bold text-sm tracking-tight text-foreground font-sans">
-                        #{order.id}
+                {/* 1. Header Strip (Matches Screenshot) */}
+                <div className="bg-[#FAF7F2] dark:bg-[#1A1617] border-b border-border/70 px-4 sm:px-6 py-4 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                  {/* Left Column Group: Order Date, Total Amount, Ship To */}
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 sm:gap-8 items-start">
+                    <div>
+                      <span className="text-[11px] sm:text-xs text-muted-foreground block font-medium">
+                        Order Date :
                       </span>
-                      <span
-                        className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold border ${
-                          tracking.isCancelled
-                            ? "bg-destructive/15 text-destructive border-destructive/30"
-                            : tracking.effectiveStatus === "Delivered"
-                              ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-emerald-500/30"
-                              : tracking.effectiveStatus === "Shipped"
-                                ? "bg-indigo-500/15 text-indigo-700 dark:text-indigo-300 border-indigo-500/30"
-                                : "bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-500/30"
-                        }`}
-                      >
-                        {tracking.isCancelled ? (
-                          <span>Cancelled</span>
-                        ) : tracking.effectiveStatus === "Delivered" ? (
-                          <>
-                            <CheckCircle2 className="size-3 text-emerald-600" />
-                            <span>Delivered</span>
-                          </>
-                        ) : tracking.effectiveStatus === "Shipped" ? (
-                          <>
-                            <Truck className="size-3 text-indigo-600 animate-pulse" />
-                            <span>Shipped · In Transit</span>
-                          </>
-                        ) : (
-                          <>
-                            <Clock className="size-3 text-amber-600" />
-                            <span>{tracking.effectiveStatus}</span>
-                          </>
-                        )}
-                      </span>
-                      <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-gold/15 text-gold border border-gold/30">
-                        {tracking.totalDays} Days Delivery
+                      <span className="text-xs sm:text-sm font-bold text-foreground block mt-0.5">
+                        {orderDateStr}
                       </span>
                     </div>
 
-                    <span className="text-xs text-muted-foreground font-sans block">
-                      Ordered on {order.date || order.createdAt?.split("T")[0]} · Expected by <strong className="text-foreground">{tracking.estimatedDeliveryDate}</strong>
-                    </span>
+                    <div>
+                      <span className="text-[11px] sm:text-xs text-muted-foreground block font-medium">
+                        Total Amount :
+                      </span>
+                      <span className="text-xs sm:text-sm font-bold text-foreground block mt-0.5">
+                        {money(order.total)}
+                      </span>
+                    </div>
+
+                    <div className="col-span-2 sm:col-span-1">
+                      <span className="text-[11px] sm:text-xs text-muted-foreground block font-medium">
+                        Ship To :
+                      </span>
+                      <span className="text-xs sm:text-sm font-bold text-foreground block mt-0.5 truncate max-w-[200px]" title={shippingDest}>
+                        {shippingDest}
+                      </span>
+                    </div>
                   </div>
 
-                  <div className="text-right flex sm:flex-col justify-between items-center sm:items-end">
-                    <span className="font-sans font-bold text-base text-primary tabular-nums">
-                      {money(order.total)}
-                    </span>
-                    <span className="text-[11px] text-muted-foreground font-sans">
-                      {order.paymentStatus === "Paid" ? "Paid (Online)" : "Cash on Delivery"}
-                    </span>
+                  {/* Right Column Group: Order #, View Invoice, View Order */}
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-3 md:justify-end pt-2 md:pt-0 border-t md:border-t-0 border-border/50">
+                    <div className="text-left sm:text-right">
+                      <span className="text-xs sm:text-sm font-normal text-muted-foreground">Order : </span>
+                      <strong className="text-xs sm:text-sm font-bold text-foreground font-mono">
+                        #{order.id}
+                      </strong>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleDownloadInvoice(order)}
+                        className="h-8 px-3.5 text-xs font-semibold rounded-lg border-border/80 bg-background hover:bg-muted/50 text-foreground transition-colors shadow-2xs"
+                      >
+                        <FileText className="size-3.5 mr-1 text-muted-foreground" />
+                        View Invoice
+                      </Button>
+
+                      <Button
+                        type="button"
+                        size="sm"
+                        onClick={() => {
+                          setTrackedOrder(order);
+                          setTrackedProduct(null);
+                        }}
+                        className="h-8 px-4 text-xs font-semibold rounded-lg bg-[#6B1E2E] hover:bg-[#852538] text-white shadow-2xs transition-colors"
+                      >
+                        View Order
+                      </Button>
+                    </div>
                   </div>
                 </div>
 
-                {/* Items in order - Clickable */}
-                <div className="space-y-2 text-xs">
-                  <div className="flex items-center justify-between">
-                    <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider block">
-                      Ordered Items:
-                    </span>
-                    <span className="text-[10px] text-primary font-medium flex items-center gap-1">
-                      <Truck className="size-3" /> Click product to view live tracking
-                    </span>
+                {/* 2. Optional Experience Rating Banner (Matches Yellow Strip in Screenshot) */}
+                {!dismissedBanners[order.id] && (
+                  <div className="bg-[#FFFBEB] dark:bg-amber-950/25 border-b border-amber-200/50 dark:border-amber-900/40 px-4 sm:px-6 py-2 flex items-center justify-between text-xs text-amber-800 dark:text-amber-200">
+                    <div className="flex items-center gap-2">
+                      <Star className="size-3.5 text-amber-500 fill-amber-500 shrink-0" />
+                      <span className="font-medium text-[11px] sm:text-xs">
+                        Please rate your experience with Padmanabha Fabrics
+                      </span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setDismissedBanners((prev) => ({ ...prev, [order.id]: true }))}
+                      className="text-amber-700 dark:text-amber-300 hover:text-amber-900 dark:hover:text-amber-100 p-0.5 rounded transition-colors"
+                      aria-label="Dismiss rating banner"
+                    >
+                      <X className="size-3.5" />
+                    </button>
+                  </div>
+                )}
+
+                {/* 3. Card Body: Delivery Status & Product Item Rows */}
+                <div className="p-4 sm:p-6 space-y-6 bg-card">
+                  {/* Delivery Status Title */}
+                  <div className="flex items-center gap-2">
+                    {tracking.effectiveStatus === "Delivered" && (
+                      <CheckCircle2 className="size-4 text-emerald-600 dark:text-emerald-400" />
+                    )}
+                    {tracking.effectiveStatus === "Shipped" && (
+                      <Truck className="size-4 text-indigo-600 dark:text-indigo-400 animate-pulse" />
+                    )}
+                    {tracking.isCancelled && (
+                      <AlertCircle className="size-4 text-destructive" />
+                    )}
+                    <h3 className="font-display text-sm sm:text-base font-bold text-foreground">
+                      {deliveryHeading}
+                    </h3>
                   </div>
 
+                  {/* Product Rows */}
                   <div className="divide-y divide-border/60">
-                    {getOrderItems(order).map((item, idx) => {
+                    {items.map((item: any, idx: number) => {
                       const matchedProd = productsList.find(
                         (p) =>
                           p.id === item.productId ||
-                          p.name.toLowerCase() === item.productName.toLowerCase(),
+                          p.name.toLowerCase() === (item.productName || item.name || "").toLowerCase(),
                       );
-                      const prodImg = matchedProd?.images?.[0] || matchedProd?.image;
+                      const prodImg = matchedProd?.images?.[0] || matchedProd?.image || item.image;
+                      const prodName = item.productName || item.name || "Handcrafted Fabric / Apparel";
+                      const sizeStr = item.size ? ` · Size: ${item.size}` : "";
+                      const qtyStr = item.quantity ? ` · Qty: ${item.quantity}` : "";
+                      const eligibleDate = formatEligibleDate(order.date || order.createdAt);
 
                       return (
                         <div
                           key={idx}
-                          onClick={() => {
-                            setTrackedOrder(order);
-                            setTrackedProduct({
-                              name: item.productName,
-                              quantity: item.quantity,
-                              unit: item.unit,
-                              price: item.price,
-                              image: prodImg,
-                            });
-                          }}
-                          className="py-3 px-3 my-1.5 rounded-lg bg-background/60 hover:bg-[#FAF6EE] dark:hover:bg-white/5 cursor-pointer transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 group border border-border/80 hover:border-[#B8913A] shadow-2xs hover:shadow-xs"
-                          title="Click to track this product shipment"
+                          className="pt-4 first:pt-0 pb-4 last:pb-0 flex flex-col sm:flex-row items-start sm:items-center gap-4 group"
                         >
-                          <div className="flex items-center gap-3 min-w-0">
-                            <div className="size-12 rounded bg-secondary/50 border border-border flex items-center justify-center shrink-0 overflow-hidden shadow-2xs">
-                              {prodImg ? (
-                                <img
-                                  src={prodImg}
-                                  alt={item.productName}
-                                  className="w-full h-full object-cover group-hover:scale-105 transition-transform"
-                                />
-                              ) : (
-                                <Package className="size-5 text-gold/70" />
-                              )}
-                            </div>
-                            <div className="min-w-0">
-                              <div className="flex items-center gap-1.5">
-                                <span className="font-bold font-sans tabular-nums text-primary text-xs">
-                                  {item.quantity}x
-                                </span>
-                                <span className="font-medium text-foreground text-xs group-hover:text-primary transition-colors truncate">
-                                  {item.productName}
-                                </span>
-                              </div>
-                              <span className="text-[10px] text-muted-foreground block mt-0.5">
-                                {item.unit} · <strong className="text-[#6B1E2E] dark:text-[#E7C880]">Click to view live tracking</strong>
-                              </span>
-                            </div>
+                          {/* Left: Square Thumbnail */}
+                          <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-xl border border-border/80 bg-[#FAF7F2] dark:bg-white/5 flex items-center justify-center shrink-0 overflow-hidden shadow-2xs">
+                            {prodImg ? (
+                              <img
+                                src={prodImg}
+                                alt={prodName}
+                                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                              />
+                            ) : (
+                              <Package className="size-8 text-gold/70" />
+                            )}
                           </div>
 
-                          <div className="w-full sm:w-auto flex items-center justify-between sm:justify-end gap-3 pt-2 sm:pt-0 border-t sm:border-t-0 border-border/40 shrink-0">
-                            <span className="font-sans tabular-nums font-semibold text-foreground text-xs">
-                              {money(item.price * item.quantity)}
-                            </span>
-                            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-bold bg-[#6B1E2E] text-white group-hover:bg-[#B8913A] transition-all shadow-2xs">
-                              <Truck className="size-3" /> Track Shipment
-                            </span>
+                          {/* Right: Details & Action Links */}
+                          <div className="flex-1 min-w-0 space-y-1.5">
+                            <h4 className="font-display text-xs sm:text-sm font-semibold text-foreground line-clamp-2">
+                              {prodName}
+                              <span className="text-muted-foreground font-normal text-xs font-sans">
+                                {sizeStr}
+                                {qtyStr}
+                              </span>
+                            </h4>
+
+                            <p className="text-[11px] sm:text-xs text-muted-foreground font-sans">
+                              Return or Replace items : Eligible through {eligibleDate}
+                            </p>
+
+                            {/* Action Links Row (Matches Screenshot: Buy it again | View Product) */}
+                            <div className="flex items-center gap-3 pt-1 text-xs">
+                              <button
+                                type="button"
+                                onClick={() => handleBuyAgain(item, matchedProd)}
+                                className="inline-flex items-center gap-1.5 font-medium text-foreground hover:text-primary transition-colors cursor-pointer"
+                              >
+                                <RotateCw className="size-3.5 text-muted-foreground group-hover:text-primary" />
+                                <span>Buy it again</span>
+                              </button>
+
+                              <span className="text-muted-foreground/40 font-light">|</span>
+
+                              <Link
+                                to="/shop"
+                                search={matchedProd?.id ? { product: matchedProd.id } : { search: prodName }}
+                                className="inline-flex items-center gap-1.5 font-medium text-foreground hover:text-primary transition-colors"
+                              >
+                                <Eye className="size-3.5 text-muted-foreground" />
+                                <span>View Product</span>
+                              </Link>
+
+                              <span className="text-muted-foreground/40 font-light">|</span>
+
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setTrackedOrder(order);
+                                  setTrackedProduct({
+                                    name: prodName,
+                                    quantity: item.quantity || 1,
+                                    unit: item.unit,
+                                    price: item.price,
+                                    image: prodImg,
+                                  });
+                                }}
+                                className="inline-flex items-center gap-1.5 font-semibold text-[#6B1E2E] dark:text-[#E7C880] hover:underline transition-colors cursor-pointer"
+                              >
+                                <Truck className="size-3.5" />
+                                <span>Track Shipment</span>
+                              </button>
+                            </div>
                           </div>
                         </div>
                       );
                     })}
-                  </div>
-                </div>
-
-                {/* Footer Buttons */}
-                <div className="pt-2 border-t border-border flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 text-xs">
-                  <div className="text-muted-foreground text-[11px] max-w-sm">
-                    <span className="font-medium text-foreground">Delivery To: </span>
-                    {order.shippingAddress || "Showroom pickup, Ambattur, Chennai"}
-                  </div>
-
-                  <div className="flex items-center gap-2 shrink-0">
-                    <Button
-                      type="button"
-                      variant="default"
-                      size="sm"
-                      onClick={() => {
-                        setTrackedOrder(order);
-                        setTrackedProduct(null);
-                      }}
-                      className="h-8 text-xs bg-primary hover:bg-primary/90 text-primary-foreground font-semibold flex items-center gap-1.5"
-                    >
-                      <Truck className="size-3.5" />
-                      <span>Track Shipment</span>
-                    </Button>
-
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      className="h-8 text-xs text-[#25D366] hover:bg-emerald-50 border-emerald-300 dark:border-emerald-800"
-                      asChild
-                    >
-                      <a
-                        href={`https://wa.me/919940135700?text=${encodeURIComponent(
-                          `Hi Padmanabha Fabrics, I would like to check the tracking status of my Order #${order.id}.`,
-                        )}`}
-                        target="_blank"
-                        rel="noreferrer"
-                      >
-                        <MessageCircle className="size-3.5 mr-1 text-[#25D366]" />
-                        WhatsApp
-                      </a>
-                    </Button>
                   </div>
                 </div>
               </div>
@@ -386,3 +676,4 @@ export function OrdersPage() {
 }
 
 export default OrdersPage;
+
