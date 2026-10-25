@@ -542,12 +542,12 @@ function AdminDashboardPage() {
     setProdColour("");
     setProdPrice("");
     setProdUnit("piece");
-    setProdStock("0");
+    setProdStock("10");
     setProdBadge("New arrival");
     setProdDescription("");
     setProdSku(`PF-${Math.floor(100 + Math.random() * 900)}`);
     setProdSizes([...AVAILABLE_SIZES]);
-    setProdImage(DUMMY_PRODUCT_IMAGES[0]?.url || productsList[0]?.image || "");
+    setProdImage("");
     setImageUploadStatus("");
     setIsProductModalOpen(true);
   };
@@ -617,13 +617,14 @@ function AdminDashboardPage() {
         });
         toast.success(`"${prodName}" updated successfully! Changes are live on customer storefront.`);
       } else {
+        const initialPieces = Math.max(0, parseInt(prodStock || "0", 10));
         await addProduct({
           name: prodName,
           category: prodCategory,
           colour: prodColour,
           price: Number(prodPrice),
           unit: prodUnit,
-          stock: 0, // Starts at 0, only added manually via Inventory
+          stock: initialPieces,
           badge: prodBadge,
           description: prodDescription,
           sku: prodSku,
@@ -632,7 +633,7 @@ function AdminDashboardPage() {
           status: "active",
           isActive: true,
         });
-        toast.success(`"${prodName}" added with 0 initial stock! Add stock manually from the Inventory tab.`);
+        toast.success(`"${prodName}" added successfully with ${initialPieces} pieces in stock!`);
       }
     } catch (err: any) {
       toast.error(`Failed to save product: ${err?.message || "Unknown error"}`);
@@ -3675,16 +3676,7 @@ function AdminDashboardPage() {
                   </div>
                   <select
                     value={prodCategory}
-                    onChange={(e) => {
-                      const newCat = e.target.value;
-                      setProdCategory(newCat);
-                      if (!editingProduct) {
-                        const match = DUMMY_PRODUCT_IMAGES.find((d) => d.category === newCat);
-                        if (match) {
-                          setProdImage(match.url);
-                        }
-                      }
-                    }}
+                    onChange={(e) => setProdCategory(e.target.value)}
                     className="w-full h-10 px-3 text-sm bg-background border border-border"
                   >
                     {activeCategoriesList
@@ -3733,28 +3725,19 @@ function AdminDashboardPage() {
                   </select>
                 </div>
                 <div className="space-y-1.5">
-                  <div className="flex items-center justify-between">
-                    <label className="text-sm font-medium">Stock Count</label>
-                    {!editingProduct && (
-                      <span className="text-[10px] text-amber-600 font-semibold uppercase tracking-wider">
-                        Manual add only
-                      </span>
-                    )}
-                  </div>
+                  <label className="text-sm font-medium">Pieces in Stock *</label>
                   <Input
                     type="number"
                     required
-                    disabled={!editingProduct}
-                    value={editingProduct ? prodStock : "0"}
+                    min="0"
+                    value={prodStock}
                     onChange={(e) => setProdStock(e.target.value)}
-                    placeholder="0"
-                    className="rounded-none text-sm h-10 font-sans tabular-nums disabled:opacity-75 disabled:bg-muted"
+                    placeholder="e.g. 10"
+                    className="rounded-none text-sm h-10 font-sans tabular-nums"
                   />
-                  {!editingProduct && (
-                    <p className="text-[11px] text-muted-foreground leading-tight">
-                      Initial stock is 0. Add stock manually using "+ Add Stock" in the Inventory tab.
-                    </p>
-                  )}
+                  <p className="text-[11px] text-muted-foreground leading-tight">
+                    Enter number of pieces in stock
+                  </p>
                 </div>
               </div>
 
@@ -4000,59 +3983,6 @@ function AdminDashboardPage() {
                     />
                   </div>
                 </details>
-
-                {/* Grid of sample / dummy images */}
-                <div className="pt-2 border-t border-border/60">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-xs font-medium text-foreground">
-                      Or pick from Sample Textile & Garment Images ({DUMMY_PRODUCT_IMAGES.length})
-                    </span>
-                    <span className="text-[10px] text-primary">Click to select</span>
-                  </div>
-                  <div className="grid grid-cols-4 sm:grid-cols-6 gap-2 max-h-36 overflow-y-auto p-1.5 border border-border/60 bg-background rounded-xs">
-                    {DUMMY_PRODUCT_IMAGES.map((dummy) => {
-                      const isSelected = prodImage === dummy.url;
-                      return (
-                        <button
-                          type="button"
-                          key={dummy.url}
-                          onClick={() => {
-                            setProdImage(dummy.url);
-                            setImageUploadStatus("");
-                          }}
-                          className={`group relative flex flex-col items-center border p-1 transition-all text-left bg-card cursor-pointer rounded-xs ${
-                            isSelected
-                              ? "border-primary ring-2 ring-primary/40 bg-primary/10"
-                              : "border-border hover:border-foreground/50"
-                          }`}
-                          title={`${dummy.name} (${dummy.category})`}
-                        >
-                          <div className="relative w-full aspect-square overflow-hidden bg-muted rounded-xs">
-                            <img
-                              src={dummy.url}
-                              alt={dummy.name}
-                              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
-                              onError={(e) => {
-                                (e.currentTarget as HTMLImageElement).src = "/assets/burgundy-silk.jpg";
-                              }}
-                            />
-                            {isSelected && (
-                              <div className="absolute top-0.5 right-0.5 bg-primary text-primary-foreground rounded-full p-0.5 shadow">
-                                <Check className="size-2.5" />
-                              </div>
-                            )}
-                          </div>
-                          <span className="text-[9px] font-medium truncate w-full mt-1 text-center text-foreground">
-                            {dummy.name}
-                          </span>
-                          <span className="text-[8px] text-muted-foreground truncate w-full text-center">
-                            {dummy.category}
-                          </span>
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
               </div>
 
               <div className="space-y-1.5">
