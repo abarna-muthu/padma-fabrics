@@ -46,6 +46,12 @@ export function ProductCard({ product, light = false, badgeText, onQuickView }: 
     addToCart(product, selectedSize, 1);
   };
 
+  const handleBuyNow = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    addToCart(product, selectedSize, 1);
+    buyNow(product, 1);
+  };
+
   const handleWishlistClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     toggleWishlist(String(product.id), product.name);
@@ -151,31 +157,31 @@ export function ProductCard({ product, light = false, badgeText, onQuickView }: 
             {product.name}
           </h3>
 
-          {/* Price with Tabular Numerals */}
-          <div className="flex items-baseline gap-1.5 mt-1.5">
-            <span className="font-['Manrope'] text-xs sm:text-[15px] font-semibold tabular-nums">
-              {formatPrice(salePrice)}
-            </span>
-            <span
-              className={`text-[11px] sm:text-xs font-light ${
-                light ? "text-[#F4F0E8]/60" : "text-[#0E0E0E]/60"
-              }`}
-            >
-              / {product.unit || "piece"}
-            </span>
-          </div>
-        </div>
+          {/* Price with Tabular Numerals on left, Buy Now button on right */}
+          <div className="flex items-center justify-between gap-2 mt-2 pt-1.5 border-t border-[rgba(14,14,14,0.06)]">
+            <div className="flex items-baseline gap-1 min-w-0">
+              <span className="font-['Manrope'] text-xs sm:text-[15px] font-semibold tabular-nums text-foreground">
+                {formatPrice(salePrice)}
+              </span>
+              <span
+                className={`text-[10px] sm:text-xs font-light truncate ${
+                  light ? "text-[#F4F0E8]/60" : "text-[#0E0E0E]/60"
+                }`}
+              >
+                / {product.unit || "piece"}
+              </span>
+            </div>
 
-        {/* Mobile-Only Action Button (clean, accessible, does not block fabric image) */}
-        <div className="lg:hidden pt-2 border-t border-[rgba(14,14,14,0.06)]">
-          <button
-            type="button"
-            onClick={handleAddToCart}
-            className="w-full py-2 rounded-full bg-[#6B1E2E] hover:bg-[#832638] active:scale-98 text-white text-[11px] font-semibold uppercase tracking-[0.12em] transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-xs border border-[#B8913A]/40"
-          >
-            <ShoppingBag className="size-3 text-[#FAF6EE]" strokeWidth={1.5} />
-            <span>Add to Cart</span>
-          </button>
+            {/* Buy Now Button */}
+            <button
+              type="button"
+              onClick={handleBuyNow}
+              className="px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-full bg-[#6B1E2E] hover:bg-[#832638] text-white text-[10px] sm:text-[11px] font-semibold uppercase tracking-wider transition-all cursor-pointer shadow-xs active:scale-95 border border-[#B8913A]/40 shrink-0 inline-flex items-center gap-1"
+              title="Buy Now"
+            >
+              <span>Buy Now</span>
+            </button>
+          </div>
         </div>
       </div>
     </article>

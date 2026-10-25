@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
 import {
   ArrowRight,
@@ -124,7 +124,12 @@ export function HomePage() {
   };
 
   useEffect(() => {
-    fetchProducts();
+    if (activeProducts && activeProducts.length > 0) {
+      setProducts(activeProducts);
+      setLoading(false);
+    } else {
+      fetchProducts();
+    }
   }, [activeProducts]);
 
   const handleCategoryNav = (catSlug: string) => {
@@ -143,18 +148,32 @@ export function HomePage() {
     setNewsletterEmail("");
   };
 
+  // Prioritize activeProducts (manually added/managed original products in admin portal)
+  const catalogToDisplay = activeProducts && activeProducts.length > 0 ? activeProducts : products;
+
   // Filter products for "Our Most Loved Styles"
-  const filteredProducts = products.filter((p) => {
+  const filteredProducts = catalogToDisplay.filter((p) => {
+    if (!p) return false;
     if (selectedCategory === "All") return true;
-    return p.category === selectedCategory;
+    return p.category?.toLowerCase() === selectedCategory.toLowerCase();
   });
 
-  const availableCategories = [
-    "All",
-    ...(categoriesList && categoriesList.length > 0
+  // Strictly single "All" pill with deduplicated category names
+  const availableCategories = useMemo(() => {
+    const raw = categoriesList && categoriesList.length > 0
       ? categoriesList
-      : ["Saree", "Chudithar", "Coordset", "Maxi", "Nighty"]),
-  ];
+      : ["Saree", "Chudithar", "Coordset", "Maxi", "Nighty"];
+
+    const uniqueNonAll = Array.from(
+      new Set(
+        raw
+          .map((c) => (typeof c === "string" ? c.trim() : (c as any)?.name?.trim() || String(c)))
+          .filter((c) => c && c.toLowerCase() !== "all")
+      )
+    );
+
+    return ["All", ...uniqueNonAll];
+  }, [categoriesList]);
 
   return (
     <div className="bg-[#FAF7F2] text-[#0E0E0E] min-h-screen selection:bg-[#B8913A]/20 selection:text-[#0E0E0E]">
@@ -396,9 +415,9 @@ export function HomePage() {
           </div>
 
           {/* Product Grid State Handling */}
-          {loading ? (
+          {loading && (!catalogToDisplay || catalogToDisplay.length === 0) ? (
             <ProductGridSkeleton count={8} />
-          ) : error ? (
+          ) : error && (!catalogToDisplay || catalogToDisplay.length === 0) ? (
             <div className="text-center py-16 px-4 bg-[#EBE6DC]/50 rounded-[2px] border border-[rgba(14,14,14,0.08)]">
               <p className="text-sm text-[#6B1E2E] font-medium">{error}</p>
               <button
