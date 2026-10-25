@@ -40,6 +40,18 @@ export function Header() {
   // Mobile drawer state
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
+  // Prevent background scrolling when mobile menu drawer is open
+  useEffect(() => {
+    if (isMobileMenuOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [isMobileMenuOpen]);
+
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (searchQuery.trim()) {
@@ -76,26 +88,26 @@ export function Header() {
             : "bg-[#FAF7F2] border-b border-[rgba(14,14,14,0.06)]"
         } text-[#0E0E0E]`}
       >
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-20">
+        <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between h-16 sm:h-20 gap-2">
             {/* BRAND LOGO / WORDMARK */}
             <Link
               to="/"
-              className="flex items-center gap-3 sm:gap-3.5 group select-none shrink-0"
+              className="flex items-center gap-2 sm:gap-3.5 group select-none shrink-0 min-w-0"
               aria-label="Padmanabha Fabrics Home"
             >
               <img
                 src={typeof logo === "string" ? logo : (logo as any)?.url || "/padmanabha-logo.jpg"}
                 alt="Padmanabha Fabrics"
-                className="w-11 h-11 sm:w-12 sm:h-12 rounded-full object-cover ring-2 ring-[#B8913A]/50 shadow-xs transition-transform duration-300 group-hover:scale-105 shrink-0"
+                className="w-9 h-9 sm:w-12 sm:h-12 rounded-full object-cover ring-2 ring-[#B8913A]/50 shadow-xs transition-transform duration-300 group-hover:scale-105 shrink-0"
                 width={48}
                 height={48}
               />
-              <div className="flex flex-col">
-                <span className="font-['Manrope'] text-lg sm:text-2xl font-semibold tracking-[0.22em] text-[#0E0E0E] group-hover:text-[#B8913A] transition-colors leading-none">
+              <div className="flex flex-col min-w-0">
+                <span className="font-['Manrope'] text-sm sm:text-2xl font-semibold tracking-[0.16em] sm:tracking-[0.22em] text-[#0E0E0E] group-hover:text-[#B8913A] transition-colors leading-none truncate">
                   PADMANABHA
                 </span>
-                <span className="text-[8.5px] sm:text-[9px] font-medium uppercase tracking-[0.32em] text-[#B8913A] mt-1 sm:mt-1.5 opacity-90">
+                <span className="text-[7.5px] sm:text-[9px] font-medium uppercase tracking-[0.26em] sm:tracking-[0.32em] text-[#B8913A] mt-0.5 sm:mt-1.5 opacity-90 truncate">
                   FABRICS · CHENNAI
                 </span>
               </div>
@@ -137,13 +149,13 @@ export function Header() {
               </Link>
             </nav>
 
-            {/* RIGHT SIDE ICONS: SEARCH, WISHLIST, CART, ACCOUNT */}
-            <div className="flex items-center gap-3 sm:gap-4">
+            {/* RIGHT SIDE ICONS: SEARCH, WISHLIST, CART, ACCOUNT, ORDERS, HAMBURGER */}
+            <div className="flex items-center gap-1 sm:gap-3 shrink-0">
               {/* SEARCH ICON */}
               <button
                 type="button"
                 onClick={() => setIsSearchOpen(!isSearchOpen)}
-                className="p-1.5 text-[#0E0E0E] hover:text-[#B8913A] transition-colors cursor-pointer"
+                className="p-1.5 sm:p-2 text-[#0E0E0E] hover:text-[#B8913A] transition-colors cursor-pointer shrink-0"
                 aria-label="Search"
                 title="Search catalog"
               >
@@ -153,13 +165,13 @@ export function Header() {
               {/* WISHLIST ICON WITH COUNT */}
               <Link
                 to="/wishlist"
-                className="relative p-1.5 text-[#0E0E0E] hover:text-[#B8913A] transition-colors"
+                className="relative p-1.5 sm:p-2 text-[#0E0E0E] hover:text-[#B8913A] transition-colors shrink-0"
                 aria-label={`Wishlist, ${wishlistCount} items`}
                 title="Saved Wishlist"
               >
                 <Heart className="size-4" strokeWidth={1.5} />
                 {wishlistCount > 0 && (
-                  <span className="absolute -top-1 -right-1 size-4 rounded-full bg-[#B8913A] text-white text-[9px] font-bold flex items-center justify-center">
+                  <span className="absolute 0 top-0.5 right-0.5 sm:-top-1 sm:-right-1 size-3.5 sm:size-4 rounded-full bg-[#B8913A] text-white text-[8px] sm:text-[9px] font-bold flex items-center justify-center">
                     {wishlistCount}
                   </span>
                 )}
@@ -168,25 +180,25 @@ export function Header() {
               {/* SHOPPING CART ICON WITH LIVE ITEM COUNT */}
               <Link
                 to="/cart"
-                className="relative flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-black/5 hover:bg-black/10 border border-[rgba(14,14,14,0.12)] text-[#0E0E0E] transition-all cursor-pointer"
+                className="relative flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-full bg-black/5 hover:bg-black/10 border border-[rgba(14,14,14,0.12)] text-[#0E0E0E] transition-all cursor-pointer shrink-0"
                 aria-label={`Shopping bag, ${cartCount} items`}
                 title="Shopping Bag"
               >
                 <ShoppingBag className="size-3.5" strokeWidth={1.5} />
-                <span className="text-xs font-semibold tabular-nums">{cartCount}</span>
+                <span className="text-[11px] sm:text-xs font-semibold tabular-nums">{cartCount}</span>
               </Link>
 
               {/* CUSTOMER LOGIN / NAME DISPLAY */}
               {isLoggedIn && customer ? (
-                <div className="relative group">
+                <div className="relative group shrink-0">
                   <button
                     type="button"
                     onClick={() => setIsCustomerPortalOpen(true)}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#FAF6EE] dark:bg-white/10 border border-[#B8913A]/40 text-[#0E0E0E] dark:text-[#FAF6EE] hover:border-[#B8913A] transition-all cursor-pointer text-xs font-semibold shadow-2xs"
+                    className="flex items-center gap-1.5 p-1.5 sm:px-3 sm:py-1.5 rounded-full bg-[#FAF6EE] dark:bg-white/10 border border-[#B8913A]/40 text-[#0E0E0E] dark:text-[#FAF6EE] hover:border-[#B8913A] transition-all cursor-pointer text-xs font-semibold shadow-2xs"
                     title={`Logged in as ${customer.name}`}
                   >
                     <User className="size-3.5 text-[#B8913A]" />
-                    <span className="max-w-[110px] truncate">{customer.name}</span>
+                    <span className="hidden sm:inline max-w-[110px] truncate">{customer.name}</span>
                   </button>
 
                   {/* Dropdown Menu on hover */}
@@ -221,7 +233,7 @@ export function Header() {
                 <button
                   type="button"
                   onClick={() => setIsCustomerPortalOpen(true)}
-                  className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-full hover:bg-black/5 dark:hover:bg-white/5 text-[#0E0E0E] hover:text-[#B8913A] transition-colors cursor-pointer text-xs font-medium"
+                  className="flex items-center gap-1.5 p-1.5 sm:px-2.5 sm:py-1.5 rounded-full hover:bg-black/5 dark:hover:bg-white/5 text-[#0E0E0E] hover:text-[#B8913A] transition-colors cursor-pointer text-xs font-medium shrink-0"
                   title="Sign In / Register"
                 >
                   <User className="size-4" strokeWidth={1.5} />
@@ -232,21 +244,22 @@ export function Header() {
               {/* MY ORDERS BUTTON (Visible right next to Profile) */}
               <Link
                 to="/orders"
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#6B1E2E]/10 hover:bg-[#6B1E2E]/20 text-[#6B1E2E] dark:text-[#E7C880] border border-[#6B1E2E]/30 hover:border-[#6B1E2E] transition-all cursor-pointer text-xs font-semibold shadow-2xs"
+                className="flex items-center gap-1.5 p-1.5 sm:px-3 sm:py-1.5 rounded-full bg-[#6B1E2E]/10 hover:bg-[#6B1E2E]/20 text-[#6B1E2E] dark:text-[#E7C880] border border-[#6B1E2E]/30 hover:border-[#6B1E2E] transition-all cursor-pointer text-xs font-semibold shadow-2xs shrink-0"
                 title="My Orders & Live Shipment Tracking"
               >
                 <Truck className="size-3.5 text-[#6B1E2E] dark:text-[#B8913A]" strokeWidth={1.8} />
-                <span className="inline">My Orders</span>
+                <span className="hidden sm:inline">My Orders</span>
               </Link>
 
-              {/* MOBILE HAMBURGER MENU */}
+              {/* MOBILE HAMBURGER MENU (3-Line Icon ☰) */}
               <button
                 type="button"
                 onClick={() => setIsMobileMenuOpen(true)}
-                className="lg:hidden p-1.5 text-[#0E0E0E] hover:text-[#B8913A] transition-colors cursor-pointer"
+                className="lg:hidden p-1.5 sm:p-2 text-[#0E0E0E] hover:text-[#B8913A] transition-colors cursor-pointer rounded-md focus:outline-none focus:ring-1 focus:ring-[#B8913A] shrink-0"
                 aria-label="Open navigation menu"
+                title="Open Navigation Menu"
               >
-                <Menu className="size-5" strokeWidth={1.5} />
+                <Menu className="size-5" strokeWidth={1.75} />
               </button>
             </div>
           </div>
@@ -277,13 +290,13 @@ export function Header() {
 
       {/* 3. MOBILE POLISHED HAMBURGER MENU DRAWER */}
       {isMobileMenuOpen && (
-        <div className="fixed inset-0 z-50 lg:hidden">
+        <div className="fixed inset-0 z-50 lg:hidden" role="dialog" aria-modal="true" aria-label="Mobile Navigation Menu">
           <div
-            className="fixed inset-0 bg-black/60 backdrop-blur-xs transition-opacity"
+            className="fixed inset-0 bg-black/60 backdrop-blur-xs transition-opacity animate-in fade-in duration-200"
             onClick={() => setIsMobileMenuOpen(false)}
           />
 
-          <aside className="fixed inset-y-0 right-0 max-w-xs w-full bg-[#FAF7F2] text-[#0E0E0E] border-l border-[rgba(14,14,14,0.1)] p-6 flex flex-col z-50 animate-in slide-in-from-right duration-300">
+          <aside className="fixed inset-y-0 right-0 max-w-[280px] xs:max-w-xs w-full bg-[#FAF7F2] text-[#0E0E0E] border-l border-[rgba(14,14,14,0.1)] p-5 sm:p-6 flex flex-col z-50 animate-in slide-in-from-right duration-300 shadow-2xl">
             <div className="flex items-center justify-between pb-4 border-b border-[rgba(14,14,14,0.08)]">
               <div className="flex items-center gap-2.5">
                 <img
@@ -305,10 +318,11 @@ export function Header() {
               <button
                 type="button"
                 onClick={() => setIsMobileMenuOpen(false)}
-                className="p-1 text-[#0E0E0E]/60 hover:text-[#0E0E0E]"
+                className="p-2 rounded-full hover:bg-black/5 text-[#0E0E0E]/70 hover:text-[#0E0E0E] transition-colors cursor-pointer"
                 aria-label="Close navigation menu"
+                title="Close navigation menu"
               >
-                <X className="size-5" strokeWidth={1.5} />
+                <X className="size-5" strokeWidth={1.75} />
               </button>
             </div>
 

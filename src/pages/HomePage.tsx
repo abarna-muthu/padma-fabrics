@@ -200,10 +200,10 @@ export function HomePage() {
                 Discover thoughtfully selected styles for every occasion, from everyday essentials to statement pieces handcrafted direct from master looms in Chennai.
               </p>
 
-              <div className="flex flex-wrap items-center gap-4 pt-2">
+              <div className="flex flex-col xs:flex-row items-stretch xs:items-center gap-3 pt-2">
                 <Link
                   to="/shop"
-                  className="inline-flex items-center justify-center px-8 py-3.5 rounded-full bg-[#0E0E0E] text-[#F4F0E8] hover:bg-[#B8913A] transition-colors text-xs font-medium uppercase tracking-[0.16em] cursor-pointer shadow-xs active:scale-98"
+                  className="inline-flex items-center justify-center px-6 sm:px-8 py-3 sm:py-3.5 rounded-full bg-[#0E0E0E] text-[#F4F0E8] hover:bg-[#B8913A] transition-colors text-xs font-medium uppercase tracking-[0.16em] cursor-pointer shadow-xs active:scale-98 text-center"
                 >
                   Shop Collection
                 </Link>
@@ -211,14 +211,14 @@ export function HomePage() {
                 <Link
                   to="/shop"
                   search={{ filter: "new" } as any}
-                  className="inline-flex items-center justify-center px-8 py-3.5 rounded-full border border-[rgba(14,14,14,0.25)] text-[#0E0E0E] hover:border-[#0E0E0E] hover:bg-black/5 transition-all text-xs font-medium uppercase tracking-[0.16em] cursor-pointer active:scale-98"
+                  className="inline-flex items-center justify-center px-6 sm:px-8 py-3 sm:py-3.5 rounded-full border border-[rgba(14,14,14,0.25)] text-[#0E0E0E] hover:border-[#0E0E0E] hover:bg-black/5 transition-all text-xs font-medium uppercase tracking-[0.16em] cursor-pointer active:scale-98 text-center"
                 >
                   Explore New Arrivals
                 </Link>
               </div>
 
               {/* Editorial provenance note */}
-              <div className="pt-6 border-t border-[rgba(14,14,14,0.08)] flex items-center gap-6 text-[11px] uppercase tracking-[0.16em] text-[#0E0E0E]/60">
+              <div className="pt-6 border-t border-[rgba(14,14,14,0.08)] flex flex-wrap items-center gap-x-4 gap-y-1 sm:gap-6 text-[10px] sm:text-[11px] uppercase tracking-[0.16em] text-[#0E0E0E]/60">
                 <span>Hand-inspected Weaves</span>
                 <span>·</span>
                 <span>Retail & Wholesale</span>
@@ -440,7 +440,7 @@ export function HomePage() {
               </Link>
             </div>
           ) : (
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-6">
               {filteredProducts.slice(0, 8).map((product) => (
                 <ProductCard key={product.id} product={product} />
               ))}

@@ -295,7 +295,7 @@ function ShopPage() {
         </div>
 
         {/* Counter and Clear Filters */}
-        <div className="flex justify-between items-center text-xs text-[#0E0E0E]/60 mb-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs text-[#0E0E0E]/60 mb-6">
           <span>
             Showing <strong>{visible.length}</strong> of {activeProducts.length} fabrics{" "}
             {filter !== ALL ? `in ${filter}` : ""}{" "}
@@ -304,7 +304,7 @@ function ShopPage() {
           {(filter !== ALL || selectedPattern || queryFilter || querySearch) && (
             <button
               type="button"
-              className="text-xs font-semibold text-[#6B1E2E] hover:underline cursor-pointer"
+              className="text-xs font-semibold text-[#6B1E2E] hover:underline cursor-pointer self-start sm:self-auto"
               onClick={resetAllFilters}
             >
               Reset All Filters
@@ -330,7 +330,7 @@ function ShopPage() {
             </button>
           </div>
         ) : (
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-6">
             {visible.map((p) => (
               <ProductCard key={p.id} product={p} />
             ))}

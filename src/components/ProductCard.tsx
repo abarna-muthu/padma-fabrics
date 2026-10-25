@@ -146,7 +146,7 @@ export function ProductCard({ product, light = false, badgeText, onQuickView }: 
       </div>
 
       {/* Product Details Below Image */}
-      <div className="p-3 sm:p-4 flex flex-col flex-1 justify-between gap-2.5">
+      <div className="p-2.5 sm:p-4 flex flex-col flex-1 justify-between gap-2">
         <div>
           {/* Name */}
           <h3
@@ -158,13 +158,13 @@ export function ProductCard({ product, light = false, badgeText, onQuickView }: 
           </h3>
 
           {/* Price with Tabular Numerals on left, Buy Now button on right */}
-          <div className="flex items-center justify-between gap-2 mt-2 pt-1.5 border-t border-[rgba(14,14,14,0.06)]">
+          <div className="flex items-center justify-between gap-1 sm:gap-2 mt-2 pt-1.5 border-t border-[rgba(14,14,14,0.06)]">
             <div className="flex items-baseline gap-1 min-w-0">
-              <span className="font-['Manrope'] text-xs sm:text-[15px] font-semibold tabular-nums text-foreground">
+              <span className="font-['Manrope'] text-[11px] xs:text-xs sm:text-[15px] font-semibold tabular-nums text-foreground">
                 {formatPrice(salePrice)}
               </span>
               <span
-                className={`text-[10px] sm:text-xs font-light truncate ${
+                className={`text-[9px] sm:text-xs font-light truncate ${
                   light ? "text-[#F4F0E8]/60" : "text-[#0E0E0E]/60"
                 }`}
               >
@@ -176,7 +176,7 @@ export function ProductCard({ product, light = false, badgeText, onQuickView }: 
             <button
               type="button"
               onClick={handleBuyNow}
-              className="px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-full bg-[#6B1E2E] hover:bg-[#832638] text-white text-[10px] sm:text-[11px] font-semibold uppercase tracking-wider transition-all cursor-pointer shadow-xs active:scale-95 border border-[#B8913A]/40 shrink-0 inline-flex items-center gap-1"
+              className="px-2 sm:px-3 py-1 sm:py-1.5 rounded-full bg-[#6B1E2E] hover:bg-[#832638] text-white text-[9.5px] sm:text-[11px] font-semibold uppercase tracking-wider transition-all cursor-pointer shadow-xs active:scale-95 border border-[#B8913A]/40 shrink-0 inline-flex items-center gap-1"
               title="Buy Now"
             >
               <span>Buy Now</span>

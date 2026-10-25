@@ -279,7 +279,7 @@ export function OrdersPage() {
                               image: prodImg,
                             });
                           }}
-                          className="py-3 px-3 my-1.5 rounded-lg bg-background/60 hover:bg-[#FAF6EE] dark:hover:bg-white/5 cursor-pointer transition-all flex justify-between items-center group border border-border/80 hover:border-[#B8913A] shadow-2xs hover:shadow-xs"
+                          className="py-3 px-3 my-1.5 rounded-lg bg-background/60 hover:bg-[#FAF6EE] dark:hover:bg-white/5 cursor-pointer transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 group border border-border/80 hover:border-[#B8913A] shadow-2xs hover:shadow-xs"
                           title="Click to track this product shipment"
                         >
                           <div className="flex items-center gap-3 min-w-0">
@@ -309,7 +309,7 @@ export function OrdersPage() {
                             </div>
                           </div>
 
-                          <div className="text-right shrink-0 flex items-center gap-3">
+                          <div className="w-full sm:w-auto flex items-center justify-between sm:justify-end gap-3 pt-2 sm:pt-0 border-t sm:border-t-0 border-border/40 shrink-0">
                             <span className="font-sans tabular-nums font-semibold text-foreground text-xs">
                               {money(item.price * item.quantity)}
                             </span>

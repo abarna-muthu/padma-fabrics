@@ -149,7 +149,7 @@ export function CustomerPortalModal() {
 
   return (
     <Dialog open={isCustomerPortalOpen} onOpenChange={setIsCustomerPortalOpen}>
-      <DialogContent className="max-w-2xl p-0 overflow-hidden border border-border shadow-2xl bg-card rounded-md">
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto p-0 border border-border shadow-2xl bg-card rounded-md">
         {/* If customer is NOT logged in: Show Customer Login Dialog */}
         {!isLoggedIn || !customer ? (
           <div className="p-6 md:p-8 space-y-6">

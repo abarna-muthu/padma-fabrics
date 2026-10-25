@@ -114,8 +114,21 @@
 }
 
 @layer base {
-  * {
+  *, *::before, *::after {
     border-color: var(--color-border);
+    box-sizing: border-box;
+  }
+
+  html, body {
+    overflow-x: hidden;
+    max-width: 100%;
+    width: 100%;
+    -webkit-text-size-adjust: 100%;
+  }
+
+  /* Responsive media containment */
+  img, svg, video, canvas {
+    max-width: 100%;
   }
 
   body {
