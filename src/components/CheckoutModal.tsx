@@ -26,6 +26,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useCustomerAuth } from "@/context/CustomerAuthContext";
 import { useStore } from "@/context/StoreContext";
+import { Link } from "@tanstack/react-router";
 import { money, bagTotal } from "@/lib/catalog";
 
 interface CheckoutModalProps {
@@ -148,6 +149,18 @@ export function CheckoutModal({ isOpen, onClose, onOrderSuccess }: CheckoutModal
         res.orderNumber || (res as any).orderId || `PF-${Date.now().toString().slice(-4)}`;
 
       if (res.success && resolvedOrderNumber) {
+        // Persist last placed order details for immediate tracking matching
+        if (typeof window !== "undefined") {
+          try {
+            localStorage.setItem("pf_last_placed_order_id", resolvedOrderNumber);
+            localStorage.setItem("pf_last_customer_phone", phone);
+            localStorage.setItem("pf_last_customer_email", email);
+            localStorage.setItem("pf_last_customer_name", name);
+          } catch (e) {
+            console.debug("localStorage order save notice:", e);
+          }
+        }
+
         // Automatically sign in customer with password: customer123
         try {
           await loginCustomer(email, "customer123", name, phone);
@@ -612,16 +625,29 @@ export function CheckoutModal({ isOpen, onClose, onOrderSuccess }: CheckoutModal
 
             {/* Action Buttons */}
             <div className="space-y-2 pt-1">
+              <Link
+                to="/orders"
+                onClick={() => {
+                  onClose();
+                  setStep("form");
+                }}
+                className="w-full h-11 flex items-center justify-center gap-2 rounded bg-primary text-primary-foreground font-semibold text-xs uppercase tracking-wider hover:bg-primary/90 transition-colors cursor-pointer shadow-xs"
+              >
+                <Truck className="size-4" />
+                <span>View Live Tracking in My Orders &rarr;</span>
+              </Link>
+
               <Button
-                variant="editorial"
-                className="w-full h-11 text-xs uppercase tracking-wider font-semibold cursor-pointer"
+                type="button"
+                variant="outline"
+                className="w-full h-10 text-xs uppercase tracking-wider font-semibold cursor-pointer border-border/80"
                 onClick={() => {
                   onClose();
                   setStep("form");
                   openCustomerOrders();
                 }}
               >
-                Go to My Orders & Wishlist Now &rarr;
+                Open Customer Account Dashboard
               </Button>
             </div>
           </div>

@@ -5,6 +5,7 @@ import {
   Menu,
   Search,
   ShoppingBag,
+  Truck,
   User,
   X,
 } from "lucide-react";
@@ -194,12 +195,18 @@ export function Header() {
                       <p className="font-semibold text-[#0E0E0E] dark:text-[#FAF6EE] truncate">{customer.name}</p>
                       <p className="text-[10px] text-[#5C5549] dark:text-[#B5AC9E] truncate">{customer.email}</p>
                     </div>
+                    <Link
+                      to="/orders"
+                      className="block w-full text-left px-3 py-2 rounded hover:bg-[#FAF6EE] dark:hover:bg-white/5 text-[#0E0E0E] dark:text-[#FAF6EE] transition-colors cursor-pointer font-medium"
+                    >
+                      My Orders & Tracking
+                    </Link>
                     <button
                       type="button"
                       onClick={() => setIsCustomerPortalOpen(true)}
                       className="w-full text-left px-3 py-2 rounded hover:bg-[#FAF6EE] dark:hover:bg-white/5 text-[#0E0E0E] dark:text-[#FAF6EE] transition-colors cursor-pointer"
                     >
-                      My Orders & Account
+                      Customer Dashboard
                     </button>
                     <button
                       type="button"
@@ -221,6 +228,16 @@ export function Header() {
                   <span className="hidden sm:inline">Sign In</span>
                 </button>
               )}
+
+              {/* MY ORDERS BUTTON (Visible right next to Profile) */}
+              <Link
+                to="/orders"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#6B1E2E]/10 hover:bg-[#6B1E2E]/20 text-[#6B1E2E] dark:text-[#E7C880] border border-[#6B1E2E]/30 hover:border-[#6B1E2E] transition-all cursor-pointer text-xs font-semibold shadow-2xs"
+                title="My Orders & Live Shipment Tracking"
+              >
+                <Truck className="size-3.5 text-[#6B1E2E] dark:text-[#B8913A]" strokeWidth={1.8} />
+                <span className="inline">My Orders</span>
+              </Link>
 
               {/* MOBILE HAMBURGER MENU */}
               <button
@@ -341,6 +358,19 @@ export function Header() {
                 >
                   <span>Wishlist</span>
                   <span className="text-[#B8913A] font-semibold">({wishlistCount})</span>
+                </Link>
+                <Link
+                  to="/orders"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className="flex items-center justify-between py-1 text-[#6B1E2E] dark:text-[#E7C880] font-semibold hover:text-[#B8913A]"
+                >
+                  <span className="flex items-center gap-1.5">
+                    <Truck className="size-3.5 text-[#6B1E2E] dark:text-[#B8913A]" />
+                    <span>My Orders & Tracking</span>
+                  </span>
+                  <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded bg-[#6B1E2E]/10">
+                    Live
+                  </span>
                 </Link>
                 {isLoggedIn && customer ? (
                   <div className="pt-2 border-t border-[rgba(14,14,14,0.08)] flex items-center justify-between py-1">

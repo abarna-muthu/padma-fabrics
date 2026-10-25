@@ -31,16 +31,28 @@ export function OrdersPage() {
   const [trackedProduct, setTrackedProduct] = useState<any | null>(null);
   const [searchError, setSearchError] = useState<string | null>(null);
 
-  // If customer is logged in, show their orders. Otherwise show recent orders or search result.
-  const customerOrders = customer
-    ? orders.filter(
-        (o) =>
-          o.customerEmail?.toLowerCase() === customer.email?.toLowerCase() ||
-          (customer.phone &&
-            o.customerPhone &&
-            o.customerPhone.replace(/\D/g, "") === customer.phone.replace(/\D/g, "")),
-      )
-    : orders.slice(0, 3); // show sample recent orders for quick preview if not logged in
+  // Match orders for customer via:
+  // 1. Logged in customer email / phone
+  // 2. localStorage last placed order ID, phone, or email
+  // 3. Fallback to recent store orders
+  const lastPlacedOrderId = typeof window !== "undefined" ? localStorage.getItem("pf_last_placed_order_id") : null;
+  const lastPlacedPhone = typeof window !== "undefined" ? localStorage.getItem("pf_last_customer_phone") : null;
+  const lastPlacedEmail = typeof window !== "undefined" ? localStorage.getItem("pf_last_customer_email") : null;
+
+  const normalizePhone = (p?: string) => (p || "").replace(/\D/g, "").slice(-10);
+
+  const matchedOrders = orders.filter((o) => {
+    if (customer) {
+      if (customer.email && o.customerEmail?.trim().toLowerCase() === customer.email.trim().toLowerCase()) return true;
+      if (customer.phone && o.customerPhone && normalizePhone(o.customerPhone) === normalizePhone(customer.phone)) return true;
+    }
+    if (lastPlacedOrderId && (o.id === lastPlacedOrderId || (o as any).orderNumber === lastPlacedOrderId)) return true;
+    if (lastPlacedPhone && o.customerPhone && normalizePhone(o.customerPhone) === normalizePhone(lastPlacedPhone)) return true;
+    if (lastPlacedEmail && o.customerEmail && o.customerEmail.trim().toLowerCase() === lastPlacedEmail.trim().toLowerCase()) return true;
+    return false;
+  });
+
+  const customerOrders = matchedOrders.length > 0 ? matchedOrders : orders.slice(0, 4);
 
   const handleSearchOrder = (e: React.FormEvent) => {
     e.preventDefault();
@@ -248,11 +260,11 @@ export function OrdersPage() {
                               image: prodImg,
                             });
                           }}
-                          className="py-2.5 px-2 -mx-2 rounded hover:bg-primary/5 cursor-pointer transition-colors flex justify-between items-center group border border-transparent hover:border-primary/20"
+                          className="py-3 px-3 my-1.5 rounded-lg bg-background/60 hover:bg-[#FAF6EE] dark:hover:bg-white/5 cursor-pointer transition-all flex justify-between items-center group border border-border/80 hover:border-[#B8913A] shadow-2xs hover:shadow-xs"
                           title="Click to track this product shipment"
                         >
                           <div className="flex items-center gap-3 min-w-0">
-                            <div className="size-11 rounded bg-secondary/50 border border-border flex items-center justify-center shrink-0 overflow-hidden">
+                            <div className="size-12 rounded bg-secondary/50 border border-border flex items-center justify-center shrink-0 overflow-hidden shadow-2xs">
                               {prodImg ? (
                                 <img
                                   src={prodImg}
@@ -272,8 +284,8 @@ export function OrdersPage() {
                                   {item.productName}
                                 </span>
                               </div>
-                              <span className="text-[10px] text-muted-foreground block">
-                                {item.unit} · Click to track shipment
+                              <span className="text-[10px] text-muted-foreground block mt-0.5">
+                                {item.unit} · <strong className="text-[#6B1E2E] dark:text-[#E7C880]">Click to view live tracking</strong>
                               </span>
                             </div>
                           </div>
@@ -282,8 +294,8 @@ export function OrdersPage() {
                             <span className="font-sans tabular-nums font-semibold text-foreground text-xs">
                               {money(item.price * item.quantity)}
                             </span>
-                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded text-[11px] font-semibold bg-primary/10 text-primary group-hover:bg-primary group-hover:text-primary-foreground transition-all">
-                              <Truck className="size-3" /> Track
+                            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-bold bg-[#6B1E2E] text-white group-hover:bg-[#B8913A] transition-all shadow-2xs">
+                              <Truck className="size-3" /> Track Shipment
                             </span>
                           </div>
                         </div>

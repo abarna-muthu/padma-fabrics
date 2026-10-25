@@ -55,14 +55,23 @@ export function CustomerPortalModal() {
   const [trackingModalOrder, setTrackingModalOrder] = useState<Order | null>(null);
   const [trackingModalProduct, setTrackingModalProduct] = useState<any | null>(null);
 
-  // Filter orders for the logged-in customer
-  const customerOrders = customer
-    ? orders.filter(
-        (o) =>
-          o.customerEmail?.toLowerCase() === customer.email?.toLowerCase() ||
-          (customer.phone && o.customerPhone && o.customerPhone.replace(/\D/g, "") === customer.phone.replace(/\D/g, "")),
-      )
-    : [];
+  // Filter orders for customer (session or recently placed)
+  const lastPlacedOrderId = typeof window !== "undefined" ? localStorage.getItem("pf_last_placed_order_id") : null;
+  const lastPlacedPhone = typeof window !== "undefined" ? localStorage.getItem("pf_last_customer_phone") : null;
+  const lastPlacedEmail = typeof window !== "undefined" ? localStorage.getItem("pf_last_customer_email") : null;
+
+  const normalizePhone = (p?: string) => (p || "").replace(/\D/g, "").slice(-10);
+
+  const customerOrders = orders.filter((o) => {
+    if (customer) {
+      if (customer.email && o.customerEmail?.trim().toLowerCase() === customer.email.trim().toLowerCase()) return true;
+      if (customer.phone && o.customerPhone && normalizePhone(o.customerPhone) === normalizePhone(customer.phone)) return true;
+    }
+    if (lastPlacedOrderId && (o.id === lastPlacedOrderId || (o as any).orderNumber === lastPlacedOrderId)) return true;
+    if (lastPlacedPhone && o.customerPhone && normalizePhone(o.customerPhone) === normalizePhone(lastPlacedPhone)) return true;
+    if (lastPlacedEmail && o.customerEmail && o.customerEmail.trim().toLowerCase() === lastPlacedEmail.trim().toLowerCase()) return true;
+    return false;
+  });
 
   // Filter wishlisted products
   const wishlistProducts = productsList.filter((p) => favorites.includes(p.id));
