@@ -927,6 +927,22 @@ function AdminDashboardPage() {
     });
   }, [productsList, productCategoryFilter, productSearch]);
 
+  // Pagination for Products (10 items per page)
+  const [productCurrentPage, setProductCurrentPage] = useState(1);
+  const productItemsPerPage = 10;
+
+  useEffect(() => {
+    setProductCurrentPage(1);
+  }, [productSearch, productCategoryFilter]);
+
+  const totalProductPages = Math.max(1, Math.ceil(filteredProducts.length / productItemsPerPage));
+
+  const paginatedProducts = useMemo(() => {
+    const validPage = Math.min(Math.max(1, productCurrentPage), totalProductPages);
+    const start = (validPage - 1) * productItemsPerPage;
+    return filteredProducts.slice(start, start + productItemsPerPage);
+  }, [filteredProducts, productCurrentPage, productItemsPerPage, totalProductPages]);
+
   // Filtered orders list
   const filteredOrders = useMemo(() => {
     return orders.filter((o) => {
@@ -938,6 +954,199 @@ function AdminDashboardPage() {
       return matchStatus && matchSearch;
     });
   }, [orders, orderStatusFilter, orderSearch]);
+
+  // Pagination for Orders (10 items per page)
+  const [orderCurrentPage, setOrderCurrentPage] = useState(1);
+  const orderItemsPerPage = 10;
+
+  useEffect(() => {
+    setOrderCurrentPage(1);
+  }, [orderSearch, orderStatusFilter]);
+
+  const totalOrderPages = Math.max(1, Math.ceil(filteredOrders.length / orderItemsPerPage));
+
+  const paginatedOrders = useMemo(() => {
+    const validPage = Math.min(Math.max(1, orderCurrentPage), totalOrderPages);
+    const start = (validPage - 1) * orderItemsPerPage;
+    return filteredOrders.slice(start, start + orderItemsPerPage);
+  }, [filteredOrders, orderCurrentPage, orderItemsPerPage, totalOrderPages]);
+
+  // Download single order receipt / invoice (HTML format)
+  const handleDownloadSingleOrder = (order: Order) => {
+    const tracking = computeOrderTracking(order);
+    const dateStr = order.date || (order.createdAt ? order.createdAt.split("T")[0] : new Date().toISOString().split("T")[0]);
+    const itemsHtml = order.items
+      .map(
+        (it) => `
+        <tr>
+          <td style="padding: 10px; border-bottom: 1px solid #eee;">${it.productName || "Product"}</td>
+          <td style="padding: 10px; border-bottom: 1px solid #eee; text-align: center;">${it.size || "Standard"}</td>
+          <td style="padding: 10px; border-bottom: 1px solid #eee; text-align: center;">${it.quantity}</td>
+          <td style="padding: 10px; border-bottom: 1px solid #eee; text-align: right;">₹${(it.price || 0).toLocaleString("en-IN")}</td>
+          <td style="padding: 10px; border-bottom: 1px solid #eee; text-align: right; font-weight: bold;">₹${((it.price || 0) * it.quantity).toLocaleString("en-IN")}</td>
+        </tr>
+      `
+      )
+      .join("");
+
+    const invoiceHtml = `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Invoice - ${order.id} - Padmanabha Fabrics</title>
+  <style>
+    body { font-family: 'Poppins', Arial, sans-serif; margin: 0; padding: 20px; background: #fff; color: #111; }
+    .invoice-box { max-width: 800px; margin: auto; padding: 30px; border: 1px solid #eee; border-radius: 8px; }
+    .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #B8913A; padding-bottom: 15px; margin-bottom: 25px; }
+    .title { font-size: 24px; font-weight: bold; color: #6B1E2E; letter-spacing: 2px; }
+    .subtitle { font-size: 11px; color: #B8913A; letter-spacing: 1px; }
+    .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 25px; font-size: 13px; line-height: 1.6; }
+    .table { width: 100%; border-collapse: collapse; margin-bottom: 25px; font-size: 13px; }
+    .table th { background: #FAF7F2; padding: 10px; text-align: left; border-bottom: 2px solid #ddd; }
+    .total-box { text-align: right; margin-top: 15px; font-size: 15px; }
+    .total-amount { font-size: 20px; color: #6B1E2E; font-weight: bold; }
+    .footer { text-align: center; margin-top: 30px; font-size: 11px; color: #777; border-top: 1px solid #eee; padding-top: 15px; }
+    @media print { body { padding: 0; } .invoice-box { border: none; padding: 0; } }
+  </style>
+</head>
+<body>
+  <div class="invoice-box">
+    <div class="header">
+      <div>
+        <div class="title">PADMANABHA FABRICS</div>
+        <div class="subtitle">CHENNAI · RETAIL & WHOLESALE</div>
+      </div>
+      <div style="text-align: right;">
+        <h2 style="margin: 0; font-size: 18px; color: #333;">ORDER INVOICE</h2>
+        <div style="font-size: 13px; color: #666;">Order #${order.id}</div>
+        <div style="font-size: 12px; color: #888;">Date: ${dateStr}</div>
+      </div>
+    </div>
+
+    <div class="info-grid">
+      <div>
+        <strong>Customer Details:</strong><br />
+        ${order.customerName}<br />
+        Phone: ${order.customerPhone}<br />
+        Email: ${order.customerEmail || "N/A"}<br />
+        Address: ${order.shippingAddress || "Menambedu, Ambattur, Chennai"}
+      </div>
+      <div style="text-align: right;">
+        <strong>Order Summary:</strong><br />
+        Fulfillment Status: <span style="font-weight: bold; color: #6B1E2E;">${tracking.effectiveStatus}</span><br />
+        Estimated Delivery: ${order.deliveryDays || 5} Days<br />
+        Payment Status: ${order.paymentStatus || "Paid"}<br />
+        Payment Method: ${order.paymentMethod || "Online / COD"}
+      </div>
+    </div>
+
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Item Description</th>
+          <th style="text-align: center;">Size</th>
+          <th style="text-align: center;">Qty</th>
+          <th style="text-align: right;">Unit Price</th>
+          <th style="text-align: right;">Total</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${itemsHtml}
+      </tbody>
+    </table>
+
+    <div class="total-box">
+      <div>Subtotal: ₹${order.total.toLocaleString("en-IN")}</div>
+      <div>Delivery: ₹0 (Free Delivery)</div>
+      <div style="margin-top: 8px;">
+        Grand Total: <span class="total-amount">₹${order.total.toLocaleString("en-IN")}</span>
+      </div>
+    </div>
+
+    <div class="footer">
+      Padmanabha Fabrics · Menambedu, Ambattur, Chennai - 600053 · Phone: +91 99401 35700<br />
+      Thank you for your order! Handcrafted Weaves & Fine Indian Apparel.
+    </div>
+  </div>
+</body>
+</html>`;
+
+    const blob = new Blob([invoiceHtml], { type: "text/html;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `Invoice-${order.id}.html`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    toast.success(`Invoice for #${order.id} downloaded!`);
+  };
+
+  // Export / Download all orders as CSV
+  const handleExportAllOrders = () => {
+    const listToExport = filteredOrders.length > 0 ? filteredOrders : orders;
+    if (listToExport.length === 0) {
+      toast.error("No orders found to download.");
+      return;
+    }
+
+    const headers = [
+      "Order ID",
+      "Date",
+      "Delivery Days",
+      "Customer Name",
+      "Phone",
+      "Email",
+      "Shipping Address",
+      "Items Count",
+      "Items Breakdown",
+      "Total (INR)",
+      "Payment Status",
+      "Fulfillment Status",
+    ];
+
+    const escapeCsv = (str: string | number | undefined) => {
+      if (str === undefined || str === null) return '""';
+      const s = String(str).replace(/"/g, '""');
+      return `"${s}"`;
+    };
+
+    const rows = listToExport.map((o) => {
+      const tracking = computeOrderTracking(o);
+      const dateStr = o.date || (o.createdAt ? o.createdAt.split("T")[0] : "");
+      const itemsSummary = o.items.map((it) => `${it.quantity}x ${it.productName} (${it.size || "Standard"})`).join("; ");
+      const totalQty = o.items.reduce((sum, it) => sum + (it.quantity || 1), 0);
+
+      return [
+        escapeCsv(o.id),
+        escapeCsv(dateStr),
+        escapeCsv(`${o.deliveryDays || 5} days`),
+        escapeCsv(o.customerName),
+        escapeCsv(o.customerPhone),
+        escapeCsv(o.customerEmail || ""),
+        escapeCsv(o.shippingAddress || ""),
+        escapeCsv(totalQty),
+        escapeCsv(itemsSummary),
+        escapeCsv(o.total),
+        escapeCsv(o.paymentStatus),
+        escapeCsv(tracking.effectiveStatus),
+      ].join(",");
+    });
+
+    const csvContent = "\uFEFF" + [headers.join(","), ...rows].join("\r\n");
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    const today = new Date().toISOString().slice(0, 10);
+    link.href = url;
+    link.download = `Padmanabha-Orders-${today}.csv`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    toast.success(`Exported ${listToExport.length} orders to CSV successfully!`);
+  };
 
   // Filtered customers list
   const filteredCustomers = useMemo(() => {
@@ -957,7 +1166,7 @@ function AdminDashboardPage() {
   }
 
   return (
-    <div className="admin-portal h-screen w-full bg-[#FAF7F2] flex flex-col md:flex-row text-[#0E0E0E] overflow-hidden select-none font-['Inter']">
+    <div className="admin-portal h-screen w-full bg-[#FAF7F2] flex flex-col md:flex-row text-[#0E0E0E] overflow-hidden select-none font-['Poppins',sans-serif]">
       {/* Mobile Top Header */}
       <div className="md:hidden flex items-center justify-between p-4 bg-[#0E0E0E] border-b border-white/10 shrink-0 z-30 text-[#F4F0E8]">
         <div className="flex items-center gap-2.5">
@@ -1008,11 +1217,11 @@ function AdminDashboardPage() {
             }}
             className={`w-full flex items-center gap-3 px-3.5 py-2.5 text-sm font-medium rounded-sm transition-colors text-left cursor-pointer ${
               activeTab === "dashboard"
-                ? "bg-primary text-primary-foreground font-semibold"
-                : "text-muted-foreground hover:bg-secondary hover:text-foreground"
+                ? "bg-[#6B1E2E] text-white font-semibold shadow-xs"
+                : "text-white/70 hover:bg-white/10 hover:text-white"
             }`}
           >
-            <LayoutDashboard className="size-4 shrink-0" />
+            <LayoutDashboard className="size-4 shrink-0 text-[#B8913A]" />
             <span>Dashboard</span>
           </button>
 
@@ -1024,11 +1233,11 @@ function AdminDashboardPage() {
             }}
             className={`w-full flex items-center gap-3 px-3.5 py-2.5 text-sm font-medium rounded-sm transition-colors text-left cursor-pointer ${
               activeTab === "products"
-                ? "bg-primary text-primary-foreground font-semibold"
-                : "text-muted-foreground hover:bg-secondary hover:text-foreground"
+                ? "bg-[#6B1E2E] text-white font-semibold shadow-xs"
+                : "text-white/70 hover:bg-white/10 hover:text-white"
             }`}
           >
-            <Package className="size-4 shrink-0" />
+            <Package className="size-4 shrink-0 text-[#B8913A]" />
             <span>Products</span>
           </button>
 
@@ -1040,11 +1249,11 @@ function AdminDashboardPage() {
             }}
             className={`w-full flex items-center gap-3 px-3.5 py-2.5 text-sm font-medium rounded-sm transition-colors text-left cursor-pointer ${
               activeTab === "inventory"
-                ? "bg-primary text-primary-foreground font-semibold"
-                : "text-muted-foreground hover:bg-secondary hover:text-foreground"
+                ? "bg-[#6B1E2E] text-white font-semibold shadow-xs"
+                : "text-white/70 hover:bg-white/10 hover:text-white"
             }`}
           >
-            <Boxes className="size-4 shrink-0" />
+            <Boxes className="size-4 shrink-0 text-[#B8913A]" />
             <span>Inventory & Stock</span>
           </button>
 
@@ -1056,11 +1265,11 @@ function AdminDashboardPage() {
             }}
             className={`w-full flex items-center gap-3 px-3.5 py-2.5 text-sm font-medium rounded-sm transition-colors text-left cursor-pointer ${
               activeTab === "orders"
-                ? "bg-primary text-primary-foreground font-semibold"
-                : "text-muted-foreground hover:bg-secondary hover:text-foreground"
+                ? "bg-[#6B1E2E] text-white font-semibold shadow-xs"
+                : "text-white/70 hover:bg-white/10 hover:text-white"
             }`}
           >
-            <ShoppingBag className="size-4 shrink-0" />
+            <ShoppingBag className="size-4 shrink-0 text-[#B8913A]" />
             <span>Orders</span>
           </button>
 
@@ -1072,11 +1281,11 @@ function AdminDashboardPage() {
             }}
             className={`w-full flex items-center gap-3 px-3.5 py-2.5 text-sm font-medium rounded-sm transition-colors text-left cursor-pointer ${
               activeTab === "customers"
-                ? "bg-primary text-primary-foreground font-semibold"
-                : "text-muted-foreground hover:bg-secondary hover:text-foreground"
+                ? "bg-[#6B1E2E] text-white font-semibold shadow-xs"
+                : "text-white/70 hover:bg-white/10 hover:text-white"
             }`}
           >
-            <Users className="size-4 shrink-0" />
+            <Users className="size-4 shrink-0 text-[#B8913A]" />
             <span>Customers</span>
           </button>
 
@@ -1088,11 +1297,11 @@ function AdminDashboardPage() {
             }}
             className={`w-full flex items-center gap-3 px-3.5 py-2.5 text-sm font-medium rounded-sm transition-colors text-left cursor-pointer ${
               activeTab === "sales"
-                ? "bg-primary text-primary-foreground font-semibold"
-                : "text-muted-foreground hover:bg-secondary hover:text-foreground"
+                ? "bg-[#6B1E2E] text-white font-semibold shadow-xs"
+                : "text-white/70 hover:bg-white/10 hover:text-white"
             }`}
           >
-            <TrendingUp className="size-4 shrink-0" />
+            <TrendingUp className="size-4 shrink-0 text-[#B8913A]" />
             <span>Sales & Reports</span>
           </button>
 
@@ -1104,17 +1313,17 @@ function AdminDashboardPage() {
             }}
             className={`w-full flex items-center gap-3 px-3.5 py-2.5 text-sm font-medium rounded-sm transition-colors text-left cursor-pointer ${
               activeTab === "settings"
-                ? "bg-primary text-primary-foreground font-semibold"
-                : "text-muted-foreground hover:bg-secondary hover:text-foreground"
+                ? "bg-[#6B1E2E] text-white font-semibold shadow-xs"
+                : "text-white/70 hover:bg-white/10 hover:text-white"
             }`}
           >
-            <Settings className="size-4 shrink-0" />
+            <Settings className="size-4 shrink-0 text-[#B8913A]" />
             <span>Admin Settings</span>
           </button>
 
           {/* Section: Page Content Management */}
-          <div className="pt-4 pb-1.5 px-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground/80 flex items-center gap-1.5">
-            <Sparkles className="size-3.5 text-gold" />
+          <div className="pt-4 pb-1.5 px-3 text-xs font-semibold uppercase tracking-wider text-[#B8913A] flex items-center gap-1.5">
+            <Sparkles className="size-3.5 text-[#B8913A]" />
             <span>Page Content</span>
           </div>
 
@@ -1126,11 +1335,11 @@ function AdminDashboardPage() {
             }}
             className={`w-full flex items-center gap-3 px-3.5 py-2.5 text-sm font-medium rounded-sm transition-colors text-left cursor-pointer ${
               activeTab === "home-content"
-                ? "bg-primary text-primary-foreground font-semibold"
-                : "text-muted-foreground hover:bg-secondary hover:text-foreground"
+                ? "bg-[#6B1E2E] text-white font-semibold shadow-xs"
+                : "text-white/70 hover:bg-white/10 hover:text-white"
             }`}
           >
-            <Globe className="size-4 shrink-0" />
+            <Globe className="size-4 shrink-0 text-[#B8913A]" />
             <span>Home Page</span>
           </button>
 
@@ -1142,11 +1351,11 @@ function AdminDashboardPage() {
             }}
             className={`w-full flex items-center gap-3 px-3.5 py-2.5 text-sm font-medium rounded-sm transition-colors text-left cursor-pointer ${
               activeTab === "about-content"
-                ? "bg-primary text-primary-foreground font-semibold"
-                : "text-muted-foreground hover:bg-secondary hover:text-foreground"
+                ? "bg-[#6B1E2E] text-white font-semibold shadow-xs"
+                : "text-white/70 hover:bg-white/10 hover:text-white"
             }`}
           >
-            <FileText className="size-4 shrink-0" />
+            <FileText className="size-4 shrink-0 text-[#B8913A]" />
             <span>About Page</span>
           </button>
 
@@ -1158,17 +1367,17 @@ function AdminDashboardPage() {
             }}
             className={`w-full flex items-center gap-3 px-3.5 py-2.5 text-sm font-medium rounded-sm transition-colors text-left cursor-pointer ${
               activeTab === "contact-content"
-                ? "bg-primary text-primary-foreground font-semibold"
-                : "text-muted-foreground hover:bg-secondary hover:text-foreground"
+                ? "bg-[#6B1E2E] text-white font-semibold shadow-xs"
+                : "text-white/70 hover:bg-white/10 hover:text-white"
             }`}
           >
-            <Phone className="size-4 shrink-0" />
+            <Phone className="size-4 shrink-0 text-[#B8913A]" />
             <span>Contact Page</span>
           </button>
         </nav>
 
         {/* Sidebar Footer */}
-        <div className="p-4 border-t border-border space-y-3 bg-secondary/30 shrink-0">
+        <div className="p-4 border-t border-white/10 space-y-3 bg-white/5 shrink-0">
           <div className="flex items-center gap-2.5 text-xs">
             <div className="w-8 h-8 rounded-full bg-[#B8913A]/20 text-[#B8913A] border border-[#B8913A]/30 flex items-center justify-center font-semibold shrink-0">
               <User className="size-4" />
@@ -1180,7 +1389,7 @@ function AdminDashboardPage() {
           </div>
 
           <div className="flex gap-2">
-            <Button variant="outline" size="sm" className="flex-1 text-xs h-8" asChild>
+            <Button variant="outline" size="sm" className="flex-1 text-xs h-8 bg-transparent text-white border-white/20 hover:bg-white/10 hover:text-white" asChild>
               <Link to="/">
                 <Home className="size-3 mr-1.5" /> Storefront
               </Link>
@@ -1188,7 +1397,7 @@ function AdminDashboardPage() {
             <Button
               variant="ghost"
               size="sm"
-              className="text-xs h-8 text-destructive hover:bg-destructive/10"
+              className="text-xs h-8 text-rose-400 hover:bg-rose-500/20 hover:text-rose-300"
               onClick={handleLogout}
               title="Sign Out"
             >
@@ -1420,23 +1629,24 @@ function AdminDashboardPage() {
         {/* ----------------- TAB 2: PRODUCTS ----------------- */}
         {activeTab === "products" && (
           <div className="space-y-6">
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-              <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto">
+            {/* Top Toolbar: Search, Category, New Category, Add Product - Single Clean Line */}
+            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 w-full">
+              <div className="flex flex-wrap sm:flex-nowrap items-center gap-2.5 w-full lg:w-auto flex-1">
                 {/* Search */}
-                <div className="relative flex-1 sm:w-72">
+                <div className="relative flex-1 sm:w-80 min-w-[200px]">
                   <Search className="size-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-[#0E0E0E]/40" />
                   <Input
                     placeholder="Search products, colours, SKU…"
                     value={productSearch}
                     onChange={(e) => setProductSearch(e.target.value)}
-                    className="pl-9.5 text-xs h-10 rounded-full border-[rgba(14,14,14,0.15)] bg-white focus-visible:ring-1 focus-visible:ring-[#B8913A] focus-visible:border-[#B8913A]"
+                    className="pl-9.5 text-xs h-10 rounded-full border-[rgba(14,14,14,0.15)] bg-white focus-visible:ring-1 focus-visible:ring-[#B8913A] focus-visible:border-[#B8913A] w-full"
                   />
                 </div>
                 {/* Category filter */}
                 <select
                   value={productCategoryFilter}
                   onChange={(e) => setProductCategoryFilter(e.target.value)}
-                  className="h-10 px-4 text-xs rounded-full bg-white border border-[rgba(14,14,14,0.15)] text-[#0E0E0E] focus:outline-none focus:ring-1 focus:ring-[#B8913A] focus:border-[#B8913A]"
+                  className="h-10 px-4 text-xs rounded-full bg-white border border-[rgba(14,14,14,0.15)] text-[#0E0E0E] focus:outline-none focus:ring-1 focus:ring-[#B8913A] focus:border-[#B8913A] shrink-0"
                 >
                   {activeCategoriesList.map((c) => (
                     <option key={c} value={c}>
@@ -1446,23 +1656,12 @@ function AdminDashboardPage() {
                 </select>
               </div>
 
-              <div className="flex flex-wrap items-center gap-2.5">
+              <div className="flex items-center gap-2.5 shrink-0 self-end sm:self-auto">
                 <Button
                   type="button"
                   variant="outline"
                   size="sm"
-                  disabled={isRestoring}
-                  className="h-10 text-xs font-medium rounded-full border-[rgba(14,14,14,0.18)] bg-white text-[#0E0E0E] hover:border-[#B8913A] hover:bg-[#FAF7F2] shadow-2xs px-4"
-                  onClick={handleRestore41Products}
-                  title="Restore all 41 original products with complete photos and descriptions"
-                >
-                  <RotateCcw className={`size-3.5 mr-1.5 text-[#B8913A] ${isRestoring ? "animate-spin" : ""}`} /> Restore 41 Products
-                </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  className="h-10 text-xs font-medium rounded-full border-[rgba(14,14,14,0.18)] bg-white text-[#0E0E0E] hover:border-[#B8913A] hover:bg-[#FAF7F2] shadow-2xs px-4"
+                  className="h-10 text-xs font-medium rounded-full border-[rgba(14,14,14,0.18)] bg-white text-[#0E0E0E] hover:border-[#B8913A] hover:bg-[#FAF7F2] shadow-2xs px-4 whitespace-nowrap"
                   onClick={() => {
                     setNewCatName("");
                     setNewCatDesc("");
@@ -1474,7 +1673,7 @@ function AdminDashboardPage() {
                 <button
                   type="button"
                   onClick={handleOpenAddProduct}
-                  className="h-10 px-5 text-xs font-medium uppercase tracking-[0.14em] rounded-full bg-[#0E0E0E] hover:bg-[#6B1E2E] text-[#F4F0E8] flex items-center gap-1.5 transition-all shadow-sm cursor-pointer active:scale-95"
+                  className="h-10 px-5 text-xs font-medium uppercase tracking-[0.14em] rounded-full bg-[#0E0E0E] hover:bg-[#6B1E2E] text-[#F4F0E8] flex items-center gap-1.5 transition-all shadow-sm cursor-pointer active:scale-95 whitespace-nowrap"
                 >
                   <Plus className="size-3.5" />
                   <span>Add Product</span>
@@ -1485,7 +1684,7 @@ function AdminDashboardPage() {
             {/* Products Table */}
             <div className="bg-white rounded-2xl border border-[rgba(14,14,14,0.08)] shadow-xs overflow-hidden">
               <div className="overflow-x-auto">
-                <table className="w-full text-left text-sm">
+                <table className="w-full text-left text-sm min-w-[760px]">
                   <thead className="bg-secondary/40 text-muted-foreground border-b border-border">
                     <tr>
                       <th className="p-3.5 w-16 text-xs font-semibold uppercase tracking-wider">Preview</th>
@@ -1499,7 +1698,7 @@ function AdminDashboardPage() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-border">
-                    {filteredProducts.map((p) => (
+                    {paginatedProducts.map((p) => (
                       <tr key={p.id} className="hover:bg-secondary/20 transition-colors">
                         <td className="p-3.5">
                           <img
@@ -1516,23 +1715,23 @@ function AdminDashboardPage() {
                           <div className="text-xs text-muted-foreground font-sans tabular-nums mt-0.5">
                             {p.sku || "PF-GEN"}
                           </div>
-                          <div className="flex flex-wrap items-center gap-1 mt-1">
-                            <span className="text-[10px] px-1.5 py-0.5 bg-secondary text-muted-foreground inline-block font-medium">
+                          {p.badge && (
+                            <span className="inline-block mt-1 px-1.5 py-0.5 text-[10px] bg-secondary text-muted-foreground inline-block font-medium">
                               {p.badge}
                             </span>
-                            {p.sizes && p.sizes.length > 0 && (
-                              <div className="flex flex-wrap gap-1">
-                                {p.sizes.map((s) => (
-                                  <span
-                                    key={s}
-                                    className="text-[9px] px-1 py-0.2 bg-primary/10 text-primary border border-primary/20 rounded-xs font-semibold font-mono"
-                                  >
-                                    {s}
-                                  </span>
-                                ))}
-                              </div>
-                            )}
-                          </div>
+                          )}
+                          {p.sizes && p.sizes.length > 0 && (
+                            <div className="flex flex-wrap gap-1 mt-1">
+                              {p.sizes.map((s) => (
+                                <span
+                                  key={s}
+                                  className="text-[9px] px-1 py-0.2 bg-primary/10 text-primary border border-primary/20 rounded-xs font-semibold font-mono"
+                                >
+                                  {s}
+                                </span>
+                              ))}
+                            </div>
+                          )}
                         </td>
                         <td className="p-3.5 text-sm">{p.category}</td>
                         <td className="p-3.5 text-sm text-muted-foreground">{p.colour}</td>
@@ -1599,6 +1798,86 @@ function AdminDashboardPage() {
                   </tbody>
                 </table>
               </div>
+
+              {/* Pagination Controls (10 products per page) */}
+              {filteredProducts.length > 0 && (
+                <div className="p-4 border-t border-border bg-secondary/10 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
+                  <div className="text-muted-foreground">
+                    Showing{" "}
+                    <strong className="text-foreground font-sans tabular-nums">
+                      {(productCurrentPage - 1) * productItemsPerPage + 1}
+                    </strong>{" "}
+                    to{" "}
+                    <strong className="text-foreground font-sans tabular-nums">
+                      {Math.min(productCurrentPage * productItemsPerPage, filteredProducts.length)}
+                    </strong>{" "}
+                    of{" "}
+                    <strong className="text-foreground font-sans tabular-nums">
+                      {filteredProducts.length}
+                    </strong>{" "}
+                    products (10 per page)
+                  </div>
+
+                  <div className="flex items-center gap-1.5">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      disabled={productCurrentPage <= 1}
+                      onClick={() => setProductCurrentPage((prev) => Math.max(1, prev - 1))}
+                      className="h-8 px-2.5 text-xs inline-flex items-center gap-1 disabled:opacity-40"
+                    >
+                      <ChevronLeft className="size-3.5" /> Previous
+                    </Button>
+
+                    <div className="flex items-center gap-1">
+                      {Array.from({ length: totalProductPages }, (_, i) => i + 1).map((pageNum) => {
+                        if (
+                          totalProductPages > 7 &&
+                          Math.abs(pageNum - productCurrentPage) > 2 &&
+                          pageNum !== 1 &&
+                          pageNum !== totalProductPages
+                        ) {
+                          if (pageNum === 2 || pageNum === totalProductPages - 1) {
+                            return (
+                              <span key={pageNum} className="px-1 text-muted-foreground">
+                                ...
+                              </span>
+                            );
+                          }
+                          return null;
+                        }
+
+                        return (
+                          <button
+                            key={pageNum}
+                            type="button"
+                            onClick={() => setProductCurrentPage(pageNum)}
+                            className={`size-8 text-xs font-sans tabular-nums rounded border transition-colors ${
+                              productCurrentPage === pageNum
+                                ? "bg-gold border-gold text-primary-foreground font-bold shadow-xs"
+                                : "bg-background border-border text-foreground hover:bg-secondary"
+                            }`}
+                          >
+                            {pageNum}
+                          </button>
+                        );
+                      })}
+                    </div>
+
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      disabled={productCurrentPage >= totalProductPages}
+                      onClick={() => setProductCurrentPage((prev) => Math.min(totalProductPages, prev + 1))}
+                      className="h-8 px-2.5 text-xs inline-flex items-center gap-1 disabled:opacity-40"
+                    >
+                      Next <ChevronRight className="size-3.5" />
+                    </Button>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         )}
@@ -1725,21 +2004,6 @@ function AdminDashboardPage() {
                       </>
                     )}
                   </div>
-
-                  {/* RESTORE 41 PRODUCTS BUTTON (if catalog has fewer than 41) */}
-                  {productsList.length < 41 && (
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      disabled={isRestoring}
-                      onClick={handleRestore41Products}
-                      className="text-xs h-9 border-[#B8913A]/50 text-[#B8913A] hover:bg-[#B8913A]/10 shrink-0 gap-1.5"
-                      title="Restore all 41 original products with photos and descriptions"
-                    >
-                      <RotateCcw className={`size-3.5 ${isRestoring ? "animate-spin" : ""}`} /> Restore 41 Products
-                    </Button>
-                  )}
 
                   {/* ADD STOCK BUTTON */}
                   <Button
@@ -2208,8 +2472,8 @@ function AdminDashboardPage() {
         {activeTab === "orders" && (
           <div className="space-y-6">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-              <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto">
-                <div className="relative flex-1 sm:w-64">
+              <div className="flex flex-wrap items-center gap-2.5 w-full sm:w-auto">
+                <div className="relative flex-1 sm:w-64 min-w-[180px]">
                   <Search className="size-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
                   <Input
                     placeholder="Search by order ID, customer, phone…"
@@ -2230,9 +2494,20 @@ function AdminDashboardPage() {
                   <option value="Delivered">Delivered</option>
                   <option value="Cancelled">Cancelled</option>
                 </select>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={handleExportAllOrders}
+                  className="h-9 text-xs border-border hover:border-gold hover:text-gold inline-flex items-center gap-1.5 shrink-0"
+                  title="Download / Export all orders to CSV"
+                >
+                  <Download className="size-3.5 text-gold" />
+                  <span>Download All Orders</span>
+                </Button>
               </div>
 
-              <div className="text-xs text-muted-foreground">
+              <div className="text-xs text-muted-foreground shrink-0">
                 Showing {filteredOrders.length} of {orders.length} orders
               </div>
             </div>
@@ -2255,7 +2530,7 @@ function AdminDashboardPage() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-border">
-                    {filteredOrders.map((o) => {
+                    {paginatedOrders.map((o) => {
                       const tracking = computeOrderTracking(o);
                       const currentDays = o.deliveryDays || 5;
 
@@ -2345,9 +2620,20 @@ function AdminDashboardPage() {
                             </select>
                           </td>
 
-                          {/* ACTION COLUMN: ICON BUTTONS (EDIT, VIEW, DELETE) */}
+                          {/* ACTION COLUMN: ICON BUTTONS (DOWNLOAD INVOICE, EDIT, VIEW, DELETE) */}
                           <td className="p-3.5 text-right whitespace-nowrap">
                             <div className="flex items-center justify-end gap-1.5">
+                              {/* DOWNLOAD INVOICE ICON BUTTON */}
+                              <button
+                                type="button"
+                                onClick={() => handleDownloadSingleOrder(o)}
+                                className="size-8 rounded flex items-center justify-center border border-border bg-background hover:border-gold hover:bg-gold/15 text-gold transition-colors"
+                                title="Download Order Invoice (HTML)"
+                                aria-label="Download Order Invoice"
+                              >
+                                <Download className="size-3.5" />
+                              </button>
+
                               {/* EDIT ORDER ICON BUTTON */}
                               <button
                                 type="button"
@@ -2395,6 +2681,86 @@ function AdminDashboardPage() {
                   </tbody>
                 </table>
               </div>
+
+              {/* Pagination Controls (10 orders per page) */}
+              {filteredOrders.length > 0 && (
+                <div className="p-4 border-t border-border bg-secondary/10 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
+                  <div className="text-muted-foreground">
+                    Showing{" "}
+                    <strong className="text-foreground font-sans tabular-nums">
+                      {(orderCurrentPage - 1) * orderItemsPerPage + 1}
+                    </strong>{" "}
+                    to{" "}
+                    <strong className="text-foreground font-sans tabular-nums">
+                      {Math.min(orderCurrentPage * orderItemsPerPage, filteredOrders.length)}
+                    </strong>{" "}
+                    of{" "}
+                    <strong className="text-foreground font-sans tabular-nums">
+                      {filteredOrders.length}
+                    </strong>{" "}
+                    orders (10 per page)
+                  </div>
+
+                  <div className="flex items-center gap-1.5">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      disabled={orderCurrentPage <= 1}
+                      onClick={() => setOrderCurrentPage((prev) => Math.max(1, prev - 1))}
+                      className="h-8 px-2.5 text-xs inline-flex items-center gap-1 disabled:opacity-40"
+                    >
+                      <ChevronLeft className="size-3.5" /> Previous
+                    </Button>
+
+                    <div className="flex items-center gap-1">
+                      {Array.from({ length: totalOrderPages }, (_, i) => i + 1).map((pageNum) => {
+                        if (
+                          totalOrderPages > 7 &&
+                          Math.abs(pageNum - orderCurrentPage) > 2 &&
+                          pageNum !== 1 &&
+                          pageNum !== totalOrderPages
+                        ) {
+                          if (pageNum === 2 || pageNum === totalOrderPages - 1) {
+                            return (
+                              <span key={pageNum} className="px-1 text-muted-foreground">
+                                ...
+                              </span>
+                            );
+                          }
+                          return null;
+                        }
+
+                        return (
+                          <button
+                            key={pageNum}
+                            type="button"
+                            onClick={() => setOrderCurrentPage(pageNum)}
+                            className={`size-8 text-xs font-sans tabular-nums rounded border transition-colors ${
+                              orderCurrentPage === pageNum
+                                ? "bg-gold border-gold text-primary-foreground font-bold shadow-xs"
+                                : "bg-background border-border text-foreground hover:bg-secondary"
+                            }`}
+                          >
+                            {pageNum}
+                          </button>
+                        );
+                      })}
+                    </div>
+
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      disabled={orderCurrentPage >= totalOrderPages}
+                      onClick={() => setOrderCurrentPage((prev) => Math.min(totalOrderPages, prev + 1))}
+                      className="h-8 px-2.5 text-xs inline-flex items-center gap-1 disabled:opacity-40"
+                    >
+                      Next <ChevronRight className="size-3.5" />
+                    </Button>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         )}
@@ -4480,19 +4846,30 @@ function AdminDashboardPage() {
               )}
             </div>
 
-            <div className="pt-4 mt-4 border-t border-border flex justify-between items-center">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => {
-                  const target = selectedOrder;
-                  setSelectedOrder(null);
-                  setEditingOrder(target);
-                }}
-                className="text-xs h-8"
-              >
-                <Edit className="size-3.5 mr-1" /> Edit Order Details
-              </Button>
+            <div className="pt-4 mt-4 border-t border-border flex flex-wrap justify-between items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    const target = selectedOrder;
+                    setSelectedOrder(null);
+                    setEditingOrder(target);
+                  }}
+                  className="text-xs h-8"
+                >
+                  <Edit className="size-3.5 mr-1" /> Edit Order Details
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleDownloadSingleOrder(selectedOrder)}
+                  className="text-xs h-8 border-gold/40 text-gold hover:bg-gold/10 inline-flex items-center gap-1"
+                >
+                  <Download className="size-3.5" /> Download Invoice
+                </Button>
+              </div>
               <Button variant="outline" size="sm" onClick={() => setSelectedOrder(null)}>
                 Close
               </Button>

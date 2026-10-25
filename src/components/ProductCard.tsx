@@ -107,8 +107,8 @@ export function ProductCard({ product, light = false, badgeText, onQuickView }: 
           />
         </button>
 
-        {/* Hover Action Overlay: Size Chips & Add to Cart (always visible on mobile) */}
-        <div className="absolute inset-x-0 bottom-0 p-3 bg-gradient-to-t from-black/80 via-black/40 to-transparent z-10 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity duration-300 flex flex-col gap-2">
+        {/* Hover Action Overlay on Desktop: Size Chips & Add to Cart */}
+        <div className="absolute inset-x-0 bottom-0 p-3 bg-gradient-to-t from-black/85 via-black/45 to-transparent z-10 hidden lg:flex flex-col gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
           {/* Size Chips */}
           <div className="flex items-center justify-center gap-1.5" onClick={(e) => e.stopPropagation()}>
             {availableSizes.slice(0, 4).map((sz) => (
@@ -140,12 +140,12 @@ export function ProductCard({ product, light = false, badgeText, onQuickView }: 
       </div>
 
       {/* Product Details Below Image */}
-      <div className="p-3.5 sm:p-4 flex flex-col flex-1 justify-between gap-2.5">
+      <div className="p-3 sm:p-4 flex flex-col flex-1 justify-between gap-2.5">
         <div>
           {/* Name */}
           <h3
             onClick={handleCardClick}
-            className="font-['Manrope'] text-sm font-medium tracking-tight line-clamp-2 min-h-[2.5rem] leading-snug cursor-pointer hover:text-[#B8913A] transition-colors"
+            className="font-['Manrope'] text-xs sm:text-sm font-medium tracking-tight line-clamp-2 min-h-[2.2rem] sm:min-h-[2.5rem] leading-snug cursor-pointer hover:text-[#B8913A] transition-colors"
             title={product.name}
           >
             {product.name}
@@ -153,17 +153,29 @@ export function ProductCard({ product, light = false, badgeText, onQuickView }: 
 
           {/* Price with Tabular Numerals */}
           <div className="flex items-baseline gap-1.5 mt-1.5">
-            <span className="font-['Manrope'] text-sm sm:text-[15px] font-semibold tabular-nums">
+            <span className="font-['Manrope'] text-xs sm:text-[15px] font-semibold tabular-nums">
               {formatPrice(salePrice)}
             </span>
             <span
-              className={`text-xs font-light ${
+              className={`text-[11px] sm:text-xs font-light ${
                 light ? "text-[#F4F0E8]/60" : "text-[#0E0E0E]/60"
               }`}
             >
               / {product.unit || "piece"}
             </span>
           </div>
+        </div>
+
+        {/* Mobile-Only Action Button (clean, accessible, does not block fabric image) */}
+        <div className="lg:hidden pt-2 border-t border-[rgba(14,14,14,0.06)]">
+          <button
+            type="button"
+            onClick={handleAddToCart}
+            className="w-full py-2 rounded-full bg-[#6B1E2E] hover:bg-[#832638] active:scale-98 text-white text-[11px] font-semibold uppercase tracking-[0.12em] transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-xs border border-[#B8913A]/40"
+          >
+            <ShoppingBag className="size-3 text-[#FAF6EE]" strokeWidth={1.5} />
+            <span>Add to Cart</span>
+          </button>
         </div>
       </div>
     </article>
