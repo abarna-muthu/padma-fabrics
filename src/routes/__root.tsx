@@ -77,10 +77,29 @@ function ErrorComponent({ error, reset }: ErrorComponentProps) {
           </button>
           <a
             href="/"
+            onClick={() => {
+              try {
+                localStorage.removeItem("pf_last_placed_order_id");
+              } catch {}
+            }}
             className="inline-flex items-center justify-center rounded-md border border-input bg-background px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-accent"
           >
             Go home
           </a>
+          <button
+            onClick={() => {
+              try {
+                sessionStorage.clear();
+                localStorage.removeItem("pf_last_placed_order_id");
+                localStorage.removeItem("pf_last_customer_phone");
+                localStorage.removeItem("pf_last_customer_email");
+              } catch {}
+              window.location.href = "/";
+            }}
+            className="inline-flex items-center justify-center rounded-md border border-destructive/30 text-destructive bg-destructive/5 px-3 py-2 text-xs font-medium hover:bg-destructive/10 transition-colors"
+          >
+            Clear Cache & Reload
+          </button>
         </div>
       </div>
     </div>

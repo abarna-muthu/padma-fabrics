@@ -60,16 +60,35 @@ export function CustomerPortalModal() {
   const lastPlacedPhone = typeof window !== "undefined" ? localStorage.getItem("pf_last_customer_phone") : null;
   const lastPlacedEmail = typeof window !== "undefined" ? localStorage.getItem("pf_last_customer_email") : null;
 
-  const normalizePhone = (p?: string) => (p || "").replace(/\D/g, "").slice(-10);
+  const normalizePhone = (p?: string) => (p ? String(p).replace(/\D/g, "").slice(-10) : "");
 
-  const customerOrders = orders.filter((o) => {
-    if (customer) {
-      if (customer.email && o.customerEmail?.trim().toLowerCase() === customer.email.trim().toLowerCase()) return true;
-      if (customer.phone && o.customerPhone && normalizePhone(o.customerPhone) === normalizePhone(customer.phone)) return true;
+  const getOrderItems = (o: any): any[] => {
+    if (!o || !o.items) return [];
+    if (Array.isArray(o.items)) return o.items;
+    if (typeof o.items === "string") {
+      try {
+        const parsed = JSON.parse(o.items);
+        return Array.isArray(parsed) ? parsed : [];
+      } catch {
+        return [];
+      }
     }
-    if (lastPlacedOrderId && (o.id === lastPlacedOrderId || (o as any).orderNumber === lastPlacedOrderId)) return true;
-    if (lastPlacedPhone && o.customerPhone && normalizePhone(o.customerPhone) === normalizePhone(lastPlacedPhone)) return true;
-    if (lastPlacedEmail && o.customerEmail && o.customerEmail.trim().toLowerCase() === lastPlacedEmail.trim().toLowerCase()) return true;
+    return [];
+  };
+
+  const customerOrders = (orders || []).filter((o) => {
+    if (!o) return false;
+    try {
+      if (customer) {
+        if (customer.email && o.customerEmail && typeof o.customerEmail === "string" && o.customerEmail.trim().toLowerCase() === customer.email.trim().toLowerCase()) return true;
+        if (customer.phone && o.customerPhone && typeof o.customerPhone === "string" && normalizePhone(o.customerPhone) === normalizePhone(customer.phone)) return true;
+      }
+      if (lastPlacedOrderId && (o.id === lastPlacedOrderId || (o as any).orderNumber === lastPlacedOrderId)) return true;
+      if (lastPlacedPhone && o.customerPhone && typeof o.customerPhone === "string" && normalizePhone(o.customerPhone) === normalizePhone(lastPlacedPhone)) return true;
+      if (lastPlacedEmail && o.customerEmail && typeof o.customerEmail === "string" && o.customerEmail.trim().toLowerCase() === lastPlacedEmail.trim().toLowerCase()) return true;
+    } catch {
+      return false;
+    }
     return false;
   });
 
@@ -415,7 +434,7 @@ export function CustomerPortalModal() {
                               </span>
                             </div>
                             <div className="divide-y divide-border/60">
-                              {order.items.map((item, idx) => {
+                              {getOrderItems(order).map((item, idx) => {
                                 const matchedProd = productsList.find(
                                   (p) =>
                                     p.id === item.productId ||

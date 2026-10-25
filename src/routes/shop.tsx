@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { ArrowUpRight, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ALL, categories, collections } from "@/lib/catalog";
@@ -70,23 +70,37 @@ function ShopPage() {
 
   const { filter, setFilter, activeProducts = [], categoriesList = [] } = useStore();
   const rawCats = categoriesList && categoriesList.length > 0 ? categoriesList : (categories as readonly string[]);
-  const activeCats = rawCats.map((c: any) => (typeof c === "string" ? c : c?.name || String(c)));
+
+  // Collect distinct categories, avoiding duplicate "ALL"
+  const distinctCategories = useMemo(() => {
+    const list = rawCats.map((c: any) => (typeof c === "string" ? c : c?.name || String(c)));
+    const productCats = (activeProducts || []).map((p) => p.category).filter(Boolean);
+    const combined = Array.from(new Set([...list, ...productCats]));
+    return combined.filter((c) => c && c.trim().toLowerCase() !== "all");
+  }, [rawCats, activeProducts]);
 
   // Pattern Filter state
   const [selectedPattern, setSelectedPattern] = useState<string | null>(queryPattern || null);
 
+  const handleCategoryClick = (cat: string) => {
+    setFilter(cat);
+    navigate({
+      to: "/shop",
+      search: {
+        category: cat !== ALL ? cat : undefined,
+        pattern: selectedPattern || undefined,
+        search: querySearch || undefined,
+        filter: queryFilter || undefined,
+      } as any,
+    });
+  };
+
   useEffect(() => {
     if (queryCategory) {
-      const matched = activeCats.find((c) => c.toLowerCase() === queryCategory.toLowerCase());
-      if (matched) {
-        setFilter(matched);
-      } else {
-        setFilter(queryCategory);
-      }
-    } else if (!queryPattern && !queryFilter && !querySearch) {
-      setFilter(ALL);
+      const matched = distinctCategories.find((c) => c.toLowerCase() === queryCategory.toLowerCase());
+      setFilter(matched || queryCategory);
     }
-  }, [queryCategory, queryPattern, queryFilter, querySearch, activeCats]);
+  }, [queryCategory]);
 
   useEffect(() => {
     if (queryPattern) {
@@ -95,6 +109,8 @@ function ShopPage() {
   }, [queryPattern]);
 
   const patternItem = selectedPattern ? PATTERNS_DATA.find((p) => p.slug === selectedPattern) : null;
+
+  const normalize = (s?: string) => (s || "").trim().toLowerCase();
 
   const visible = (activeProducts || []).filter((p) => {
     if (!p) return false;
@@ -105,8 +121,13 @@ function ShopPage() {
       if (p.badge && !isNew) return false;
     }
 
-    // Category match
-    const matchCategory = filter === ALL || p.category === filter;
+    // Category match - case-insensitive and partial-match resilient
+    const matchCategory =
+      filter === ALL ||
+      normalize(p.category) === normalize(filter) ||
+      normalize(p.category).includes(normalize(filter)) ||
+      normalize(filter).includes(normalize(p.category));
+
     if (!matchCategory) return false;
 
     // Search query match
@@ -187,21 +208,31 @@ function ShopPage() {
         <div className="flex items-center gap-2 overflow-x-auto pb-3 mb-6 no-scrollbar">
           <Button
             variant="filter"
-            data-active={filter === ALL}
-            onClick={() => setFilter(ALL)}
+            data-active={filter === ALL || normalize(filter) === "all"}
+            onClick={() => handleCategoryClick(ALL)}
           >
-            All Categories
+            All Categories ({(activeProducts || []).length})
           </Button>
-          {activeCats.map((c) => (
-            <Button
-              key={c}
-              variant="filter"
-              data-active={filter === c}
-              onClick={() => setFilter(c)}
-            >
-              {c}
-            </Button>
-          ))}
+          {distinctCategories.map((c) => {
+            const count = (activeProducts || []).filter((p) => {
+              return (
+                normalize(p.category) === normalize(c) ||
+                normalize(p.category).includes(normalize(c)) ||
+                normalize(c).includes(normalize(p.category))
+              );
+            }).length;
+
+            return (
+              <Button
+                key={c}
+                variant="filter"
+                data-active={normalize(filter) === normalize(c)}
+                onClick={() => handleCategoryClick(c)}
+              >
+                {c} {count > 0 && `(${count})`}
+              </Button>
+            );
+          })}
         </div>
 
         {/* Pattern Filter Group */}

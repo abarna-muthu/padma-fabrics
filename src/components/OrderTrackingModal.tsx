@@ -55,7 +55,18 @@ export function OrderTrackingModal({
     }
   };
 
-  const activeItem = clickedProduct || (order.items && order.items.length > 0 ? order.items[0] : null);
+  const orderItemsList = Array.isArray(order.items)
+    ? order.items
+    : typeof order.items === "string"
+      ? (() => {
+          try {
+            return JSON.parse(order.items);
+          } catch {
+            return [];
+          }
+        })()
+      : [];
+  const activeItem = clickedProduct || (orderItemsList.length > 0 ? orderItemsList[0] : null);
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
