@@ -65,13 +65,24 @@ function ErrorComponent({ error, reset }: ErrorComponentProps) {
         <p className="mt-2 text-sm text-muted-foreground">
           Something went wrong on our end. You can try refreshing or head back home.
         </p>
+        {error && (
+          <div className="mt-4 p-3 bg-destructive/10 border border-destructive/20 text-destructive text-xs rounded text-left overflow-auto max-h-48 font-mono">
+            <p className="font-bold">Details:</p>
+            <p className="break-words">{(error as any)?.message || String(error)}</p>
+            {(error as any)?.stack && (
+              <pre className="mt-2 text-[10px] text-muted-foreground whitespace-pre-wrap max-h-24 overflow-y-auto">
+                {(error as any).stack}
+              </pre>
+            )}
+          </div>
+        )}
         <div className="mt-6 flex flex-wrap justify-center gap-2">
           <button
             onClick={() => {
               router.invalidate();
               reset();
             }}
-            className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+            className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 cursor-pointer"
           >
             Try again
           </button>
@@ -82,21 +93,19 @@ function ErrorComponent({ error, reset }: ErrorComponentProps) {
                 localStorage.removeItem("pf_last_placed_order_id");
               } catch {}
             }}
-            className="inline-flex items-center justify-center rounded-md border border-input bg-background px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-accent"
+            className="inline-flex items-center justify-center rounded-md border border-input bg-background px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-accent cursor-pointer"
           >
             Go home
           </a>
           <button
             onClick={() => {
               try {
+                localStorage.clear();
                 sessionStorage.clear();
-                localStorage.removeItem("pf_last_placed_order_id");
-                localStorage.removeItem("pf_last_customer_phone");
-                localStorage.removeItem("pf_last_customer_email");
               } catch {}
               window.location.href = "/";
             }}
-            className="inline-flex items-center justify-center rounded-md border border-destructive/30 text-destructive bg-destructive/5 px-3 py-2 text-xs font-medium hover:bg-destructive/10 transition-colors"
+            className="inline-flex items-center justify-center rounded-md border border-destructive/30 text-destructive bg-destructive/5 px-3 py-2 text-xs font-medium hover:bg-destructive/10 transition-colors cursor-pointer"
           >
             Clear Cache & Reload
           </button>

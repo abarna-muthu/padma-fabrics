@@ -66,7 +66,18 @@ const realCatalogProducts: Item[] = (fallbackProductsRaw as any[]).map((p) => ({
   stock: Number(p.stock !== undefined ? p.stock : p.stockQuantity || p.stock_quantity) || 10,
   status: (p.status === "inactive" || p.isActive === false ? "inactive" : "active") as "active" | "inactive",
   sku: p.sku || `PF-${p.id}`,
-  sizes: Array.isArray(p.sizes) ? p.sizes : typeof p.sizes === "string" ? JSON.parse(p.sizes) : ["S", "M", "L", "XL"],
+  sizes: Array.isArray(p.sizes)
+    ? p.sizes
+    : typeof p.sizes === "string"
+      ? (() => {
+          try {
+            const parsed = JSON.parse(p.sizes);
+            return Array.isArray(parsed) ? parsed : [p.sizes];
+          } catch {
+            return p.sizes.includes(",") ? p.sizes.split(",").map((s: string) => s.trim()) : [p.sizes];
+          }
+        })()
+      : ["S", "M", "L", "XL"],
   isActive: p.isActive !== false,
 }));
 
