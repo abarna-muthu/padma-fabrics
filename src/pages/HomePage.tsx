@@ -155,7 +155,8 @@ export function HomePage() {
   const filteredProducts = catalogToDisplay.filter((p) => {
     if (!p) return false;
     if (selectedCategory === "All") return true;
-    return p.category?.toLowerCase() === selectedCategory.toLowerCase();
+    const cat = typeof p.category === "string" ? p.category.toLowerCase() : (p.category ? String(p.category).toLowerCase() : "");
+    return cat === selectedCategory.toLowerCase();
   });
 
   // Strictly single "All" pill with deduplicated category names

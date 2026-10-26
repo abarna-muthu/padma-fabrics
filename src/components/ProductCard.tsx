@@ -30,8 +30,10 @@ export function ProductCard({ product, light = false, badgeText, onQuickView }: 
 
   const [selectedSize, setSelectedSize] = useState<string>(availableSizes[0] || "Standard");
 
-  const salePrice = Number(product.price) || 0;
-  const badge = badgeText || product.badge || "New";
+  const salePrice = Number(product?.price) || 0;
+  const rawBadge = badgeText !== undefined ? badgeText : product?.badge;
+  const badge = typeof rawBadge === "string" ? rawBadge.trim() : (rawBadge ? String(rawBadge).trim() : "");
+  const badgeLower = badge.toLowerCase();
 
   const handleCardClick = () => {
     if (onQuickView) {
@@ -54,7 +56,7 @@ export function ProductCard({ product, light = false, badgeText, onQuickView }: 
 
   const handleWishlistClick = (e: React.MouseEvent) => {
     e.stopPropagation();
-    toggleWishlist(String(product.id), product.name);
+    toggleWishlist(String(product?.id || ""), product?.name || "");
   };
 
   return (
@@ -71,13 +73,13 @@ export function ProductCard({ product, light = false, badgeText, onQuickView }: 
         onClick={handleCardClick}
       >
         <img
-          src={product.image || product.imageUrl || product.image_url || "/placeholder.svg"}
-          alt={product.name}
+          src={product?.image || product?.imageUrl || product?.image_url || "/placeholder.svg"}
+          alt={product?.name || "Product"}
           loading="lazy"
           className="w-full h-full object-cover object-center transition-transform duration-700 ease-[cubic-bezier(0.2,0.7,0.2,1)] group-hover:scale-104"
           onError={(e) => {
             const target = e.currentTarget as HTMLImageElement;
-            const fallback = product.imageUrl || product.image_url;
+            const fallback = product?.imageUrl || product?.image_url;
             if (fallback && target.src !== fallback) {
               target.src = fallback;
             }
@@ -85,11 +87,11 @@ export function ProductCard({ product, light = false, badgeText, onQuickView }: 
         />
 
         {/* Tiny Pill Badge Top-Left */}
-        {badge && (
+        {badge ? (
           <div className="absolute top-3 left-3 z-10">
             <span
               className={`inline-block px-2.5 py-0.5 rounded-full text-[10px] font-medium uppercase tracking-[0.15em] ${
-                badge.toLowerCase().includes("bestseller") || badge.toLowerCase().includes("trending")
+                badgeLower.includes("bestseller") || badgeLower.includes("trending")
                   ? "bg-[#B8913A] text-[#0E0E0E]"
                   : "bg-[#0E0E0E] text-[#F4F0E8] border border-[rgba(244,240,232,0.2)]"
               }`}
@@ -97,7 +99,7 @@ export function ProductCard({ product, light = false, badgeText, onQuickView }: 
               {badge}
             </span>
           </div>
-        )}
+        ) : null}
 
         {/* Minimal Heart Top-Right */}
         <button

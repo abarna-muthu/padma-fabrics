@@ -117,7 +117,8 @@ function ShopPage() {
 
     // Filter by new arrivals
     if (queryFilter === "new") {
-      const isNew = p.badge?.toLowerCase().includes("new") || (p as any).isNew;
+      const b = typeof p.badge === "string" ? p.badge.toLowerCase() : (p.badge ? String(p.badge).toLowerCase() : "");
+      const isNew = b.includes("new") || Boolean((p as any).isNew);
       if (p.badge && !isNew) return false;
     }
 
