@@ -2569,21 +2569,49 @@ function AdminDashboardPage() {
                       const currentDays = o.deliveryDays || 5;
 
                       return (
-                        <tr key={o.id} className="hover:bg-secondary/20 transition-colors">
+                        <tr
+                          key={o.id}
+                          className={
+                            o.status === "Cancelled"
+                              ? "bg-red-500/10 dark:bg-red-950/35 border-l-4 border-l-red-600 hover:bg-red-500/20 transition-colors"
+                              : "hover:bg-secondary/20 transition-colors"
+                          }
+                        >
                           <td className="p-3.5 font-sans font-bold text-sm tracking-tight text-foreground">
-                            {o.id}
+                            <div className={o.status === "Cancelled" ? "text-red-700 dark:text-red-400 font-bold" : ""}>
+                              {o.id}
+                            </div>
                           </td>
                           <td className="p-3.5">
-                            <div className="font-medium text-foreground">{o.customerName}</div>
-                            <div className="text-xs font-sans tabular-nums text-muted-foreground mt-0.5">{o.customerPhone}</div>
-                            <div className="text-xs text-muted-foreground">{o.customerEmail}</div>
-                            {o.status === "Cancelled" && (
-                              <div
-                                className="mt-1 inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] bg-destructive/15 text-destructive font-medium border border-destructive/20 max-w-[200px] truncate"
-                                title={o.notes || "Order Cancelled"}
-                              >
-                                <span>Cancelled</span>
+                            {o.status === "Cancelled" ? (
+                              <div className="p-2.5 rounded-md bg-red-500/15 border border-red-500/35 text-red-700 dark:text-red-300 space-y-1 shadow-2xs">
+                                <div className="font-bold text-sm text-red-700 dark:text-red-300 flex items-center justify-between gap-1.5">
+                                  <span className="truncate">{o.customerName}</span>
+                                  <span className="shrink-0 px-1.5 py-0.5 rounded text-[9px] bg-red-600 text-white font-extrabold uppercase tracking-wide">
+                                    Cancelled
+                                  </span>
+                                </div>
+                                <div className="text-xs font-sans tabular-nums text-red-600/95 dark:text-red-300/90 font-medium">
+                                  {o.customerPhone}
+                                </div>
+                                <div className="text-xs text-red-600/90 dark:text-red-300/90 truncate">
+                                  {o.customerEmail}
+                                </div>
+                                {o.notes && (
+                                  <div
+                                    className="text-[10px] text-red-800 dark:text-red-200 font-mono pt-1 border-t border-red-500/20 line-clamp-2"
+                                    title={o.notes}
+                                  >
+                                    {o.notes}
+                                  </div>
+                                )}
                               </div>
+                            ) : (
+                              <>
+                                <div className="font-medium text-foreground">{o.customerName}</div>
+                                <div className="text-xs font-sans tabular-nums text-muted-foreground mt-0.5">{o.customerPhone}</div>
+                                <div className="text-xs text-muted-foreground">{o.customerEmail}</div>
+                              </>
                             )}
                           </td>
                           <td className="p-3.5 font-sans tabular-nums text-xs font-semibold text-foreground">
@@ -2874,21 +2902,53 @@ function AdminDashboardPage() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-border">
-                    {filteredCustomers.map((c) => (
-                      <tr key={c.id || c.email} className="hover:bg-secondary/20 transition-colors">
-                        <td className="p-3.5">
-                          <div className="flex items-center gap-2.5">
-                            <div className="size-8 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold text-xs uppercase shrink-0">
-                              {c.name ? c.name.charAt(0) : "C"}
+                    {filteredCustomers.map((c) => {
+                      const hasCancelled = orders.some(
+                        (o) =>
+                          (o.customerEmail?.toLowerCase() === c.email?.toLowerCase() ||
+                            (c.phone &&
+                              o.customerPhone &&
+                              o.customerPhone.replace(/\D/g, "") === c.phone.replace(/\D/g, ""))) &&
+                          o.status === "Cancelled",
+                      );
+
+                      return (
+                        <tr
+                          key={c.id || c.email}
+                          className={
+                            hasCancelled
+                              ? "bg-red-500/10 dark:bg-red-950/35 border-l-4 border-l-red-600 hover:bg-red-500/15 transition-colors"
+                              : "hover:bg-secondary/20 transition-colors"
+                          }
+                        >
+                          <td className="p-3.5">
+                            <div className="flex items-center gap-2.5">
+                              <div
+                                className={`size-8 rounded-full flex items-center justify-center font-bold text-xs uppercase shrink-0 ${
+                                  hasCancelled ? "bg-red-600 text-white" : "bg-primary/10 text-primary"
+                                }`}
+                              >
+                                {c.name ? c.name.charAt(0) : "C"}
+                              </div>
+                              <div>
+                                <div
+                                  className={`font-medium flex items-center gap-1.5 ${
+                                    hasCancelled ? "text-red-700 dark:text-red-300 font-bold" : "text-foreground"
+                                  }`}
+                                >
+                                  <span>{c.name}</span>
+                                  {hasCancelled && (
+                                    <span className="px-1.5 py-0.5 rounded text-[9px] bg-red-600 text-white font-bold uppercase tracking-wide">
+                                      Cancelled Order
+                                    </span>
+                                  )}
+                                </div>
+                                <span className="text-[10px] text-muted-foreground font-mono">
+                                  {c.id || "CUST-ACT"}
+                                </span>
+                              </div>
                             </div>
-                            <div>
-                              <div className="font-medium text-foreground">{c.name}</div>
-                              <span className="text-[10px] text-muted-foreground font-mono">
-                                {c.id || "CUST-ACT"}
-                              </span>
-                            </div>
-                          </div>
-                        </td>
+                          </td>
                         <td className="p-3.5">
                           <div className="text-xs text-foreground flex items-center gap-1">
                             <Mail className="size-3 text-muted-foreground shrink-0" />
@@ -2927,7 +2987,8 @@ function AdminDashboardPage() {
                           </Button>
                         </td>
                       </tr>
-                    ))}
+                      );
+                    })}
                     {filteredCustomers.length === 0 && (
                       <tr>
                         <td colSpan={7} className="p-8 text-center text-muted-foreground text-sm">
@@ -4723,11 +4784,59 @@ function AdminDashboardPage() {
             </div>
 
             <div className="space-y-4 mt-4 text-sm">
-              <div className="p-3.5 bg-secondary/40 border border-border space-y-1">
-                <div className="font-medium text-foreground">{selectedOrder.customerName}</div>
-                <div className="text-xs font-sans tabular-nums text-muted-foreground">{selectedOrder.customerPhone}</div>
-                <div className="text-xs text-muted-foreground">{selectedOrder.customerEmail}</div>
-                <div className="text-xs text-muted-foreground pt-1">{selectedOrder.shippingAddress}</div>
+              <div
+                className={
+                  selectedOrder.status === "Cancelled"
+                    ? "p-3.5 bg-red-500/15 border-2 border-red-500/40 rounded space-y-1.5"
+                    : "p-3.5 bg-secondary/40 border border-border space-y-1"
+                }
+              >
+                <div className="flex items-center justify-between">
+                  <div
+                    className={
+                      selectedOrder.status === "Cancelled"
+                        ? "font-bold text-base text-red-700 dark:text-red-300 flex items-center gap-2"
+                        : "font-medium text-foreground"
+                    }
+                  >
+                    {selectedOrder.status === "Cancelled" && (
+                      <span className="size-2 rounded-full bg-red-600 animate-pulse" />
+                    )}
+                    <span>{selectedOrder.customerName}</span>
+                  </div>
+                  {selectedOrder.status === "Cancelled" && (
+                    <span className="px-2 py-0.5 rounded text-[10px] bg-red-600 text-white font-bold uppercase tracking-wider">
+                      Cancelled Customer
+                    </span>
+                  )}
+                </div>
+                <div
+                  className={
+                    selectedOrder.status === "Cancelled"
+                      ? "text-xs font-sans tabular-nums text-red-600 dark:text-red-300 font-semibold"
+                      : "text-xs font-sans tabular-nums text-muted-foreground"
+                  }
+                >
+                  {selectedOrder.customerPhone}
+                </div>
+                <div
+                  className={
+                    selectedOrder.status === "Cancelled"
+                      ? "text-xs text-red-600 dark:text-red-300 font-medium"
+                      : "text-xs text-muted-foreground"
+                  }
+                >
+                  {selectedOrder.customerEmail}
+                </div>
+                <div
+                  className={
+                    selectedOrder.status === "Cancelled"
+                      ? "text-xs text-red-700/90 dark:text-red-300/90 pt-1 border-t border-red-500/25"
+                      : "text-xs text-muted-foreground pt-1"
+                  }
+                >
+                  {selectedOrder.shippingAddress}
+                </div>
               </div>
 
               {/* Live Tracking Quick Action */}
