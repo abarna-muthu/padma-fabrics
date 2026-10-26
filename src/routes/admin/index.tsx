@@ -165,6 +165,7 @@ function AdminDashboardPage() {
     updateOrderDays,
     updateOrderDetails,
     deleteOrder,
+    refreshOrders,
   } = useStore();
 
   const [isRestoring, setIsRestoring] = useState(false);
@@ -210,6 +211,26 @@ function AdminDashboardPage() {
   // Customer management states
   const [customersList, setCustomersList] = useState<any[]>([]);
   const [customerSearch, setCustomerSearch] = useState("");
+  const [isRefreshingOrders, setIsRefreshingOrders] = useState(false);
+
+  // Auto-refresh orders whenever Admin navigates to Orders tab
+  useEffect(() => {
+    if (activeTab === "orders") {
+      refreshOrders();
+    }
+  }, [activeTab]);
+
+  const handleManualRefreshOrders = async () => {
+    setIsRefreshingOrders(true);
+    try {
+      await refreshOrders();
+      toast.success("Orders synced with latest live database status!");
+    } catch {
+      toast.error("Failed to refresh orders.");
+    } finally {
+      setIsRefreshingOrders(false);
+    }
+  };
 
   // Sync customers from backend API and orders
   useEffect(() => {
@@ -2505,6 +2526,18 @@ function AdminDashboardPage() {
                 >
                   <Download className="size-3.5 text-gold" />
                   <span>Download All Orders</span>
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={handleManualRefreshOrders}
+                  disabled={isRefreshingOrders}
+                  className="h-9 text-xs border-border hover:border-gold hover:text-gold inline-flex items-center gap-1.5 shrink-0"
+                  title="Refresh orders from live database"
+                >
+                  <RefreshCw className={`size-3.5 ${isRefreshingOrders ? "animate-spin text-gold" : "text-muted-foreground"}`} />
+                  <span>Refresh Orders</span>
                 </Button>
               </div>
 

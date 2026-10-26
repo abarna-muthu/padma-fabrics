@@ -75,6 +75,7 @@ interface StoreContextType {
   updateOrderDetails: (orderId: string, updates: Partial<Order>) => void;
   deleteOrder: (orderId: string) => void;
   cancelOrder: (orderId: string, reason: string, notes?: string) => Promise<{ success: boolean; message?: string; error?: string }>;
+  refreshOrders: () => Promise<void>;
   createCheckoutOrder: (details: {
     customerName: string;
     customerEmail: string;
@@ -407,10 +408,16 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         setCategoriesList(e.detail);
       }
     };
+    const handleCustomOrderUpdate = (e: any) => {
+      if (e.detail && Array.isArray(e.detail)) {
+        setOrders(e.detail);
+      }
+    };
 
     window.addEventListener("storage", handleStorageChange);
     window.addEventListener("pf_products_updated", handleCustomProductUpdate);
     window.addEventListener("pf_categories_updated", handleCustomCategoryUpdate);
+    window.addEventListener("pf_orders_updated", handleCustomOrderUpdate);
 
     // 4. Background fetch categories from database
     productApi.getCategories().then((res) => {
@@ -570,6 +577,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     return () => {
       window.removeEventListener("storage", handleStorageChange);
       window.removeEventListener("pf_products_updated", handleCustomProductUpdate);
+      window.removeEventListener("pf_categories_updated", handleCustomCategoryUpdate);
+      window.removeEventListener("pf_orders_updated", handleCustomOrderUpdate);
     };
   }, []);
 
@@ -1005,6 +1014,18 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const refreshOrders = async () => {
+    try {
+      const ordersRes = await orderApi.getAll();
+      if (ordersRes.success && Array.isArray(ordersRes.data)) {
+        setOrders(ordersRes.data);
+        localStorage.setItem(STORAGE_ORDERS_KEY, JSON.stringify(ordersRes.data));
+      }
+    } catch (err) {
+      console.warn("Could not refresh orders:", err);
+    }
+  };
+
   // Checkout action with backend stock validation & order creation
   const createCheckoutOrder = async (details: {
     customerName: string;
@@ -1316,6 +1337,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         updateOrderDetails,
         deleteOrder,
         cancelOrder,
+        refreshOrders,
         createCheckoutOrder,
       }}
     >
