@@ -149,7 +149,7 @@ export function CustomerPortalModal() {
 
   return (
     <Dialog open={isCustomerPortalOpen} onOpenChange={setIsCustomerPortalOpen}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto p-0 border border-border shadow-2xl bg-card rounded-md">
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto overflow-x-hidden p-0 border border-border shadow-2xl bg-card rounded-xl w-[calc(100%-1rem)] sm:w-[calc(100%-2rem)]">
         {/* If customer is NOT logged in: Show Customer Login Dialog */}
         {!isLoggedIn || !customer ? (
           <div className="p-6 md:p-8 space-y-6">
@@ -233,27 +233,31 @@ export function CustomerPortalModal() {
           </div>
         ) : (
           /* Customer IS Logged In: Full Customer Dashboard */
-          <div className="max-h-[88vh] flex flex-col">
+          <div className="max-h-[88vh] flex flex-col overflow-x-hidden">
             {/* Top Customer Profile Banner */}
-            <div className="p-5 md:p-6 pb-4 border-b border-border bg-sand-50/70 dark:bg-secondary/40 shrink-0">
-              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
-                <div className="flex items-center gap-3">
-                  <div className="size-11 rounded-full bg-primary text-white flex items-center justify-center font-bold text-base uppercase shrink-0 shadow-xs">
+            <div className="p-3.5 sm:p-5 md:p-6 pb-2.5 sm:pb-4 border-b border-border bg-sand-50/70 dark:bg-secondary/40 shrink-0">
+              <div className="flex justify-between items-center gap-2">
+                <div className="flex items-center gap-2.5 sm:gap-3 min-w-0 flex-1">
+                  <div className="size-9 sm:size-11 rounded-full bg-primary text-white flex items-center justify-center font-bold text-sm sm:text-base uppercase shrink-0 shadow-xs">
                     {customer.name ? customer.name.charAt(0) : "C"}
                   </div>
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <h2 className="font-display text-xl font-bold text-foreground">
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <h2 className="font-display text-base sm:text-xl font-bold text-foreground truncate">
                         {customer.name || "Customer Account"}
                       </h2>
-                      <span className="text-[10px] uppercase font-semibold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-700 dark:text-emerald-300">
+                      <span className="text-[9px] sm:text-[10px] uppercase font-semibold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 shrink-0">
                         Signed In
                       </span>
                     </div>
-                    <p className="text-xs text-muted-foreground flex items-center gap-2 mt-0.5">
-                      <span>{customer.email}</span>
-                      <span>•</span>
-                      <span>{customer.phone}</span>
+                    <p className="text-[11px] sm:text-xs text-muted-foreground flex flex-wrap items-center gap-1.5 mt-0.5 truncate">
+                      <span className="truncate">{customer.email}</span>
+                      {customer.phone && (
+                        <>
+                          <span>•</span>
+                          <span>{customer.phone}</span>
+                        </>
+                      )}
                     </p>
                   </div>
                 </div>
@@ -261,30 +265,31 @@ export function CustomerPortalModal() {
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="text-xs text-muted-foreground hover:text-destructive h-8 px-2.5 cursor-pointer"
+                  className="text-xs text-muted-foreground hover:text-destructive h-8 px-2 sm:px-2.5 cursor-pointer shrink-0"
                   onClick={() => {
                     logoutCustomer();
                     setIsCustomerPortalOpen(false);
                   }}
                 >
-                  <LogOut className="size-3.5 mr-1" /> Sign Out
+                  <LogOut className="size-3.5 mr-1" />
+                  <span className="hidden xs:inline">Sign Out</span>
                 </Button>
               </div>
 
-              {/* Navigation Tabs */}
-              <div className="flex items-center gap-2 mt-5 border-b border-border/80 pb-0">
+              {/* Navigation Tabs - Grid of 3 with equal width (No overflow) */}
+              <div className="grid grid-cols-3 gap-1 mt-3 sm:mt-5 border-b border-border/80 pb-0 w-full">
                 <button
                   type="button"
                   onClick={() => setCustomerPortalTab("orders")}
-                  className={`flex items-center gap-1.5 pb-2.5 px-3 text-xs font-semibold border-b-2 transition-all cursor-pointer ${
+                  className={`flex items-center justify-center gap-1 pb-2 px-1 text-xs font-semibold border-b-2 transition-all cursor-pointer text-center ${
                     customerPortalTab === "orders"
                       ? "border-primary text-primary"
                       : "border-transparent text-muted-foreground hover:text-foreground"
                   }`}
                 >
-                  <Package className="size-3.5" />
-                  <span>My Orders</span>
-                  <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-secondary font-bold font-sans tabular-nums">
+                  <Package className="size-3.5 shrink-0 hidden xs:inline" />
+                  <span className="truncate">Orders</span>
+                  <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-secondary font-bold font-sans tabular-nums shrink-0">
                     {customerOrders.length}
                   </span>
                 </button>
@@ -292,15 +297,15 @@ export function CustomerPortalModal() {
                 <button
                   type="button"
                   onClick={() => setCustomerPortalTab("wishlist")}
-                  className={`flex items-center gap-1.5 pb-2.5 px-3 text-xs font-semibold border-b-2 transition-all cursor-pointer ${
+                  className={`flex items-center justify-center gap-1 pb-2 px-1 text-xs font-semibold border-b-2 transition-all cursor-pointer text-center ${
                     customerPortalTab === "wishlist"
                       ? "border-primary text-primary"
                       : "border-transparent text-muted-foreground hover:text-foreground"
                   }`}
                 >
-                  <Heart className="size-3.5" />
-                  <span>My Wishlist</span>
-                  <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-secondary font-bold font-sans tabular-nums">
+                  <Heart className="size-3.5 shrink-0 hidden xs:inline" />
+                  <span className="truncate">Wishlist</span>
+                  <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-secondary font-bold font-sans tabular-nums shrink-0">
                     {wishlistProducts.length}
                   </span>
                 </button>
@@ -308,20 +313,20 @@ export function CustomerPortalModal() {
                 <button
                   type="button"
                   onClick={() => setCustomerPortalTab("profile")}
-                  className={`flex items-center gap-1.5 pb-2.5 px-3 text-xs font-semibold border-b-2 transition-all cursor-pointer ${
+                  className={`flex items-center justify-center gap-1 pb-2 px-1 text-xs font-semibold border-b-2 transition-all cursor-pointer text-center ${
                     customerPortalTab === "profile"
                       ? "border-primary text-primary"
                       : "border-transparent text-muted-foreground hover:text-foreground"
                   }`}
                 >
-                  <User className="size-3.5" />
-                  <span>Account & Password</span>
+                  <User className="size-3.5 shrink-0 hidden xs:inline" />
+                  <span className="truncate">Account</span>
                 </button>
               </div>
             </div>
 
             {/* Tab Contents */}
-            <div className="p-5 md:p-6 overflow-y-auto flex-1 space-y-4">
+            <div className="p-3 sm:p-5 md:p-6 overflow-y-auto overflow-x-hidden flex-1 space-y-4">
               {/* TAB 1: MY ORDERS */}
               {customerPortalTab === "orders" && (
                 <div className="space-y-4">
@@ -351,12 +356,12 @@ export function CustomerPortalModal() {
                       return (
                         <div
                           key={order.id}
-                          className="border border-border bg-card rounded-sm p-4.5 space-y-4 shadow-2xs hover:border-border/80 transition-colors"
+                          className="border border-border bg-card rounded-xl p-3 sm:p-4.5 space-y-3.5 shadow-2xs hover:border-border/80 transition-colors overflow-hidden"
                         >
                           {/* Order Header */}
                           <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-2 pb-3 border-b border-border">
-                            <div>
-                              <div className="flex items-center gap-2">
+                            <div className="space-y-1">
+                              <div className="flex items-center gap-2 flex-wrap">
                                 <span className="font-bold text-sm tracking-tight text-foreground font-sans tabular-nums">
                                   #{order.id}
                                 </span>
@@ -367,12 +372,12 @@ export function CustomerPortalModal() {
                                   <span>{badge.label}</span>
                                 </span>
                               </div>
-                              <span className="text-[11px] text-muted-foreground font-sans tabular-nums block mt-0.5">
+                              <span className="text-[11px] text-muted-foreground font-sans tabular-nums block">
                                 Ordered on {order.date}
                               </span>
                             </div>
 
-                            <div className="text-right sm:text-right flex sm:flex-col justify-between items-center sm:items-end">
+                            <div className="flex sm:flex-col justify-between items-center sm:items-end gap-1 pt-1 sm:pt-0 border-t sm:border-t-0 border-border/40">
                               <span className="font-display font-bold text-base text-primary tabular-nums">
                                 {money(order.total)}
                               </span>
@@ -382,8 +387,126 @@ export function CustomerPortalModal() {
                             </div>
                           </div>
 
-                          {/* Live Visual Tracker */}
-                          <div className="py-2 px-3 bg-secondary/40 border border-border/60 rounded-xs space-y-2">
+                          {/* MOBILE VERTICAL TRACKER (sm:hidden) - Solves horizontal scroll */}
+                          <div className="sm:hidden p-3 bg-secondary/35 border border-border/60 rounded-lg space-y-2.5">
+                            <div className="flex items-center justify-between pb-1.5 border-b border-border/40 text-[11px]">
+                              <span className="font-semibold text-muted-foreground uppercase tracking-wider">
+                                Order Tracking Progress
+                              </span>
+                              <span className="font-bold text-primary">
+                                {order.status === "Delivered"
+                                  ? "Delivered"
+                                  : order.status === "Shipped"
+                                    ? "In Transit"
+                                    : order.status === "Packing"
+                                      ? "Packing"
+                                      : "Order Placed"}
+                              </span>
+                            </div>
+
+                            {/* Clean Vertical Steps */}
+                            <div className="space-y-2 pt-0.5">
+                              {/* Step 1: Order Placed */}
+                              <div className="flex items-center gap-2.5 text-xs">
+                                <span className={`size-3 rounded-full flex items-center justify-center shrink-0 ${
+                                  badge.step >= 1 ? "bg-emerald-500 text-white" : "bg-muted-foreground/30"
+                                }`}>
+                                  {badge.step >= 1 && <span className="text-[8px] font-bold">✓</span>}
+                                </span>
+                                <span className={badge.step >= 1 ? "font-semibold text-foreground" : "text-muted-foreground"}>
+                                  1. Order Placed & Confirmed
+                                </span>
+                                {badge.step >= 1 && (
+                                  <span className="text-[10px] text-emerald-600 font-medium ml-auto">Completed</span>
+                                )}
+                              </div>
+
+                              {/* Step 2: Packing */}
+                              <div className="flex items-center gap-2.5 text-xs">
+                                <span className={`size-3 rounded-full flex items-center justify-center shrink-0 ${
+                                  badge.step >= 2 ? "bg-emerald-500 text-white" : "bg-muted-foreground/30"
+                                }`}>
+                                  {badge.step >= 2 && <span className="text-[8px] font-bold">✓</span>}
+                                </span>
+                                <span className={badge.step >= 2 ? "font-semibold text-foreground" : "text-muted-foreground"}>
+                                  2. Packing & Quality Checked
+                                </span>
+                                {badge.step >= 2 ? (
+                                  <span className="text-[10px] text-emerald-600 font-medium ml-auto">Completed</span>
+                                ) : badge.step === 1 ? (
+                                  <span className="text-[10px] text-amber-600 font-medium ml-auto">Pending</span>
+                                ) : null}
+                              </div>
+
+                              {/* Step 3: Shipped */}
+                              <div className="flex items-center gap-2.5 text-xs">
+                                <span className={`size-3 rounded-full flex items-center justify-center shrink-0 ${
+                                  badge.step >= 3
+                                    ? badge.step === 3
+                                      ? "bg-indigo-600 text-white animate-pulse"
+                                      : "bg-emerald-500 text-white"
+                                    : "bg-muted-foreground/30"
+                                }`}>
+                                  {badge.step > 3 ? (
+                                    <span className="text-[8px] font-bold">✓</span>
+                                  ) : badge.step === 3 ? (
+                                    <span className="size-1 rounded-full bg-white" />
+                                  ) : null}
+                                </span>
+                                <span className={
+                                  badge.step === 3
+                                    ? "font-bold text-indigo-600 dark:text-indigo-400"
+                                    : badge.step > 3
+                                      ? "font-semibold text-foreground"
+                                      : "text-muted-foreground"
+                                }>
+                                  3. Shipped (In Transit from Ambattur)
+                                </span>
+                                {badge.step === 3 ? (
+                                  <span className="text-[10px] font-bold text-indigo-600 bg-indigo-50 dark:bg-indigo-950/40 px-1.5 py-0.5 rounded ml-auto">
+                                    Active
+                                  </span>
+                                ) : badge.step > 3 ? (
+                                  <span className="text-[10px] text-emerald-600 font-medium ml-auto">Completed</span>
+                                ) : null}
+                              </div>
+
+                              {/* Step 4: Delivered */}
+                              <div className="flex items-center gap-2.5 text-xs">
+                                <span className={`size-3 rounded-full flex items-center justify-center shrink-0 ${
+                                  badge.step >= 4 ? "bg-emerald-500 text-white" : "bg-muted-foreground/30"
+                                }`}>
+                                  {badge.step >= 4 && <span className="text-[8px] font-bold">✓</span>}
+                                </span>
+                                <span className={badge.step >= 4 ? "font-semibold text-foreground" : "text-muted-foreground"}>
+                                  4. Delivered at Doorstep
+                                </span>
+                                {badge.step >= 4 && (
+                                  <span className="text-[10px] text-emerald-600 font-bold ml-auto">Delivered</span>
+                                )}
+                              </div>
+                            </div>
+
+                            {/* Progress bar line */}
+                            <div className="w-full bg-secondary h-1.5 rounded-full overflow-hidden mt-1.5">
+                              <div
+                                className="bg-primary h-full rounded-full transition-all duration-500"
+                                style={{
+                                  width:
+                                    badge.step === 4
+                                      ? "100%"
+                                      : badge.step === 3
+                                        ? "75%"
+                                        : badge.step === 2
+                                          ? "50%"
+                                          : "25%",
+                                }}
+                              />
+                            </div>
+                          </div>
+
+                          {/* DESKTOP / TABLET HORIZONTAL TRACKER (hidden sm:block) */}
+                          <div className="hidden sm:block py-2.5 px-3.5 bg-secondary/40 border border-border/60 rounded-lg space-y-2">
                             <div className="flex items-center justify-between text-[11px] font-medium text-foreground">
                               <span className="flex items-center gap-1">
                                 <span className={`size-2 rounded-full ${badge.step >= 1 ? "bg-emerald-500" : "bg-muted"}`} />
@@ -425,7 +548,7 @@ export function CustomerPortalModal() {
 
                           {/* Items List - Clickable for live tracking */}
                           <div className="space-y-2 text-xs">
-                            <div className="flex items-center justify-between">
+                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
                               <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider block">
                                 Items Ordered:
                               </span>
@@ -455,10 +578,10 @@ export function CustomerPortalModal() {
                                         image: prodImg,
                                       });
                                     }}
-                                    className="py-2.5 px-2.5 -mx-1 rounded-sm hover:bg-primary/5 cursor-pointer transition-colors flex justify-between items-center group border border-transparent hover:border-primary/20"
+                                    className="py-2.5 px-2 rounded-lg hover:bg-primary/5 cursor-pointer transition-colors flex justify-between items-center group border border-transparent hover:border-primary/20 gap-2"
                                     title="Click to view live tracking details"
                                   >
-                                    <div className="flex items-center gap-3 min-w-0">
+                                    <div className="flex items-center gap-2.5 min-w-0 flex-1">
                                       <div className="size-10 rounded bg-secondary/50 border border-border flex items-center justify-center shrink-0 overflow-hidden">
                                         {prodImg ? (
                                           <img
@@ -470,27 +593,27 @@ export function CustomerPortalModal() {
                                           <Package className="size-5 text-gold/70" />
                                         )}
                                       </div>
-                                      <div className="min-w-0">
-                                        <div className="flex items-center gap-1.5">
-                                          <span className="font-bold font-sans tabular-nums text-primary text-xs">
+                                      <div className="min-w-0 flex-1">
+                                        <div className="flex items-center gap-1.5 min-w-0">
+                                          <span className="font-bold font-sans tabular-nums text-primary text-xs shrink-0">
                                             {item.quantity}x
                                           </span>
                                           <span className="font-medium text-foreground text-xs group-hover:text-primary transition-colors truncate">
                                             {item.productName}
                                           </span>
                                         </div>
-                                        <span className="text-[10px] text-muted-foreground block">
+                                        <span className="text-[10px] text-muted-foreground block truncate">
                                           {item.unit} · Click to track shipment
                                         </span>
                                       </div>
                                     </div>
 
-                                    <div className="text-right shrink-0 flex items-center gap-2.5">
+                                    <div className="text-right shrink-0 flex items-center gap-2">
                                       <span className="font-sans tabular-nums font-semibold text-foreground text-xs">
                                         {money(item.price * item.quantity)}
                                       </span>
                                       <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-semibold bg-primary/10 text-primary group-hover:bg-primary group-hover:text-primary-foreground transition-all">
-                                        <Truck className="size-3" /> Track
+                                        <Truck className="size-3" /> <span className="hidden xs:inline">Track</span>
                                       </span>
                                     </div>
                                   </div>
@@ -500,30 +623,30 @@ export function CustomerPortalModal() {
                           </div>
 
                           {/* Shipping address & Live Tracking / WhatsApp buttons */}
-                          <div className="pt-2 border-t border-border/80 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 text-xs">
-                            <div className="text-muted-foreground text-[11px] max-w-sm">
+                          <div className="pt-2.5 border-t border-border/80 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2.5 text-xs">
+                            <div className="text-muted-foreground text-[11px] w-full sm:max-w-sm">
                               <span className="font-medium text-foreground">Delivery To: </span>
-                              {order.shippingAddress || "Chennai, Tamil Nadu"}
+                              <span className="break-words">{order.shippingAddress || "Chennai, Tamil Nadu"}</span>
                             </div>
 
-                            <div className="flex items-center gap-2 shrink-0">
+                            <div className="grid grid-cols-2 sm:flex items-center gap-2 w-full sm:w-auto shrink-0">
                               <Button
                                 variant="default"
                                 size="sm"
-                                className="h-8 text-xs bg-primary hover:bg-primary/90 text-primary-foreground font-semibold flex items-center gap-1.5 cursor-pointer"
+                                className="w-full sm:w-auto min-h-[38px] h-auto py-2 px-3 text-xs bg-primary hover:bg-primary/90 text-primary-foreground font-semibold flex items-center justify-center gap-1.5 cursor-pointer rounded-lg"
                                 onClick={() => {
                                   setTrackingModalOrder(order);
                                   setTrackingModalProduct(null);
                                 }}
                               >
-                                <Truck className="size-3.5" />
+                                <Truck className="size-3.5 shrink-0" />
                                 <span>Track Shipment</span>
                               </Button>
 
                               <Button
                                 variant="outline"
                                 size="sm"
-                                className="h-8 text-xs text-[#25D366] hover:text-[#25D366] hover:bg-emerald-50 border-emerald-300 dark:border-emerald-800 shrink-0 cursor-pointer"
+                                className="w-full sm:w-auto min-h-[38px] h-auto py-2 px-3 text-xs text-[#25D366] hover:text-[#25D366] hover:bg-emerald-50 border-emerald-300 dark:border-emerald-800 flex items-center justify-center cursor-pointer rounded-lg"
                                 asChild
                               >
                                 <a
@@ -533,8 +656,8 @@ export function CustomerPortalModal() {
                                   target="_blank"
                                   rel="noreferrer"
                                 >
-                                  <MessageCircle className="size-3.5 mr-1 text-[#25D366]" />
-                                  WhatsApp
+                                  <MessageCircle className="size-3.5 mr-1 text-[#25D366] shrink-0" />
+                                  <span>WhatsApp</span>
                                 </a>
                               </Button>
                             </div>
