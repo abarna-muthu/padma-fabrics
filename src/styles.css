@@ -958,3 +958,14 @@ html {
     transition: none !important;
   }
 }
+
+/* Mobile button touch targets, tap ergonomics, and overflow prevention */
+@media (max-width: 640px) {
+  button,
+  [role="button"],
+  a.btn {
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+  }
+}
+

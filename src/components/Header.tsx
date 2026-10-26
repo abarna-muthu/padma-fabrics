@@ -353,7 +353,7 @@ export function Header() {
                     setIsMobileMenuOpen(false);
                     setIsCustomerPortalOpen(true);
                   }}
-                  className="w-full p-2.5 rounded-xl bg-[#6B1E2E] text-white hover:bg-[#852538] transition-colors text-xs font-semibold flex items-center justify-center gap-2 shadow-2xs cursor-pointer"
+                  className="w-full min-h-[44px] p-2.5 rounded-xl bg-[#6B1E2E] text-white hover:bg-[#852538] transition-colors text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-2 shadow-2xs cursor-pointer touch-manipulation"
                 >
                   <User className="size-3.5" />
                   <span>Sign In / Create Account</span>

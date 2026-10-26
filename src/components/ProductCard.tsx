@@ -162,14 +162,14 @@ export function ProductCard({ product, light = false, badgeText, onQuickView }: 
             {product.name}
           </h3>
 
-          {/* Price with Tabular Numerals on left, Buy Now button on right */}
+          {/* Price with Tabular Numerals on left, Action Buttons on right */}
           <div className="flex items-center justify-between gap-1 sm:gap-2 mt-2 pt-1.5 border-t border-[rgba(14,14,14,0.06)]">
-            <div className="flex items-baseline gap-1 min-w-0">
-              <span className="font-['Manrope'] text-[11px] xs:text-xs sm:text-[15px] font-semibold tabular-nums text-foreground">
+            <div className="flex items-baseline gap-0.5 sm:gap-1 min-w-0">
+              <span className="font-['Manrope'] text-xs sm:text-[15px] font-bold tabular-nums text-foreground truncate">
                 {formatPrice(salePrice)}
               </span>
               <span
-                className={`text-[9px] sm:text-xs font-light truncate ${
+                className={`text-[9px] sm:text-xs font-light shrink-0 ${
                   light ? "text-[#F4F0E8]/60" : "text-[#0E0E0E]/60"
                 }`}
               >
@@ -177,15 +177,28 @@ export function ProductCard({ product, light = false, badgeText, onQuickView }: 
               </span>
             </div>
 
-            {/* Buy Now Button */}
-            <button
-              type="button"
-              onClick={handleBuyNow}
-              className="px-2 sm:px-3 py-1 sm:py-1.5 rounded-full bg-[#6B1E2E] hover:bg-[#832638] text-white text-[9.5px] sm:text-[11px] font-semibold uppercase tracking-wider transition-all cursor-pointer shadow-xs active:scale-95 border border-[#B8913A]/40 shrink-0 inline-flex items-center gap-1"
-              title="Buy Now"
-            >
-              <span>Buy Now</span>
-            </button>
+            <div className="flex items-center gap-1 sm:gap-1.5 shrink-0">
+              {/* Quick Add to Cart Button (Mobile & Desktop) */}
+              <button
+                type="button"
+                onClick={handleAddToCart}
+                className="size-7 sm:size-7.5 rounded-full bg-black/5 hover:bg-black/10 dark:bg-white/10 dark:hover:bg-white/20 text-[#0E0E0E] dark:text-[#FAF6EE] flex items-center justify-center transition-all cursor-pointer active:scale-90 touch-manipulation border border-[rgba(14,14,14,0.1)]"
+                title="Add to Bag"
+                aria-label="Add to bag"
+              >
+                <ShoppingBag className="size-3.5 text-[#6B1E2E] dark:text-[#B8913A]" strokeWidth={1.5} />
+              </button>
+
+              {/* Buy Now Button */}
+              <button
+                type="button"
+                onClick={handleBuyNow}
+                className="px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-full bg-[#6B1E2E] hover:bg-[#832638] text-white text-[10px] sm:text-[11px] font-semibold uppercase tracking-wider transition-all cursor-pointer shadow-xs active:scale-95 border border-[#B8913A]/40 shrink-0 inline-flex items-center gap-1 touch-manipulation whitespace-nowrap"
+                title="Buy Now"
+              >
+                <span>Buy Now</span>
+              </button>
+            </div>
           </div>
         </div>
       </div>

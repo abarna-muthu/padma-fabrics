@@ -159,28 +159,30 @@ export function ShopSheet() {
               <Button
                 variant="editorial"
                 size="lg"
-                className="w-full h-12 text-sm uppercase tracking-wider font-bold shadow-md bg-gradient-to-r from-[#9B2242] via-[#8B1D36] to-[#731429] text-white hover:brightness-110 flex items-center justify-center gap-2 cursor-pointer transition-all active:scale-[0.99]"
+                className="w-full !rounded-xl !h-auto min-h-[48px] py-3 px-3 text-xs sm:text-sm uppercase tracking-wide font-bold shadow-md bg-gradient-to-r from-[#9B2242] via-[#8B1D36] to-[#731429] text-white hover:brightness-110 flex items-center justify-center gap-2 cursor-pointer transition-all active:scale-[0.99] touch-manipulation"
                 onClick={handleBuyNow}
               >
-                <Zap className="size-4.5 fill-amber-300 text-amber-300" />
-                BUY NOW · {money(selected.price * quantity)}
+                <Zap className="size-4.5 shrink-0 fill-amber-300 text-amber-300" />
+                <span>BUY NOW · {money(selected.price * quantity)}</span>
               </Button>
 
               <div className="grid grid-cols-2 gap-2">
                 <Button
                   variant="outline"
-                  className="h-10 text-xs font-semibold uppercase tracking-wider border-primary/30 text-primary hover:bg-primary/5 flex items-center justify-center gap-1.5 cursor-pointer"
+                  className="!rounded-xl !h-auto min-h-[42px] py-2 px-2 text-xs font-semibold uppercase tracking-wider border-primary/30 text-primary hover:bg-primary/5 flex items-center justify-center gap-1.5 cursor-pointer touch-manipulation"
                   onClick={addToBag}
                 >
-                  <ShoppingBag className="size-3.5" /> Add to Bag
+                  <ShoppingBag className="size-3.5 shrink-0" />
+                  <span className="truncate">Add to Bag</span>
                 </Button>
                 <Button
                   variant="whatsapp"
-                  className="h-10 text-xs font-medium shadow-xs"
+                  className="!rounded-xl !h-auto min-h-[42px] py-2 px-2 text-xs font-semibold uppercase tracking-wider shadow-xs flex items-center justify-center gap-1 cursor-pointer touch-manipulation"
                   asChild
                 >
                   <a href={whatsappUrl} target="_blank" rel="noreferrer">
-                    <MessageCircle className="size-3.5 mr-1" /> WhatsApp
+                    <MessageCircle className="size-3.5 shrink-0 mr-1" />
+                    <span>WhatsApp</span>
                   </a>
                 </Button>
               </div>

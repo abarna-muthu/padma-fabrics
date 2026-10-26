@@ -175,7 +175,7 @@ export function CartPage() {
                     <button
                       type="button"
                       onClick={() => updateQuantity(item.cartItemId, -1)}
-                      className="size-8 flex items-center justify-center text-sm font-semibold hover:bg-black/5 dark:hover:bg-white/10 transition-colors cursor-pointer"
+                      className="size-9 sm:size-8 flex items-center justify-center text-sm font-semibold hover:bg-black/5 dark:hover:bg-white/10 transition-colors cursor-pointer touch-manipulation"
                       aria-label="Decrease quantity"
                     >
                       -
@@ -184,7 +184,7 @@ export function CartPage() {
                     <button
                       type="button"
                       onClick={() => updateQuantity(item.cartItemId, 1)}
-                      className="size-8 flex items-center justify-center text-sm font-semibold hover:bg-black/5 dark:hover:bg-white/10 transition-colors cursor-pointer"
+                      className="size-9 sm:size-8 flex items-center justify-center text-sm font-semibold hover:bg-black/5 dark:hover:bg-white/10 transition-colors cursor-pointer touch-manipulation"
                       aria-label="Increase quantity"
                     >
                       +
@@ -194,7 +194,7 @@ export function CartPage() {
                   <button
                     type="button"
                     onClick={() => removeFromCart(item.cartItemId)}
-                    className="p-2 text-rose-600 hover:text-white hover:bg-rose-500 rounded-lg transition-all cursor-pointer"
+                    className="p-2.5 sm:p-2 text-rose-600 hover:text-white hover:bg-rose-500 rounded-lg transition-all cursor-pointer touch-manipulation"
                     title="Remove item from bag"
                   >
                     <Trash2 className="size-4" />
@@ -266,7 +266,7 @@ export function CartPage() {
                   </div>
                   <button
                     type="submit"
-                    className="px-3 py-2 bg-[#FAF6EE] dark:bg-white/10 hover:bg-[#B8913A] hover:text-white border border-[#B8913A]/40 rounded text-[11px] font-bold uppercase tracking-wider transition-colors cursor-pointer"
+                    className="min-h-[38px] px-3.5 py-2 bg-[#FAF6EE] dark:bg-white/10 hover:bg-[#B8913A] hover:text-white border border-[#B8913A]/40 rounded text-[11px] font-bold uppercase tracking-wider transition-colors cursor-pointer touch-manipulation"
                   >
                     Apply
                   </button>
@@ -277,7 +277,7 @@ export function CartPage() {
               {/* Direct Checkout Button */}
               <Link
                 to="/checkout"
-                className="w-full py-3.5 rounded-lg bg-[#6B1E2E] hover:bg-[#521623] text-white text-xs font-semibold uppercase tracking-[0.14em] flex items-center justify-center gap-2 shadow-md hover:shadow-lg transition-all cursor-pointer"
+                className="w-full min-h-[48px] py-3.5 px-4 rounded-xl bg-[#6B1E2E] hover:bg-[#521623] text-white text-xs sm:text-sm font-bold uppercase tracking-wider flex items-center justify-center gap-2 shadow-md hover:shadow-lg transition-all cursor-pointer touch-manipulation"
               >
                 <span>Proceed to Checkout</span>
                 <ArrowRight className="size-4" />
@@ -288,9 +288,9 @@ export function CartPage() {
                 href={whatsappUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="w-full py-2.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold uppercase tracking-wider flex items-center justify-center gap-2 transition-all shadow-xs"
+                className="w-full min-h-[44px] py-3 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold uppercase tracking-wider flex items-center justify-center gap-2 transition-all shadow-xs touch-manipulation"
               >
-                <MessageCircle className="size-3.5" />
+                <MessageCircle className="size-4" />
                 <span>Order via WhatsApp</span>
               </a>
 

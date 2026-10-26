@@ -491,7 +491,7 @@ export function FeaturedCollectionCarousel() {
                           toggleWishlist(String(product.id), product.name);
                         }}
                         aria-label={isFavorite ? "Remove from wishlist" : "Add to wishlist"}
-                        className="absolute bottom-3.5 right-3.5 size-10 rounded-full bg-white/95 hover:bg-white text-[#0E0E0E] flex items-center justify-center shadow-md transition-transform hover:scale-110 active:scale-95 cursor-pointer z-10"
+                        className="absolute bottom-3.5 right-3.5 size-9 sm:size-10 rounded-full bg-white/95 hover:bg-white text-[#0E0E0E] flex items-center justify-center shadow-md transition-transform hover:scale-110 active:scale-90 cursor-pointer z-10 touch-manipulation"
                       >
                         <Heart
                           className={`size-4 transition-colors ${
@@ -511,7 +511,7 @@ export function FeaturedCollectionCarousel() {
                             e.stopPropagation();
                             addToCart(product, sizes[0] || "Standard", 1);
                           }}
-                          className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-[#0E0E0E] text-[#F4F0E8] hover:bg-[#B8913A] transition-all text-[11px] font-medium uppercase tracking-[0.14em] shadow-md cursor-pointer active:scale-95"
+                          className="inline-flex items-center gap-1.5 px-3 sm:px-4 py-1.5 sm:py-2 rounded-full bg-[#0E0E0E] text-[#F4F0E8] hover:bg-[#B8913A] transition-all text-[10px] sm:text-[11px] font-semibold uppercase tracking-wider shadow-md cursor-pointer active:scale-95 touch-manipulation whitespace-nowrap"
                         >
                           <ShoppingBag className="size-3" strokeWidth={1.5} />
                           <span>Quick Add</span>
@@ -573,19 +573,23 @@ export function FeaturedCollectionCarousel() {
             </div>
 
             {/* PAGINATION DOTS */}
-            <div className="flex items-center justify-center gap-2 pt-6">
+            <div className="flex items-center justify-center gap-1.5 pt-6">
               {products.map((_, idx) => (
                 <button
                   key={idx}
                   type="button"
                   onClick={() => scrollToCard(idx)}
                   aria-label={`Go to style ${idx + 1}`}
-                  className={`h-1.5 rounded-full transition-all cursor-pointer ${
-                    idx === activeIndex
-                      ? "w-8 bg-[#0E0E0E]"
-                      : "w-2 bg-[#0E0E0E]/20 hover:bg-[#0E0E0E]/50"
-                  }`}
-                />
+                  className="py-2.5 px-1 flex items-center justify-center cursor-pointer touch-manipulation"
+                >
+                  <span
+                    className={`h-1.5 rounded-full transition-all block ${
+                      idx === activeIndex
+                        ? "w-8 bg-[#0E0E0E]"
+                        : "w-2.5 bg-[#0E0E0E]/20 hover:bg-[#0E0E0E]/50"
+                    }`}
+                  />
+                </button>
               ))}
             </div>
           </div>

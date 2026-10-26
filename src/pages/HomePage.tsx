@@ -201,10 +201,10 @@ export function HomePage() {
                 Discover thoughtfully selected styles for every occasion, from everyday essentials to statement pieces handcrafted direct from master looms in Chennai.
               </p>
 
-              <div className="flex flex-col xs:flex-row items-stretch xs:items-center gap-3 pt-2">
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 sm:gap-3 pt-2">
                 <Link
                   to="/shop"
-                  className="inline-flex items-center justify-center px-6 sm:px-8 py-3 sm:py-3.5 rounded-full bg-[#0E0E0E] text-[#F4F0E8] hover:bg-[#B8913A] transition-colors text-xs font-medium uppercase tracking-[0.16em] cursor-pointer shadow-xs active:scale-98 text-center"
+                  className="inline-flex items-center justify-center px-5 sm:px-8 py-3 sm:py-3.5 rounded-full bg-[#0E0E0E] text-[#F4F0E8] hover:bg-[#B8913A] transition-colors text-xs font-semibold uppercase tracking-[0.08em] sm:tracking-[0.14em] cursor-pointer shadow-xs active:scale-98 text-center w-full sm:w-auto touch-manipulation"
                 >
                   Shop Collection
                 </Link>
@@ -212,7 +212,7 @@ export function HomePage() {
                 <Link
                   to="/shop"
                   search={{ filter: "new" } as any}
-                  className="inline-flex items-center justify-center px-6 sm:px-8 py-3 sm:py-3.5 rounded-full border border-[rgba(14,14,14,0.25)] text-[#0E0E0E] hover:border-[#0E0E0E] hover:bg-black/5 transition-all text-xs font-medium uppercase tracking-[0.16em] cursor-pointer active:scale-98 text-center"
+                  className="inline-flex items-center justify-center px-5 sm:px-8 py-3 sm:py-3.5 rounded-full border border-[rgba(14,14,14,0.25)] text-[#0E0E0E] hover:border-[#0E0E0E] hover:bg-black/5 transition-all text-xs font-semibold uppercase tracking-[0.08em] sm:tracking-[0.14em] cursor-pointer active:scale-98 text-center w-full sm:w-auto touch-manipulation"
                 >
                   Explore New Arrivals
                 </Link>
@@ -404,9 +404,9 @@ export function HomePage() {
                 key={cat}
                 type="button"
                 onClick={() => setSelectedCategory(cat)}
-                className={`px-4 py-1.5 rounded-full text-xs font-medium uppercase tracking-[0.14em] transition-all cursor-pointer shrink-0 ${
+                className={`px-3.5 sm:px-4 py-1.5 sm:py-2 rounded-full text-xs font-semibold uppercase tracking-wider transition-all cursor-pointer shrink-0 whitespace-nowrap min-h-[34px] touch-manipulation flex items-center justify-center ${
                   selectedCategory === cat
-                    ? "bg-[#0E0E0E] text-[#F4F0E8]"
+                    ? "bg-[#0E0E0E] text-[#F4F0E8] shadow-xs"
                     : "bg-black/5 text-[#0E0E0E]/80 hover:bg-black/10 border border-[rgba(14,14,14,0.08)]"
                 }`}
               >

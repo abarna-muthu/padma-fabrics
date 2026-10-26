@@ -189,7 +189,7 @@ export function ProductDetailPage({ id }: ProductDetailPageProps) {
                     key={sz}
                     type="button"
                     onClick={() => setSelectedSize(sz)}
-                    className={`px-4 py-2 rounded-lg text-xs font-semibold uppercase tracking-wider transition-all cursor-pointer ${
+                    className={`min-h-[36px] px-3.5 sm:px-4 py-2 rounded-lg text-xs font-semibold uppercase tracking-wider transition-all cursor-pointer touch-manipulation flex items-center justify-center ${
                       selectedSize === sz
                         ? "bg-[#6B1E2E] text-white shadow-xs"
                         : "border border-[#E5DAC4] dark:border-white/10 hover:border-[#B8913A] text-[#0E0E0E] dark:text-[#FAF6EE]"
@@ -210,15 +210,15 @@ export function ProductDetailPage({ id }: ProductDetailPageProps) {
                 <button
                   type="button"
                   onClick={() => setQuantity((q) => Math.max(1, q - 1))}
-                  className="size-8 flex items-center justify-center text-sm font-semibold hover:bg-black/5 dark:hover:bg-white/10 cursor-pointer"
+                  className="size-9 sm:size-8 flex items-center justify-center text-sm font-semibold hover:bg-black/5 dark:hover:bg-white/10 cursor-pointer touch-manipulation"
                 >
                   -
                 </button>
-                <span className="text-xs font-bold px-3">{quantity}</span>
+                <span className="text-xs font-bold px-3 tabular-nums">{quantity}</span>
                 <button
                   type="button"
                   onClick={() => setQuantity((q) => q + 1)}
-                  className="size-8 flex items-center justify-center text-sm font-semibold hover:bg-black/5 dark:hover:bg-white/10 cursor-pointer"
+                  className="size-9 sm:size-8 flex items-center justify-center text-sm font-semibold hover:bg-black/5 dark:hover:bg-white/10 cursor-pointer touch-manipulation"
                 >
                   +
                 </button>
@@ -227,12 +227,12 @@ export function ProductDetailPage({ id }: ProductDetailPageProps) {
           </div>
 
           {/* Action Buttons */}
-          <div className="pt-6 border-t border-[#E5DAC4] dark:border-[#B8913A]/20 space-y-3">
+          <div className="pt-6 border-t border-[#E5DAC4] dark:border-[#B8913A]/20 space-y-3 pb-20 sm:pb-0">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <button
                 type="button"
                 onClick={handleAddToCart}
-                className="w-full py-3.5 rounded-lg bg-[#FAF6EE] hover:bg-[#F2ECE1] dark:bg-white/10 text-[#6B1E2E] dark:text-[#FAF6EE] border border-[#B8913A]/40 text-xs font-semibold uppercase tracking-wider flex items-center justify-center gap-2 transition-all cursor-pointer shadow-xs active:scale-98"
+                className="w-full min-h-[46px] py-3.5 px-4 rounded-xl bg-[#FAF6EE] hover:bg-[#F2ECE1] dark:bg-white/10 text-[#6B1E2E] dark:text-[#FAF6EE] border border-[#B8913A]/40 text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-2 transition-all cursor-pointer shadow-xs active:scale-98 touch-manipulation"
               >
                 <ShoppingBag className="size-4 text-[#B8913A]" />
                 <span>Add to Cart</span>
@@ -241,9 +241,9 @@ export function ProductDetailPage({ id }: ProductDetailPageProps) {
               <button
                 type="button"
                 onClick={handleBuyNow}
-                className="w-full py-3.5 rounded-lg bg-[#6B1E2E] hover:bg-[#521623] text-white text-xs font-semibold uppercase tracking-wider flex items-center justify-center gap-2 transition-all cursor-pointer shadow-md active:scale-98"
+                className="w-full min-h-[46px] py-3.5 px-4 rounded-xl bg-[#6B1E2E] hover:bg-[#521623] text-white text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-2 transition-all cursor-pointer shadow-md active:scale-98 touch-manipulation"
               >
-                <Zap className="size-4 text-[#B8913A] fill-[#B8913A]" />
+                <Zap className="size-4 text-amber-300 fill-amber-300" />
                 <span>Buy Now Directly</span>
               </button>
             </div>
@@ -261,6 +261,26 @@ export function ProductDetailPage({ id }: ProductDetailPageProps) {
             </div>
           </div>
         </div>
+      </div>
+
+      {/* Sticky Mobile Bottom Purchase Bar */}
+      <div className="fixed bottom-0 inset-x-0 sm:hidden z-40 bg-white/95 dark:bg-[#1E191A]/95 backdrop-blur-md p-3 border-t border-[#E5DAC4] dark:border-white/10 shadow-[0_-4px_16px_rgba(0,0,0,0.08)] flex items-center gap-2.5">
+        <button
+          type="button"
+          onClick={handleAddToCart}
+          className="flex-1 min-h-[44px] py-2.5 px-3 rounded-lg bg-[#FAF6EE] dark:bg-white/10 text-[#6B1E2E] dark:text-[#FAF6EE] border border-[#B8913A]/40 text-xs font-bold uppercase tracking-wide flex items-center justify-center gap-1.5 active:scale-98 touch-manipulation"
+        >
+          <ShoppingBag className="size-3.5 text-[#B8913A]" />
+          <span>Add to Bag</span>
+        </button>
+        <button
+          type="button"
+          onClick={handleBuyNow}
+          className="flex-1 min-h-[44px] py-2.5 px-3 rounded-lg bg-[#6B1E2E] text-white text-xs font-bold uppercase tracking-wide flex items-center justify-center gap-1.5 shadow-md active:scale-98 touch-manipulation"
+        >
+          <Zap className="size-3.5 text-amber-300 fill-amber-300" />
+          <span>Buy Now</span>
+        </button>
       </div>
     </div>
   );

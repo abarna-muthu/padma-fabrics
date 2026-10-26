@@ -357,7 +357,7 @@ function ShopPage() {
             variant="whatsapp"
             size="lg"
             asChild
-            className="shrink-0"
+            className="w-full sm:w-auto shrink-0 touch-manipulation"
           >
             <a
               href="https://wa.me/919940145700?text=Hello%20Padmanabha%20Fabrics%2C%20I%20would%20like%20to%20enquire%20about%20wholesale%20fabrics."

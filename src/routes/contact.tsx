@@ -262,14 +262,15 @@ function ContactPage() {
                     We have received your enquiry. Our team in Chennai will review your request and
                     get back to you shortly.
                   </p>
-                  <div className="pt-4 flex flex-wrap justify-center gap-4">
-                    <Button variant="whatsapp" className="h-11 px-6 text-xs uppercase tracking-wider font-semibold shadow-md" asChild>
+                  <div className="pt-4 flex flex-col sm:flex-row justify-center gap-3">
+                    <Button variant="whatsapp" className="min-h-[44px] h-auto py-2.5 px-5 text-xs uppercase tracking-wider font-semibold shadow-md touch-manipulation" asChild>
                       <a href={generateWhatsAppUrl()} target="_blank" rel="noreferrer">
                         Continue on WhatsApp <ArrowUpRight className="ml-2" />
                       </a>
                     </Button>
                     <Button
                       variant="outline"
+                      className="min-h-[44px] h-auto py-2.5 px-5 text-xs uppercase tracking-wider font-semibold touch-manipulation"
                       onClick={() => {
                         setSubmitted(false);
                         setMessage("");
@@ -371,7 +372,7 @@ function ContactPage() {
                       type="submit"
                       variant="editorial"
                       disabled={isSubmitting}
-                      className="h-11 px-7 text-xs font-semibold uppercase tracking-wider cursor-pointer shadow-md hover:shadow-lg transition-all"
+                      className="min-h-[46px] h-auto py-3 px-6 text-xs font-semibold uppercase tracking-wider cursor-pointer shadow-md hover:shadow-lg transition-all touch-manipulation w-full sm:w-auto"
                     >
                       {isSubmitting ? "Sending..." : "Send Enquiry"} <ArrowRight className="ml-3 size-4" />
                     </Button>
