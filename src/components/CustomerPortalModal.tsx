@@ -867,6 +867,16 @@ export function CustomerPortalModal() {
         order={cancellingOrder}
         isOpen={!!cancellingOrder}
         onClose={() => setCancellingOrder(null)}
+        onSuccess={(cancelledOrder) => {
+          if (
+            trackingModalOrder &&
+            (trackingModalOrder.id === cancelledOrder.id ||
+              (trackingModalOrder as any).orderNumber === cancelledOrder.id)
+          ) {
+            setTrackingModalOrder(cancelledOrder);
+          }
+          setCancellingOrder(null);
+        }}
       />
     </Dialog>
   );

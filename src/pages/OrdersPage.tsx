@@ -693,6 +693,16 @@ export function OrdersPage() {
         order={cancellingOrder}
         isOpen={!!cancellingOrder}
         onClose={() => setCancellingOrder(null)}
+        onSuccess={(cancelledOrder) => {
+          if (
+            trackedOrder &&
+            (trackedOrder.id === cancelledOrder.id ||
+              (trackedOrder as any).orderNumber === cancelledOrder.id)
+          ) {
+            setTrackedOrder(cancelledOrder);
+          }
+          setCancellingOrder(null);
+        }}
       />
     </div>
   );

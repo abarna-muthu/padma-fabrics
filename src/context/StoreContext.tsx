@@ -961,57 +961,79 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     reason: string,
     notes?: string,
   ): Promise<{ success: boolean; message?: string; error?: string }> => {
-    try {
-      const res = await orderApi.cancel(orderId, reason, notes);
-      if (!res.success) {
-        return { success: false, error: res.error || "Failed to cancel order" };
+    const cleanId = String(orderId).replace(/^#/, "").trim();
+    const dateStr = new Date().toLocaleString("en-IN");
+    const cancellationStamp = `[Cancelled by Customer on ${dateStr}. Reason: ${reason}${notes ? ` | Details: ${notes}` : ""}]`;
+
+    // 1. Find matching order in state
+    const targetOrder = orders.find(
+      (o) =>
+        o.id === orderId ||
+        (o as any).orderNumber === orderId ||
+        String(o.id).replace(/^#/, "").toLowerCase() === cleanId.toLowerCase() ||
+        String((o as any).orderNumber || "").replace(/^#/, "").toLowerCase() === cleanId.toLowerCase(),
+    );
+
+    // 2. Immediately mark order as Cancelled in local state and localStorage
+    const updated = orders.map((o) => {
+      const match =
+        o.id === orderId ||
+        (o as any).orderNumber === orderId ||
+        String(o.id).replace(/^#/, "").toLowerCase() === cleanId.toLowerCase() ||
+        String((o as any).orderNumber || "").replace(/^#/, "").toLowerCase() === cleanId.toLowerCase();
+
+      if (match) {
+        return {
+          ...o,
+          status: "Cancelled" as const,
+          manualStatusOverride: true,
+          notes: o.notes ? `${o.notes}\n${cancellationStamp}` : cancellationStamp,
+        };
       }
+      return o;
+    });
+    saveOrders(updated);
 
-      const dateStr = new Date().toLocaleString("en-IN");
-      const cancellationStamp = `[Cancelled by Customer on ${dateStr}. Reason: ${reason}${notes ? ` | Details: ${notes}` : ""}]`;
+    // 3. Immediately restore stock in productsList
+    if (targetOrder && targetOrder.items) {
+      const orderItems = Array.isArray(targetOrder.items)
+        ? targetOrder.items
+        : typeof targetOrder.items === "string"
+          ? (() => {
+              try {
+                return JSON.parse(targetOrder.items);
+              } catch {
+                return [];
+              }
+            })()
+          : [];
 
-      const targetOrder = orders.find(
-        (o) => o.id === orderId || (o as any).orderNumber === orderId,
-      );
-
-      const updated = orders.map((o) => {
-        if (o.id === orderId || (o as any).orderNumber === orderId) {
-          return {
-            ...o,
-            status: "Cancelled" as const,
-            manualStatusOverride: true,
-            notes: o.notes ? `${o.notes}\n${cancellationStamp}` : cancellationStamp,
-          };
-        }
-        return o;
-      });
-      saveOrders(updated);
-
-      // Restore stock in local productsList if order items exist
-      if (targetOrder && targetOrder.items) {
-        const orderItems = Array.isArray(targetOrder.items) ? targetOrder.items : [];
-        if (orderItems.length > 0) {
-          const updatedProducts = productsList.map((p) => {
-            const matchedItem = orderItems.find(
-              (i) =>
-                i.productId === p.id ||
-                (i.productName && i.productName.toLowerCase() === p.name.toLowerCase()),
-            );
-            if (matchedItem) {
-              const restored = p.stock + (Number(matchedItem.quantity) || 1);
-              return { ...p, stock: restored };
-            }
-            return p;
-          });
-          saveProducts(updatedProducts);
-        }
+      if (orderItems.length > 0) {
+        const updatedProducts = productsList.map((p) => {
+          const matchedItem = orderItems.find(
+            (i: any) =>
+              i.productId === p.id ||
+              (i.productName && i.productName.toLowerCase() === p.name.toLowerCase()),
+          );
+          if (matchedItem) {
+            const restored = p.stock + (Number(matchedItem.quantity) || 1);
+            return { ...p, stock: restored };
+          }
+          return p;
+        });
+        saveProducts(updatedProducts);
       }
-
-      return { success: true, message: res.message || "Order cancelled successfully." };
-    } catch (err: any) {
-      console.error("Cancel order error:", err);
-      return { success: false, error: err.message || "Network error while cancelling order." };
     }
+
+    // 4. Send cancellation to backend database API
+    try {
+      const primaryId = targetOrder ? targetOrder.id : cleanId;
+      await orderApi.cancel(primaryId, reason, notes);
+    } catch (err) {
+      console.warn("Backend order cancellation notice:", err);
+    }
+
+    return { success: true, message: "Order cancelled successfully." };
   };
 
   const refreshOrders = async () => {

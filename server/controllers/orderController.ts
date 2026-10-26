@@ -470,10 +470,11 @@ export async function cancelOrder(req: Request, res: Response) {
       });
     }
 
+    const cleanId = String(id).replace(/^#/, "").trim();
     const db = await getDb();
     const rows = await db.query(
-      "SELECT * FROM orders WHERE id = ? OR order_number = ?",
-      [id, id]
+      "SELECT * FROM orders WHERE id = ? OR order_number = ? OR LOWER(id) = ? OR LOWER(order_number) = ? OR id = ? OR order_number = ?",
+      [id, id, cleanId.toLowerCase(), cleanId.toLowerCase(), cleanId, cleanId]
     );
 
     if (rows.length === 0) {
