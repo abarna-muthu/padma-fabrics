@@ -10,10 +10,12 @@ async function main() {
     console.log("Total Products in 'products' table:", countResult[0]?.total ?? countResult);
 
     const products = await db.query<any>(
-      "SELECT id, sku, name, category_id, price, stock_quantity, is_active FROM products LIMIT 10"
+      "SELECT id, sku, name, category_id, price, image_url, description, sizes FROM products"
     );
-    console.log("\nSample Products from database:");
-    console.table(products);
+    console.log("\nProducts in database:");
+    for (const p of products) {
+      console.log(`- [${p.id}] ${p.name} | Cat: ${p.category_id} | Image: ${p.image_url ? p.image_url.slice(0, 60) : "NULL"} | Desc: ${p.description ? p.description.slice(0, 50) : "EMPTY"} | Sizes: ${p.sizes}`);
+    }
 
     const categoriesCount = await db.query<any>("SELECT COUNT(*) AS total FROM categories");
     console.log("\nTotal Categories:", categoriesCount[0]?.total ?? categoriesCount);

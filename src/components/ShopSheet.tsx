@@ -96,10 +96,14 @@ export function ShopSheet() {
           <>
             <img
               className="detail-image"
-              src={selected.image}
+              src={selected.image || selected.imageUrl || (selected as any).image_url || "/placeholder.svg"}
               alt={selected.name}
               onError={(e) => {
-                (e.currentTarget as HTMLImageElement).src = "/assets/burgundy-silk.jpg";
+                const target = e.currentTarget as HTMLImageElement;
+                const fallback = selected.imageUrl || (selected as any).image_url;
+                if (fallback && target.src !== fallback) {
+                  target.src = fallback;
+                }
               }}
             />
             <p className="text-sm text-muted-foreground leading-7">{selected.description}</p>

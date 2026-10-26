@@ -27,7 +27,9 @@
     "lowStockThreshold": 5,
     "imageUrl": "https://res.cloudinary.com/ugzb1wup/image/upload/v1792584958/padma_products/v9quby0cest8zrupfzqc.jpg",
     "isFeatured": false,
-    "createdAt": "2026-10-23T06:39:01.159Z"
+    "createdAt": "2026-10-23T06:39:01.159Z",
+    "image_url": "https://res.cloudinary.com/ugzb1wup/image/upload/v1792584958/padma_products/v9quby0cest8zrupfzqc.jpg",
+    "is_active": 1
   },
   {
     "name": " Embroidered Special Glass Top",
@@ -56,7 +58,9 @@
     "lowStockThreshold": 5,
     "imageUrl": "https://res.cloudinary.com/ugzb1wup/image/upload/v1792585537/padma_products/pdisu68dfacorrfqyr2o.jpg",
     "isFeatured": false,
-    "createdAt": "2026-10-23T06:16:37.610Z"
+    "createdAt": "2026-10-23T06:16:37.610Z",
+    "image_url": "https://res.cloudinary.com/ugzb1wup/image/upload/v1792585537/padma_products/pdisu68dfacorrfqyr2o.jpg",
+    "is_active": 1
   },
   {
     "name": " Floral Printed Crinkle Pleated Palazzo Pants",
@@ -85,7 +89,9 @@
     "lowStockThreshold": 5,
     "imageUrl": "https://res.cloudinary.com/ugzb1wup/image/upload/v1792672291/padma_products/bnkpkxufamzooyn8f1g1.jpg",
     "isFeatured": false,
-    "createdAt": "2026-10-23T06:14:04.936Z"
+    "createdAt": "2026-10-23T06:14:04.936Z",
+    "image_url": "https://res.cloudinary.com/ugzb1wup/image/upload/v1792672291/padma_products/bnkpkxufamzooyn8f1g1.jpg",
+    "is_active": 1
   },
   {
     "name": "Textured Wide-Leg Palazzo Pants",
@@ -114,7 +120,9 @@
     "lowStockThreshold": 5,
     "imageUrl": "https://res.cloudinary.com/ugzb1wup/image/upload/v1792670404/padma_products/w9zprkau1z2677lg6na7.jpg",
     "isFeatured": false,
-    "createdAt": "2026-10-23T06:14:40.968Z"
+    "createdAt": "2026-10-23T06:14:40.968Z",
+    "image_url": "https://res.cloudinary.com/ugzb1wup/image/upload/v1792670404/padma_products/w9zprkau1z2677lg6na7.jpg",
+    "is_active": 1
   },
   {
     "name": "Wavy Polka Dot Printed Crinkle Palazzo Pants",
@@ -143,7 +151,9 @@
     "lowStockThreshold": 5,
     "imageUrl": "https://res.cloudinary.com/ugzb1wup/image/upload/v1792671315/padma_products/iu4pgysfnecq5gga1ynn.jpg",
     "isFeatured": false,
-    "createdAt": "2026-10-23T06:14:40.451Z"
+    "createdAt": "2026-10-23T06:14:40.451Z",
+    "image_url": "https://res.cloudinary.com/ugzb1wup/image/upload/v1792671315/padma_products/iu4pgysfnecq5gga1ynn.jpg",
+    "is_active": 1
   },
   {
     "id": "pf-mvi2xvuk",
@@ -173,7 +183,9 @@
       "2XL"
     ],
     "createdAt": "2026-10-23T06:14:13.749Z",
-    "updatedAt": "2026-10-23T06:14:13.749Z"
+    "updatedAt": "2026-10-23T06:14:13.749Z",
+    "image_url": "https://res.cloudinary.com/ugzb1wup/image/upload/v1792585181/padma_products/icnttasui78uksoxmngd.jpg",
+    "is_active": 1
   },
   {
     "id": "pf-mvjiatpw",
@@ -202,7 +214,9 @@
       "XL"
     ],
     "createdAt": "2026-10-23T06:14:05.032Z",
-    "updatedAt": "2026-10-23T06:14:05.032Z"
+    "updatedAt": "2026-10-23T06:14:05.032Z",
+    "image_url": "https://res.cloudinary.com/ugzb1wup/image/upload/v1792671448/padma_products/wfhcztryuwx99jv4oq6w.jpg",
+    "is_active": 1
   },
   {
     "name": "Floral Printed & Embroidered Cotton 3-Piece Churidar Suit Set",
@@ -231,7 +245,9 @@
     "lowStockThreshold": 5,
     "imageUrl": "https://res.cloudinary.com/ugzb1wup/image/upload/v1792663194/padma_products/xubbjkw5jypt5culizys.jpg",
     "isFeatured": false,
-    "createdAt": "2026-10-23T06:14:05.315Z"
+    "createdAt": "2026-10-23T06:14:05.315Z",
+    "image_url": "https://res.cloudinary.com/ugzb1wup/image/upload/v1792663194/padma_products/xubbjkw5jypt5culizys.jpg",
+    "is_active": 1
   },
   {
     "name": "Embellished Pleated Anarkali Kurti Top",
@@ -258,7 +274,9 @@
     "lowStockThreshold": 5,
     "imageUrl": "https://res.cloudinary.com/ugzb1wup/image/upload/v1792655931/padma_products/gp9w9f1ges6rogkbzue1.jpg",
     "isFeatured": false,
-    "createdAt": "2026-10-23T05:19:49.132Z"
+    "createdAt": "2026-10-23T05:19:49.132Z",
+    "image_url": "https://res.cloudinary.com/ugzb1wup/image/upload/v1792655931/padma_products/gp9w9f1ges6rogkbzue1.jpg",
+    "is_active": 1
   },
   {
     "name": " Floral Printed Crinkle Pleated Palazzo Pants",
@@ -288,7 +306,9 @@
     "lowStockThreshold": 5,
     "imageUrl": "https://res.cloudinary.com/ugzb1wup/image/upload/v1792669956/padma_products/zxwgfxwlnc7oafod2tam.jpg",
     "isFeatured": false,
-    "createdAt": "2026-10-23T05:19:36.091Z"
+    "createdAt": "2026-10-23T05:19:36.091Z",
+    "image_url": "https://res.cloudinary.com/ugzb1wup/image/upload/v1792669956/padma_products/zxwgfxwlnc7oafod2tam.jpg",
+    "is_active": 1
   },
   {
     "name": "KURTI SCOTT SET  ",
@@ -317,7 +337,9 @@
     "lowStockThreshold": 5,
     "imageUrl": "https://res.cloudinary.com/ugzb1wup/image/upload/v1792647721/padma_products/xkgskhhlfb7jhekh9rq6.jpg",
     "isFeatured": false,
-    "createdAt": "2026-10-23T05:19:36.340Z"
+    "createdAt": "2026-10-23T05:19:36.340Z",
+    "image_url": "https://res.cloudinary.com/ugzb1wup/image/upload/v1792647721/padma_products/xkgskhhlfb7jhekh9rq6.jpg",
+    "is_active": 1
   },
   {
     "name": " Pleated Wide-Leg Palazzo Pants",
@@ -341,7 +363,10 @@
     "id": "pf-mvjiq477",
     "updatedAt": "2026-10-22T12:29:31.459Z",
     "slug": "pleated-wide-leg-palazzo-pants-mvjiq525",
-    "categoryId": "palazzo"
+    "categoryId": "palazzo",
+    "image_url": "https://res.cloudinary.com/ugzb1wup/image/upload/v1792672160/padma_products/yfu9qsmc0k8pejpyvwqn.jpg",
+    "imageUrl": "https://res.cloudinary.com/ugzb1wup/image/upload/v1792672160/padma_products/yfu9qsmc0k8pejpyvwqn.jpg",
+    "is_active": 1
   },
   {
     "name": "Pleated Wide-Leg Palazzo Pants",
@@ -365,7 +390,10 @@
     "id": "pf-mvjinz3p",
     "updatedAt": "2026-10-22T12:27:51.541Z",
     "slug": "pleated-wide-leg-palazzo-pants",
-    "categoryId": "palazzo"
+    "categoryId": "palazzo",
+    "image_url": "https://res.cloudinary.com/ugzb1wup/image/upload/v1792672065/padma_products/feetmku23xmwbxlbhbf6.jpg",
+    "imageUrl": "https://res.cloudinary.com/ugzb1wup/image/upload/v1792672065/padma_products/feetmku23xmwbxlbhbf6.jpg",
+    "is_active": 1
   },
   {
     "name": " Pleated Textured Straight Trouser Pants",
@@ -389,7 +417,10 @@
     "id": "pf-mvjikypd",
     "updatedAt": "2026-10-22T12:25:31.057Z",
     "slug": "pleated-textured-straight-trouser-pants",
-    "categoryId": "palazzo"
+    "categoryId": "palazzo",
+    "image_url": "https://res.cloudinary.com/ugzb1wup/image/upload/v1792671913/padma_products/hoc7cpfkmqyomtuwhuul.jpg",
+    "imageUrl": "https://res.cloudinary.com/ugzb1wup/image/upload/v1792671913/padma_products/hoc7cpfkmqyomtuwhuul.jpg",
+    "is_active": 1
   },
   {
     "name": " Textured Wide-Leg Palazzo Pants",
@@ -413,7 +444,10 @@
     "id": "pf-mvjihifr",
     "updatedAt": "2026-10-22T12:22:50.007Z",
     "slug": "textured-wide-leg-palazzo-pants-mvjihjak",
-    "categoryId": "palazzo"
+    "categoryId": "palazzo",
+    "image_url": "https://res.cloudinary.com/ugzb1wup/image/upload/v1792671714/padma_products/ebvgxzqplmaiuqgi3kdf.jpg",
+    "imageUrl": "https://res.cloudinary.com/ugzb1wup/image/upload/v1792671714/padma_products/ebvgxzqplmaiuqgi3kdf.jpg",
+    "is_active": 1
   },
   {
     "name": "Ethnic Printed Crinkle Pleated Palazzo Pants",
@@ -437,7 +471,10 @@
     "id": "pf-mvji5ukl",
     "updatedAt": "2026-10-22T12:13:45.861Z",
     "slug": "ethnic-printed-crinkle-pleated-palazzo-pants-mvji5ve3",
-    "categoryId": "palazzo"
+    "categoryId": "palazzo",
+    "image_url": "https://res.cloudinary.com/ugzb1wup/image/upload/v1792671204/padma_products/mxh9tqklhoaxlhvkaovr.jpg",
+    "imageUrl": "https://res.cloudinary.com/ugzb1wup/image/upload/v1792671204/padma_products/mxh9tqklhoaxlhvkaovr.jpg",
+    "is_active": 1
   },
   {
     "name": " Ethnic Printed Crinkle Pleated Palazzo Pants",
@@ -461,7 +498,10 @@
     "id": "pf-mvji1bgi",
     "updatedAt": "2026-10-22T12:10:14.466Z",
     "slug": "ethnic-printed-crinkle-pleated-palazzo-pants",
-    "categoryId": "palazzo"
+    "categoryId": "palazzo",
+    "image_url": "https://res.cloudinary.com/ugzb1wup/image/upload/v1792670950/padma_products/reyvk6rplntk7xurptbt.jpg",
+    "imageUrl": "https://res.cloudinary.com/ugzb1wup/image/upload/v1792670950/padma_products/reyvk6rplntk7xurptbt.jpg",
+    "is_active": 1
   },
   {
     "name": " Floral Printed Crinkle Pleated Palazzo Pants",
@@ -485,7 +525,10 @@
     "id": "pf-mvjhy0f0",
     "updatedAt": "2026-10-22T12:07:40.188Z",
     "slug": "floral-printed-crinkle-pleated-palazzo-pants",
-    "categoryId": "palazzo"
+    "categoryId": "palazzo",
+    "image_url": "https://res.cloudinary.com/ugzb1wup/image/upload/v1792670830/padma_products/ggfgt5lbctogyxidtxz8.jpg",
+    "imageUrl": "https://res.cloudinary.com/ugzb1wup/image/upload/v1792670830/padma_products/ggfgt5lbctogyxidtxz8.jpg",
+    "is_active": 1
   },
   {
     "name": " Textured Wide-Leg Palazzo Pants",
@@ -509,7 +552,10 @@
     "id": "pf-mvjhupr8",
     "updatedAt": "2026-10-22T12:05:06.404Z",
     "slug": "textured-wide-leg-palazzo-pants-mvjhuqlu",
-    "categoryId": "palazzo"
+    "categoryId": "palazzo",
+    "image_url": "https://res.cloudinary.com/ugzb1wup/image/upload/v1792670689/padma_products/wg05wv7gchhzoyguuzln.jpg",
+    "imageUrl": "https://res.cloudinary.com/ugzb1wup/image/upload/v1792670689/padma_products/wg05wv7gchhzoyguuzln.jpg",
+    "is_active": 1
   },
   {
     "name": "Textured Wide-Leg Palazzo Pants   ",
@@ -533,7 +579,10 @@
     "id": "pf-mvjhs1gu",
     "updatedAt": "2026-10-22T12:03:01.614Z",
     "slug": "textured-wide-leg-palazzo-pants-mvjhs2f4",
-    "categoryId": "palazzo"
+    "categoryId": "palazzo",
+    "image_url": "https://res.cloudinary.com/ugzb1wup/image/upload/v1792670561/padma_products/exajadcvqimez6myjrvw.jpg",
+    "imageUrl": "https://res.cloudinary.com/ugzb1wup/image/upload/v1792670561/padma_products/exajadcvqimez6myjrvw.jpg",
+    "is_active": 1
   },
   {
     "name": " Pleated Textured Wide-Leg Palazzo Pants",
@@ -557,7 +606,10 @@
     "id": "pf-mvjhlgrv",
     "updatedAt": "2026-10-22T11:57:54.859Z",
     "slug": "pleated-textured-wide-leg-palazzo-pants",
-    "categoryId": "palazzo"
+    "categoryId": "palazzo",
+    "image_url": "https://res.cloudinary.com/ugzb1wup/image/upload/v1792670260/padma_products/jzms5x7xvv0wffwlqiel.jpg",
+    "imageUrl": "https://res.cloudinary.com/ugzb1wup/image/upload/v1792670260/padma_products/jzms5x7xvv0wffwlqiel.jpg",
+    "is_active": 1
   },
   {
     "name": " Pleated Wide-Leg Palazzo Pants",
@@ -586,7 +638,9 @@
     "lowStockThreshold": 5,
     "imageUrl": "https://res.cloudinary.com/ugzb1wup/image/upload/v1792670081/padma_products/kutbrbdwxisb2bzodbtg.jpg",
     "isFeatured": false,
-    "createdAt": "2026-10-22T11:54:56.619Z"
+    "createdAt": "2026-10-22T11:54:56.619Z",
+    "image_url": "https://res.cloudinary.com/ugzb1wup/image/upload/v1792670081/padma_products/kutbrbdwxisb2bzodbtg.jpg",
+    "is_active": 1
   },
   {
     "name": " Striped Crinkle Pleated Palazzo Pants",
@@ -616,7 +670,9 @@
     "lowStockThreshold": 5,
     "imageUrl": "https://res.cloudinary.com/ugzb1wup/image/upload/v1792669845/padma_products/sisyjdedv79nh5xwnj4k.jpg",
     "isFeatured": false,
-    "createdAt": "2026-10-22T11:51:08.082Z"
+    "createdAt": "2026-10-22T11:51:08.082Z",
+    "image_url": "https://res.cloudinary.com/ugzb1wup/image/upload/v1792669845/padma_products/sisyjdedv79nh5xwnj4k.jpg",
+    "is_active": 1
   },
   {
     "name": "Palazzo Pants",
@@ -646,7 +702,9 @@
     "lowStockThreshold": 5,
     "imageUrl": "https://res.cloudinary.com/ugzb1wup/image/upload/v1792669669/padma_products/ncohifdqa6gciwn4bwyn.jpg",
     "isFeatured": false,
-    "createdAt": "2026-10-22T11:49:17.220Z"
+    "createdAt": "2026-10-22T11:49:17.220Z",
+    "image_url": "https://res.cloudinary.com/ugzb1wup/image/upload/v1792669669/padma_products/ncohifdqa6gciwn4bwyn.jpg",
+    "is_active": 1
   },
   {
     "name": "Palazzo Pants",
@@ -676,7 +734,9 @@
     "lowStockThreshold": 5,
     "imageUrl": "https://res.cloudinary.com/ugzb1wup/image/upload/v1792669532/padma_products/fzzap6y28hohirga8it8.jpg",
     "isFeatured": false,
-    "createdAt": "2026-10-22T11:46:30.760Z"
+    "createdAt": "2026-10-22T11:46:30.760Z",
+    "image_url": "https://res.cloudinary.com/ugzb1wup/image/upload/v1792669532/padma_products/fzzap6y28hohirga8it8.jpg",
+    "is_active": 1
   },
   {
     "name": "Ethnic Printed Cotton Palazzo Pants",
@@ -700,7 +760,10 @@
     "id": "pf-mvje2xll",
     "updatedAt": "2026-10-22T10:19:31.353Z",
     "slug": "ethnic-printed-cotton-palazzo-pants",
-    "categoryId": "palazzo"
+    "categoryId": "palazzo",
+    "image_url": "https://res.cloudinary.com/ugzb1wup/image/upload/v1792664369/padma_products/nb32h1yqb7bhl2xuvsr5.jpg",
+    "imageUrl": "https://res.cloudinary.com/ugzb1wup/image/upload/v1792664369/padma_products/nb32h1yqb7bhl2xuvsr5.jpg",
+    "is_active": 1
   },
   {
     "name": "Floral Printed & Embroidered Cotton 3-Piece Churidar Suit Set",
@@ -722,7 +785,10 @@
     "status": "active",
     "isActive": true,
     "id": "pf-mvjd884u",
-    "updatedAt": "2026-10-22T09:55:38.670Z"
+    "updatedAt": "2026-10-22T09:55:38.670Z",
+    "image_url": "https://res.cloudinary.com/ugzb1wup/image/upload/v1792662840/padma_products/kc5lwk4phvnsumhj3utf.jpg",
+    "imageUrl": "https://res.cloudinary.com/ugzb1wup/image/upload/v1792662840/padma_products/kc5lwk4phvnsumhj3utf.jpg",
+    "is_active": 1
   },
   {
     "name": "Floral Printed & Embroidered Cotton 3-Piece Churidar Suit Set",
@@ -746,7 +812,10 @@
     "id": "pf-mvjcyrtu",
     "updatedAt": "2026-10-22T09:48:17.634Z",
     "slug": "floral-printed-embroidered-cotton-3-piece-churidar-suit-set",
-    "categoryId": "chudithar"
+    "categoryId": "chudithar",
+    "image_url": "https://res.cloudinary.com/ugzb1wup/image/upload/v1792662337/padma_products/lb5ccdoexcapbuhze89r.jpg",
+    "imageUrl": "https://res.cloudinary.com/ugzb1wup/image/upload/v1792662337/padma_products/lb5ccdoexcapbuhze89r.jpg",
+    "is_active": 1
   },
   {
     "name": "Kalamkari Ethnic Printed Cotton Kurti Pant Co-ord Set",
@@ -770,7 +839,10 @@
     "id": "pf-mvjco5dm",
     "updatedAt": "2026-10-22T09:40:01.978Z",
     "slug": "kalamkari-ethnic-printed-cotton-kurti-pant-co-ord-set-mvjco5y5",
-    "categoryId": "coordset"
+    "categoryId": "coordset",
+    "image_url": "https://res.cloudinary.com/ugzb1wup/image/upload/v1792661990/padma_products/jhgnnlk2fuzzrwdlhd3b.jpg",
+    "imageUrl": "https://res.cloudinary.com/ugzb1wup/image/upload/v1792661990/padma_products/jhgnnlk2fuzzrwdlhd3b.jpg",
+    "is_active": 1
   },
   {
     "name": "Kalamkari Ethnic Printed Cotton Kurti Pant Co-ord Set",
@@ -794,7 +866,10 @@
     "id": "pf-mvjci9sb",
     "updatedAt": "2026-10-22T09:35:27.755Z",
     "slug": "kalamkari-ethnic-printed-cotton-kurti-pant-co-ord-set",
-    "categoryId": "coordset"
+    "categoryId": "coordset",
+    "image_url": "https://res.cloudinary.com/ugzb1wup/image/upload/v1792661256/padma_products/glb6t4d2espqzjs77en0.jpg",
+    "imageUrl": "https://res.cloudinary.com/ugzb1wup/image/upload/v1792661256/padma_products/glb6t4d2espqzjs77en0.jpg",
+    "is_active": 1
   },
   {
     "name": "Kalamkari Ethnic Printed Cotton Kurti Pant Co-ord Set",
@@ -818,7 +893,10 @@
     "id": "pf-mvjc25p7",
     "updatedAt": "2026-10-22T09:23:37.394Z",
     "slug": "kalamkari-ethnic-printed-cotton-kurti-pant-co-ord-set",
-    "categoryId": "coordset"
+    "categoryId": "coordset",
+    "image_url": "https://res.cloudinary.com/ugzb1wup/image/upload/v1792660999/padma_products/dy3e8owajru1w6aitqhr.jpg",
+    "imageUrl": "https://res.cloudinary.com/ugzb1wup/image/upload/v1792660999/padma_products/dy3e8owajru1w6aitqhr.jpg",
+    "is_active": 1
   },
   {
     "name": "Kalamkari Ethnic Printed Cotton Kurti Pant Co-ord Set",
@@ -842,7 +920,10 @@
     "id": "pf-mvjbmg8q",
     "updatedAt": "2026-10-22T09:10:43.130Z",
     "slug": "kalamkari-ethnic-printed-cotton-kurti-pant-co-ord-set",
-    "categoryId": "coordset"
+    "categoryId": "coordset",
+    "image_url": "https://res.cloudinary.com/ugzb1wup/image/upload/v1792660235/padma_products/iyzfjvbelja6suq4wu9k.jpg",
+    "imageUrl": "https://res.cloudinary.com/ugzb1wup/image/upload/v1792660235/padma_products/iyzfjvbelja6suq4wu9k.jpg",
+    "is_active": 1
   },
   {
     "name": "Elephant Printed Cotton Kurti Pant Co-ord Set",
@@ -866,7 +947,10 @@
     "id": "pf-mvjbfcxq",
     "updatedAt": "2026-10-22T09:05:12.254Z",
     "slug": "elephant-printed-cotton-kurti-pant-co-ord-set",
-    "categoryId": "coordset"
+    "categoryId": "coordset",
+    "image_url": "https://res.cloudinary.com/ugzb1wup/image/upload/v1792659785/padma_products/ikle3vv4bhgmbv1aj3pu.jpg",
+    "imageUrl": "https://res.cloudinary.com/ugzb1wup/image/upload/v1792659785/padma_products/ikle3vv4bhgmbv1aj3pu.jpg",
+    "is_active": 1
   },
   {
     "name": "Embellished Pleated Anarkali Kurti Top",
@@ -886,7 +970,10 @@
     "status": "active",
     "isActive": true,
     "id": "pf-mvj85t5u",
-    "updatedAt": "2026-10-22T07:58:39.093Z"
+    "updatedAt": "2026-10-22T07:58:39.093Z",
+    "image_url": "https://res.cloudinary.com/ugzb1wup/image/upload/v1792655859/padma_products/twhfhbsqikwsslt47tdo.jpg",
+    "imageUrl": "https://res.cloudinary.com/ugzb1wup/image/upload/v1792655859/padma_products/twhfhbsqikwsslt47tdo.jpg",
+    "is_active": 1
   },
   {
     "name": "Embroidered Anarkali / Kurti",
@@ -908,7 +995,10 @@
     "id": "pf-mvj6zlc9",
     "updatedAt": "2026-10-22T07:00:58.185Z",
     "slug": "embroidered-anarkali-kurti",
-    "categoryId": "chudithar-top"
+    "categoryId": "chudithar-top",
+    "image_url": "https://res.cloudinary.com/ugzb1wup/image/upload/v1792652440/padma_products/xejjg0cmsy18oqlqqi67.jpg",
+    "imageUrl": "https://res.cloudinary.com/ugzb1wup/image/upload/v1792652440/padma_products/xejjg0cmsy18oqlqqi67.jpg",
+    "is_active": 1
   },
   {
     "name": "Floral Printed Kurti Pant Set",
@@ -932,7 +1022,10 @@
     "id": "pf-mvj6r6sw",
     "updatedAt": "2026-10-22T06:54:26.096Z",
     "slug": "floral-printed-kurti-pant-set-mvj6r72b",
-    "categoryId": "2piece"
+    "categoryId": "2piece",
+    "image_url": "https://res.cloudinary.com/ugzb1wup/image/upload/v1792652051/padma_products/bkrnnklu1ysdg8aaovid.jpg",
+    "imageUrl": "https://res.cloudinary.com/ugzb1wup/image/upload/v1792652051/padma_products/bkrnnklu1ysdg8aaovid.jpg",
+    "is_active": 1
   },
   {
     "name": "Floral Printed Kurti Pant Set",
@@ -956,7 +1049,10 @@
     "id": "pf-mvj6mqru",
     "updatedAt": "2026-10-22T06:52:28.627Z",
     "slug": "floral-printed-kurti-pant-set",
-    "categoryId": "2piece"
+    "categoryId": "2piece",
+    "image_url": "https://res.cloudinary.com/ugzb1wup/image/upload/v1792651840/padma_products/fahrmczyixfqtcqytkfw.jpg",
+    "imageUrl": "https://res.cloudinary.com/ugzb1wup/image/upload/v1792651840/padma_products/fahrmczyixfqtcqytkfw.jpg",
+    "is_active": 1
   },
   {
     "name": "Floral Printed Kurti Pant Set",
@@ -980,7 +1076,10 @@
     "id": "pf-mvj6cldz",
     "updatedAt": "2026-10-22T06:43:05.159Z",
     "slug": "floral-printed-kurti-pant-set",
-    "categoryId": "2piece"
+    "categoryId": "2piece",
+    "image_url": "https://res.cloudinary.com/ugzb1wup/image/upload/v1792651346/padma_products/sagzltcb9rzomslm4ukz.jpg",
+    "imageUrl": "https://res.cloudinary.com/ugzb1wup/image/upload/v1792651346/padma_products/sagzltcb9rzomslm4ukz.jpg",
+    "is_active": 1
   },
   {
     "name": "Embroidered Special Top",
@@ -1008,7 +1107,9 @@
     "lowStockThreshold": 5,
     "imageUrl": "https://res.cloudinary.com/ugzb1wup/image/upload/v1792585941/padma_products/mvh3hxduw8ppbrmitpns.jpg",
     "isFeatured": false,
-    "createdAt": "2026-10-21T12:32:46.590Z"
+    "createdAt": "2026-10-21T12:32:46.590Z",
+    "image_url": "https://res.cloudinary.com/ugzb1wup/image/upload/v1792585941/padma_products/mvh3hxduw8ppbrmitpns.jpg",
+    "is_active": 1
   },
   {
     "name": "Embroiding special top",
@@ -1036,7 +1137,9 @@
     "lowStockThreshold": 5,
     "imageUrl": "https://res.cloudinary.com/ugzb1wup/image/upload/v1792585748/padma_products/pc247h6uvkkgtkxc6j4i.jpg",
     "isFeatured": false,
-    "createdAt": "2026-10-21T12:30:27.369Z"
+    "createdAt": "2026-10-21T12:30:27.369Z",
+    "image_url": "https://res.cloudinary.com/ugzb1wup/image/upload/v1792585748/padma_products/pc247h6uvkkgtkxc6j4i.jpg",
+    "is_active": 1
   },
   {
     "name": "Embroidered Special Glass Top",
@@ -1061,6 +1164,9 @@
     "id": "pf-mvi31qzd",
     "updatedAt": "2026-10-21T12:22:54.169Z",
     "slug": "embroidered-special-glass-top-mvi31rox",
-    "categoryId": "chudithar-top"
+    "categoryId": "chudithar-top",
+    "image_url": "https://res.cloudinary.com/ugzb1wup/image/upload/v1792585308/padma_products/qso4ntuv1hs5vg9vqybf.jpg",
+    "imageUrl": "https://res.cloudinary.com/ugzb1wup/image/upload/v1792585308/padma_products/qso4ntuv1hs5vg9vqybf.jpg",
+    "is_active": 1
   }
 ]

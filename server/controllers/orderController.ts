@@ -56,6 +56,33 @@ export async function createCheckoutOrder(req: Request, res: Response) {
             (p.sku && p.sku.toLowerCase() === rawId.toLowerCase()),
         );
         if (catalogMatch) {
+          if (db.isMySQL) {
+            await db
+              .execute(
+                `INSERT IGNORE INTO products (id, sku, name, slug, category_id, colour, price, original_price, unit, stock_quantity, low_stock_threshold, badge, description, image_url, is_active, is_featured, sizes)
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                [
+                  catalogMatch.id,
+                  catalogMatch.sku,
+                  catalogMatch.name,
+                  catalogMatch.slug,
+                  catalogMatch.category_id,
+                  catalogMatch.colour,
+                  catalogMatch.price,
+                  catalogMatch.original_price || null,
+                  catalogMatch.unit || "piece",
+                  catalogMatch.stock_quantity,
+                  catalogMatch.low_stock_threshold || 5,
+                  catalogMatch.badge || "",
+                  catalogMatch.description || "",
+                  catalogMatch.image_url,
+                  catalogMatch.is_active ? 1 : 0,
+                  catalogMatch.is_featured ? 1 : 0,
+                  catalogMatch.sizes || "[]",
+                ],
+              )
+              .catch(() => {});
+          }
           rows = [catalogMatch];
         }
       }

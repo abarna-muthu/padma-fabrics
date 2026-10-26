@@ -71,13 +71,16 @@ export function ProductCard({ product, light = false, badgeText, onQuickView }: 
         onClick={handleCardClick}
       >
         <img
-          src={product.image || "/placeholder.svg"}
+          src={product.image || product.imageUrl || product.image_url || "/placeholder.svg"}
           alt={product.name}
           loading="lazy"
           className="w-full h-full object-cover object-center transition-transform duration-700 ease-[cubic-bezier(0.2,0.7,0.2,1)] group-hover:scale-104"
           onError={(e) => {
-            (e.currentTarget as HTMLImageElement).src =
-              "https://images.unsplash.com/photo-1610030469983-98e550d6193c?auto=format&fit=crop&w=800&q=80";
+            const target = e.currentTarget as HTMLImageElement;
+            const fallback = product.imageUrl || product.image_url;
+            if (fallback && target.src !== fallback) {
+              target.src = fallback;
+            }
           }}
         />
 

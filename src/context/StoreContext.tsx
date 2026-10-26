@@ -109,7 +109,40 @@ export const DEMO_PRODUCT_IDS = new Set([
   "pattu-pavadai",
   "pf-mvi2hcnc",
   "pf-mvi2jlu8",
+  "pf-mvp0gyhf",
+  "pf-mvp0jhqa",
 ]);
+
+export function isDemoProduct(p: any): boolean {
+  if (!p) return true;
+  const id = String(p.id || "");
+  if (DEMO_PRODUCT_IDS.has(id)) return true;
+  const name = (p.name || "").toLowerCase();
+  if (
+    name.includes("wine zari") ||
+    name.includes("royal indigo") ||
+    name.includes("sage buti") ||
+    name.includes("heritage silk") ||
+    name.includes("linen shirt") ||
+    name.includes("navy tee") ||
+    name.includes("pattu pavadai") ||
+    name.includes("maroon anarkali")
+  ) {
+    return true;
+  }
+  const img = p.image || p.imageUrl || p.image_url || "";
+  if (
+    typeof img === "string" &&
+    (img.includes("burgundy-silk") ||
+      img.includes("sage-fabric") ||
+      img.includes("ivory-brocade") ||
+      img.includes("fabric-hero") ||
+      img.startsWith("/assets/"))
+  ) {
+    return true;
+  }
+  return false;
+}
 
 const CATEGORY_MIGRATION: Record<string, string> = {
   Sarees: "Saree",
@@ -121,20 +154,54 @@ const CATEGORY_MIGRATION: Record<string, string> = {
 };
 
 export function normalizeProduct(p: any): Product {
-  const cat = CATEGORY_MIGRATION[p.category] || p.category || "Saree";
+  const cat = CATEGORY_MIGRATION[p.category] || p.category || "Chudithar Top";
   let img = p.image || p.imageUrl || p.image_url;
-  if (!img || img === "New arrival" || typeof img !== "string" || img.trim() === "" || img === "undefined") {
-    img = (p.image_url && p.image_url !== "New arrival")
-      ? p.image_url
-      : (p.imageUrl && p.imageUrl !== "New arrival")
-        ? p.imageUrl
-        : "/assets/burgundy-silk.jpg";
+
+  // If image is missing, empty, or a dummy /assets/ image, restore original Cloudinary image from staticProducts
+  if (
+    !img ||
+    img === "New arrival" ||
+    typeof img !== "string" ||
+    img.trim() === "" ||
+    img === "undefined" ||
+    img.includes("burgundy-silk") ||
+    img.includes("sage-fabric") ||
+    img.includes("ivory-brocade") ||
+    img.includes("fabric-hero") ||
+    img.startsWith("/assets/")
+  ) {
+    const orig = (staticProducts as Product[]).find(
+      (sp) => sp.id === p.id || sp.name?.trim().toLowerCase() === p.name?.trim().toLowerCase(),
+    );
+    if (orig && orig.image && !orig.image.startsWith("/assets/")) {
+      img = orig.image;
+    } else if (p.image_url && !p.image_url.startsWith("/assets/")) {
+      img = p.image_url;
+    } else if (p.imageUrl && !p.imageUrl.startsWith("/assets/")) {
+      img = p.imageUrl;
+    }
   }
+
+  // Restore description if empty
+  let desc = p.description;
+  if (!desc || typeof desc !== "string" || desc.trim() === "") {
+    const orig = (staticProducts as Product[]).find((sp) => sp.id === p.id || sp.name === p.name);
+    if (orig && orig.description) {
+      desc = orig.description;
+    }
+  }
+
+  const isActive = p.isActive !== false && p.is_active !== 0 && p.status !== "inactive";
+
   return {
     ...p,
+    id: String(p.id),
     category: cat,
-    image: img,
-    imageUrl: img,
+    image: img || "/placeholder.svg",
+    imageUrl: img || "/placeholder.svg",
+    description: desc || "",
+    isActive,
+    status: isActive ? "active" : "inactive",
   };
 }
 
@@ -229,17 +296,47 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     try {
       const storedProducts = localStorage.getItem(STORAGE_PRODUCTS_KEY);
       let loadedProds: Product[] = [];
-      const masterOriginals = (staticProducts as Product[]).filter((p) => !DEMO_PRODUCT_IDS.has(p.id)).map(normalizeProduct);
+      const masterOriginals = (staticProducts as Product[]).filter((p) => !isDemoProduct(p)).map(normalizeProduct);
 
       if (storedProducts) {
         const parsed = JSON.parse(storedProducts);
         if (Array.isArray(parsed)) {
           // Evict all mock/demo products from local storage
           loadedProds = parsed
-            .filter((p: any) => !DEMO_PRODUCT_IDS.has(p.id))
+            .filter((p: any) => !isDemoProduct(p))
             .map(normalizeProduct);
         }
       }
+
+      // Ensure all products have their real Cloudinary images and descriptions restored
+      loadedProds = loadedProds.map((lp) => {
+        const orig = masterOriginals.find(
+          (mo) => mo.id === lp.id || mo.name.trim().toLowerCase() === lp.name.trim().toLowerCase(),
+        );
+        if (orig) {
+          const validImg =
+            !lp.image ||
+            lp.image.includes("/assets/") ||
+            lp.image.includes("burgundy-silk") ||
+            lp.image === "/placeholder.svg"
+              ? orig.image
+              : lp.image;
+          const validDesc =
+            !lp.description || lp.description.trim() === "" ? orig.description : lp.description;
+          return {
+            ...lp,
+            image: validImg,
+            imageUrl: validImg,
+            description: validDesc,
+            isActive: lp.isActive !== false,
+            status: lp.status !== "inactive" ? "active" : lp.status,
+          };
+        }
+        return lp;
+      });
+
+      // Evict any lingering demo products
+      loadedProds = loadedProds.filter((p) => !isDemoProduct(p));
 
       // If local storage has fewer than 41 products or was empty, seed with the 41 original products
       // while preserving any custom products the user added in admin
@@ -510,9 +607,13 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  // Active products visible on the storefront
+  // Active products visible on the storefront (strictly user-uploaded, non-demo products)
   const activeProducts = productsList.filter(
-    (p) => p.status !== "inactive" && p.status !== "archived" && (p as any).isActive !== false,
+    (p) =>
+      p.status !== "inactive" &&
+      p.status !== "archived" &&
+      (p as any).isActive !== false &&
+      !isDemoProduct(p),
   );
 
   const count = bag.reduce((n, item) => n + item.quantity, 0);

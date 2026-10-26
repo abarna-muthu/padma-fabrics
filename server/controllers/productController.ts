@@ -37,6 +37,23 @@ const CATEGORY_NAME_TO_ID: Record<string, string> = {
   "Kids Wear": "combo-dresses",
 };
 
+function parseSafeSizes(sizesVal: any): string[] {
+  if (Array.isArray(sizesVal)) return sizesVal;
+  if (typeof sizesVal === "string") {
+    try {
+      const parsed = JSON.parse(sizesVal);
+      if (Array.isArray(parsed)) return parsed;
+    } catch {}
+    if (sizesVal.includes(",")) {
+      return sizesVal.split(",").map((s) => s.trim()).filter(Boolean);
+    }
+    if (sizesVal.trim()) {
+      return [sizesVal.trim()];
+    }
+  }
+  return [];
+}
+
 export async function getProducts(req: Request, res: Response) {
   try {
     const { category, search, featured, active_only = "true" } = req.query;
@@ -61,42 +78,59 @@ export async function getProducts(req: Request, res: Response) {
 
     let products = await db.query(sql, params);
 
+    const DEMO_IDS_SET = new Set(DEFAULT_PRODUCT_IDS);
+    products = products.filter(
+      (p) =>
+        !DEMO_IDS_SET.has(p.id) &&
+        !p.name?.toLowerCase().includes("wine zari") &&
+        !p.name?.toLowerCase().includes("royal indigo") &&
+        !p.name?.toLowerCase().includes("sage buti") &&
+        !p.name?.toLowerCase().includes("heritage silk"),
+    );
+
     if (search && typeof search === "string") {
       const q = search.toLowerCase();
       products = products.filter(
         (p) =>
-          p.name.toLowerCase().includes(q) ||
-          p.colour.toLowerCase().includes(q) ||
+          (p.name && p.name.toLowerCase().includes(q)) ||
+          (p.colour && p.colour.toLowerCase().includes(q)) ||
           (p.sku && p.sku.toLowerCase().includes(q)),
       );
     }
 
     // Format products for frontend consumption
-    const formatted = products.map((p) => ({
-      id: p.id,
-      name: p.name,
-      slug: p.slug,
-      sku: p.sku,
-      category: CATEGORY_ID_TO_NAME[p.category_id] || p.category_id,
-      categoryId: p.category_id,
-      colour: p.colour,
-      price: Number(p.price),
-      originalPrice: p.original_price ? Number(p.original_price) : undefined,
-      unit: p.unit || "piece",
-      stock: Number(p.stock_quantity),
-      stockQuantity: Number(p.stock_quantity),
-      lowStockThreshold: Number(p.low_stock_threshold),
-      badge: p.badge || "",
-      description: p.description || "",
-      image: p.image_url,
-      imageUrl: p.image_url,
-      isActive: Boolean(p.is_active),
-      status: p.is_active ? "active" : "inactive",
-      isFeatured: Boolean(p.is_featured),
-      sizes: typeof p.sizes === "string" ? JSON.parse(p.sizes || "[]") : p.sizes || [],
-      createdAt: p.created_at,
-      updatedAt: p.updated_at || p.created_at || "2026-10-10T00:00:00.000Z",
-    }));
+    const formatted = products.map((p) => {
+      const img = p.image || p.imageUrl || p.image_url || "";
+      const isActive = p.is_active !== undefined ? Boolean(p.is_active) : (p.isActive !== false);
+      const catId = p.category_id || p.categoryId || (p.category ? p.category.toLowerCase().replace(/[^a-z0-9]+/g, "-") : "chudithar-top");
+      const stock = Number(p.stock_quantity ?? p.stockQuantity ?? p.stock ?? 10);
+
+      return {
+        id: String(p.id),
+        name: p.name,
+        slug: p.slug || p.name.toLowerCase().replace(/[^a-z0-9]+/g, "-"),
+        sku: p.sku || `PF-${p.id}`,
+        category: CATEGORY_ID_TO_NAME[catId] || catId,
+        categoryId: catId,
+        colour: p.colour || "Custom",
+        price: Number(p.price) || 0,
+        originalPrice: p.original_price ? Number(p.original_price) : (p.originalPrice ? Number(p.originalPrice) : undefined),
+        unit: p.unit || "piece",
+        stock: stock,
+        stockQuantity: stock,
+        lowStockThreshold: Number(p.low_stock_threshold ?? p.lowStockThreshold ?? 5),
+        badge: p.badge || "",
+        description: p.description || "",
+        image: img,
+        imageUrl: img,
+        isActive: isActive,
+        status: isActive ? "active" : "inactive",
+        isFeatured: Boolean(p.is_featured ?? p.isFeatured),
+        sizes: parseSafeSizes(p.sizes),
+        createdAt: p.created_at || p.createdAt || new Date().toISOString(),
+        updatedAt: p.updated_at || p.updatedAt || p.created_at || new Date().toISOString(),
+      };
+    });
 
     return res.status(200).json({
       success: true,
@@ -121,24 +155,35 @@ export async function getProductById(req: Request, res: Response) {
     }
 
     const p = rows[0];
+    const img = p.image || p.imageUrl || p.image_url || "";
+    const isActive = p.is_active !== undefined ? Boolean(p.is_active) : (p.isActive !== false);
+    const catId = p.category_id || p.categoryId || (p.category ? p.category.toLowerCase().replace(/[^a-z0-9]+/g, "-") : "chudithar-top");
+    const stock = Number(p.stock_quantity ?? p.stockQuantity ?? p.stock ?? 10);
+
     const product = {
-      id: p.id,
+      id: String(p.id),
       name: p.name,
-      slug: p.slug,
-      sku: p.sku,
-      category: p.category_id,
-      colour: p.colour,
-      price: Number(p.price),
-      originalPrice: p.original_price ? Number(p.original_price) : undefined,
+      slug: p.slug || p.name.toLowerCase().replace(/[^a-z0-9]+/g, "-"),
+      sku: p.sku || `PF-${p.id}`,
+      category: CATEGORY_ID_TO_NAME[catId] || catId,
+      categoryId: catId,
+      colour: p.colour || "Custom",
+      price: Number(p.price) || 0,
+      originalPrice: p.original_price ? Number(p.original_price) : (p.originalPrice ? Number(p.originalPrice) : undefined),
       unit: p.unit || "piece",
-      stock: Number(p.stock_quantity),
+      stock: stock,
+      stockQuantity: stock,
+      lowStockThreshold: Number(p.low_stock_threshold ?? p.lowStockThreshold ?? 5),
       badge: p.badge || "",
       description: p.description || "",
-      image: p.image_url,
-      isActive: Boolean(p.is_active),
-      status: p.is_active ? "active" : "inactive",
-      isFeatured: Boolean(p.is_featured),
-      sizes: typeof p.sizes === "string" ? JSON.parse(p.sizes || "[]") : p.sizes || [],
+      image: img,
+      imageUrl: img,
+      isActive: isActive,
+      status: isActive ? "active" : "inactive",
+      isFeatured: Boolean(p.is_featured ?? p.isFeatured),
+      sizes: parseSafeSizes(p.sizes),
+      createdAt: p.created_at || p.createdAt || new Date().toISOString(),
+      updatedAt: p.updated_at || p.updatedAt || p.created_at || new Date().toISOString(),
     };
 
     return res.status(200).json({ success: true, product });
@@ -573,6 +618,8 @@ export const DEFAULT_PRODUCT_IDS = [
   "pattu-pavadai",
   "pf-mvi2hcnc",
   "pf-mvi2jlu8",
+  "pf-mvp0gyhf",
+  "pf-mvp0jhqa",
 ];
 
 export async function removeDefaultProducts(req: Request, res: Response) {

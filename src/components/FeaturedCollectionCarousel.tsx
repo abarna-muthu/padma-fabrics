@@ -15,15 +15,52 @@ import { formatPrice } from "@/utils/formatters";
 import { productServices } from "@/services/api";
 import type { Product } from "@/lib/catalog";
 
-// Fallback high-res women's fashion images if image is missing or relative path fails
-const FALLBACK_WOMEN_IMAGES = [
-  "/assets/womens-dress.jpg",
-  "/assets/burgundy-silk.jpg",
-  "/assets/girls-lehenga.jpg",
-  "/assets/sage-fabric.jpg",
-  "/assets/fabric-hero.jpg",
-  "/assets/ivory-brocade.jpg",
-];
+// Demo product IDs and titles to strictly exclude from the featured carousel
+const DEMO_IDS = new Set([
+  "wine-silk",
+  "heritage-silk",
+  "sage-cotton",
+  "ivory-brocade",
+  "linen-shirt",
+  "navy-tee",
+  "maroon-anarkali",
+  "pattu-pavadai",
+  "pf-mvi2hcnc",
+  "pf-mvi2jlu8",
+  "pf-mvp0gyhf",
+  "pf-mvp0jhqa",
+]);
+
+function isDummyOrDemo(p: any): boolean {
+  if (!p) return true;
+  const id = String(p.id || "");
+  if (DEMO_IDS.has(id)) return true;
+  const name = (p.name || "").toLowerCase();
+  if (
+    name.includes("wine zari") ||
+    name.includes("royal indigo") ||
+    name.includes("sage buti") ||
+    name.includes("heritage silk") ||
+    name.includes("linen shirt") ||
+    name.includes("navy tee") ||
+    name.includes("pattu pavadai") ||
+    name.includes("maroon anarkali")
+  ) {
+    return true;
+  }
+  const img = p.image || p.imageUrl || p.image_url || "";
+  if (
+    typeof img === "string" &&
+    (img.includes("burgundy-silk") ||
+      img.includes("sage-fabric") ||
+      img.includes("ivory-brocade") ||
+      img.includes("fabric-hero") ||
+      img.startsWith("/assets/"))
+  ) {
+    return true;
+  }
+  return false;
+}
 
 export function FeaturedCollectionCarousel() {
   const { openProduct, activeProducts } = useStore();
@@ -43,21 +80,20 @@ export function FeaturedCollectionCarousel() {
   const startXRef = useRef(0);
   const scrollLeftRef = useRef(0);
 
-  // Fetch women's clothing products from backend API with fallback to active catalog
+  // Fetch only original uploaded products from backend API with fallback to active catalog
   useEffect(() => {
     let isMounted = true;
     const fetchWomensProducts = async () => {
       setLoading(true);
       setError(null);
       try {
-        const DEMO_IDS = new Set(["wine-silk", "heritage-silk", "sage-cotton", "ivory-brocade", "linen-shirt", "navy-tee", "maroon-anarkali", "pattu-pavadai"]);
         let rawList: any[] = [];
         if (activeProducts && activeProducts.length > 0) {
-          rawList = activeProducts.filter((p) => !DEMO_IDS.has(p.id));
+          rawList = activeProducts.filter((p) => !isDummyOrDemo(p));
         } else {
           const res = await productServices.getAllProducts();
           if (res.success && Array.isArray(res.data) && res.data.length > 0) {
-            rawList = res.data.filter((p) => !DEMO_IDS.has(p.id));
+            rawList = res.data.filter((p) => !isDummyOrDemo(p));
           }
         }
 
@@ -65,7 +101,6 @@ export function FeaturedCollectionCarousel() {
         const womensOnly = rawList.filter((p) => {
           const cat = (p.category || p.category_id || "").toLowerCase();
           const name = (p.name || "").toLowerCase();
-          const desc = (p.description || "").toLowerCase();
 
           // Exclude explicit menswear
           if (cat === "men" || cat === "mens" || name.includes("men's") || name.includes("shirt")) {
@@ -115,8 +150,9 @@ export function FeaturedCollectionCarousel() {
         console.warn("Featured collection load error:", err);
         if (isMounted) {
           if (activeProducts && activeProducts.length > 0) {
-            setProducts(activeProducts);
-            setActiveIndex(Math.min(1, activeProducts.length - 1));
+            const safeList = activeProducts.filter((p) => !isDummyOrDemo(p));
+            setProducts(safeList);
+            setActiveIndex(Math.min(1, safeList.length - 1));
           } else {
             setError("Unable to load featured collection.");
           }
@@ -378,9 +414,9 @@ export function FeaturedCollectionCarousel() {
                 const isFavorite = wishlist.includes(String(product.id));
                 const productImg =
                   product.image ||
+                  (product as any).imageUrl ||
                   (product as any).image_url ||
-                  FALLBACK_WOMEN_IMAGES[idx % FALLBACK_WOMEN_IMAGES.length] ||
-                  "/assets/womens-dress.jpg";
+                  "/placeholder.svg";
 
                 const sizes =
                   Array.isArray(product.sizes) && product.sizes.length > 0
@@ -400,12 +436,12 @@ export function FeaturedCollectionCarousel() {
                     }}
                     style={{
                       transition:
-                        "transform 500ms cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 450ms ease, opacity 350ms ease, filter 350ms ease, border-color 350ms ease",
+                        "transform 500ms cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 450ms ease, opacity 350ms ease, border-color 350ms ease",
                     }}
                     className={`group relative shrink-0 snap-center cursor-pointer rounded-2xl overflow-hidden ${
                       isActive
-                        ? "w-[82vw] sm:w-[350px] md:w-[390px] lg:w-[430px] z-30 scale-[1.04] sm:scale-[1.10] -translate-y-4 sm:-translate-y-6 opacity-100 shadow-[0_28px_60px_-15px_rgba(14,14,14,0.32),0_0_35px_rgba(184,145,58,0.25)] border-2 border-[#B8913A] ring-2 ring-[#B8913A]/30 bg-white"
-                        : "w-[72vw] sm:w-[280px] md:w-[310px] lg:w-[330px] z-10 scale-[0.88] translate-y-2 opacity-45 hover:opacity-80 shadow-sm border border-[rgba(14,14,14,0.08)] bg-white/80 filter brightness-95"
+                        ? "w-[80vw] sm:w-[340px] md:w-[380px] lg:w-[410px] z-30 scale-[1.03] sm:scale-[1.06] -translate-y-3 sm:-translate-y-4 opacity-100 shadow-[0_24px_50px_-12px_rgba(14,14,14,0.28),0_0_25px_rgba(184,145,58,0.22)] border-2 border-[#B8913A] ring-2 ring-[#B8913A]/30 bg-white"
+                        : "w-[74vw] sm:w-[290px] md:w-[320px] lg:w-[340px] z-10 scale-100 translate-y-0 opacity-100 shadow-md border border-[rgba(14,14,14,0.12)] bg-white hover:border-[#B8913A]/50 hover:shadow-lg"
                     }`}
                   >
                     {/* PRODUCT IMAGE CONTAINER */}
@@ -418,9 +454,11 @@ export function FeaturedCollectionCarousel() {
                           isActive ? "group-hover:scale-106 scale-102" : "group-hover:scale-104 scale-100"
                         }`}
                         onError={(e) => {
-                          (e.currentTarget as HTMLImageElement).src =
-                            FALLBACK_WOMEN_IMAGES[idx % FALLBACK_WOMEN_IMAGES.length] ||
-                            "/assets/womens-dress.jpg";
+                          const target = e.currentTarget as HTMLImageElement;
+                          const fallback = (product as any).imageUrl || (product as any).image_url || product.image;
+                          if (fallback && target.src !== fallback) {
+                            target.src = fallback;
+                          }
                         }}
                       />
 

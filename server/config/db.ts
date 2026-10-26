@@ -255,10 +255,24 @@ const DB_CAT_MIGRATION: Record<string, string> = {
 };
 
 function normalizeDbProduct(p: any): any {
-  if (p && p.category_id && DB_CAT_MIGRATION[p.category_id]) {
-    return { ...p, category_id: DB_CAT_MIGRATION[p.category_id] };
-  }
-  return p;
+  if (!p) return p;
+  const rawCat = p.category_id || p.categoryId || (p.category ? p.category.toLowerCase().replace(/[^a-z0-9]+/g, "-") : "chudithar-top");
+  const category_id = DB_CAT_MIGRATION[rawCat] || rawCat;
+  const img = p.image_url || p.imageUrl || p.image || "";
+  const is_active = p.is_active !== undefined ? (p.is_active ? 1 : 0) : (p.isActive !== false ? 1 : 0);
+  const stock = Number(p.stock_quantity ?? p.stockQuantity ?? p.stock ?? 10);
+
+  return {
+    ...p,
+    category_id,
+    image_url: img,
+    imageUrl: img,
+    image: img,
+    is_active,
+    isActive: is_active === 1,
+    stock_quantity: stock,
+    description: p.description || "",
+  };
 }
 
 export function loadPersistedProducts(): any[] {

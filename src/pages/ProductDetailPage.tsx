@@ -87,12 +87,15 @@ export function ProductDetailPage({ id }: ProductDetailPageProps) {
         {/* Left: Product Image */}
         <div className="relative aspect-3/4 rounded-xl overflow-hidden bg-[#FAF6EE] dark:bg-[#2A2425] border border-[#B8913A]/20">
           <img
-            src={product.image || "/placeholder.svg"}
+            src={product.image || product.imageUrl || product.image_url || "/placeholder.svg"}
             alt={product.name}
             className="w-full h-full object-cover object-center"
             onError={(e) => {
-              (e.currentTarget as HTMLImageElement).src =
-                "https://images.unsplash.com/photo-1610030469983-98e550d6193c?auto=format&fit=crop&w=800&q=80";
+              const target = e.currentTarget as HTMLImageElement;
+              const fallback = product.imageUrl || product.image_url;
+              if (fallback && target.src !== fallback) {
+                target.src = fallback;
+              }
             }}
           />
 
