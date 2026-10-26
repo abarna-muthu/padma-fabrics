@@ -458,6 +458,103 @@ export async function updateOrderStatus(req: Request, res: Response) {
   }
 }
 
+export async function cancelOrder(req: Request, res: Response) {
+  try {
+    const { id } = req.params;
+    const { reason, notes: customerNotes } = req.body;
+
+    if (!reason || typeof reason !== "string" || !reason.trim()) {
+      return res.status(400).json({
+        success: false,
+        error: "A valid cancellation reason is required.",
+      });
+    }
+
+    const db = await getDb();
+    const rows = await db.query(
+      "SELECT * FROM orders WHERE id = ? OR order_number = ?",
+      [id, id]
+    );
+
+    if (rows.length === 0) {
+      return res.status(404).json({ success: false, error: "Order not found." });
+    }
+
+    const order = rows[0];
+
+    if (order.order_status === "Cancelled") {
+      return res.status(400).json({
+        success: false,
+        error: "This order is already cancelled.",
+      });
+    }
+
+    if (order.order_status === "Delivered") {
+      return res.status(400).json({
+        success: false,
+        error: "Delivered orders cannot be cancelled.",
+      });
+    }
+
+    const trimmedReason = reason.trim();
+    const extraDetails = customerNotes && typeof customerNotes === "string" ? customerNotes.trim() : "";
+    const cancellationStamp = `[Cancelled by Customer on ${new Date().toLocaleString("en-IN")}. Reason: ${trimmedReason}${extraDetails ? ` | Details: ${extraDetails}` : ""}]`;
+    const updatedNotes = order.notes ? `${order.notes}\n${cancellationStamp}` : cancellationStamp;
+
+    // 1. Update order status to 'Cancelled' and save reason in notes
+    await db.execute(
+      "UPDATE orders SET order_status = 'Cancelled', notes = ? WHERE id = ?",
+      [updatedNotes, order.id]
+    );
+
+    // 2. Restore stock quantity for all items in the order
+    const items = await db.query("SELECT * FROM order_items WHERE order_id = ?", [order.id]);
+    for (const item of items) {
+      const prodRows = await db.query("SELECT stock_quantity, name FROM products WHERE id = ?", [
+        item.product_id,
+      ]);
+      if (prodRows.length > 0) {
+        const currentStock = Number(prodRows[0].stock_quantity) || 0;
+        const restoredStock = currentStock + Number(item.quantity);
+        await db.execute("UPDATE products SET stock_quantity = ? WHERE id = ?", [
+          restoredStock,
+          item.product_id,
+        ]);
+
+        await db
+          .execute(
+            `INSERT INTO inventory_logs (id, product_id, previous_stock, new_stock, change_amount, reason)
+             VALUES (?, ?, ?, ?, ?, ?)`,
+            [
+              `LOG-${Date.now().toString(36)}-${Math.random().toString(36).substring(2, 5)}`,
+              item.product_id,
+              currentStock,
+              restoredStock,
+              Number(item.quantity),
+              `Customer cancellation stock restoration (Order: ${order.order_number || order.id}) - Reason: ${trimmedReason}`,
+            ],
+          )
+          .catch(() => {});
+      }
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: "Order cancelled successfully.",
+      order: {
+        id: order.id,
+        orderNumber: order.order_number,
+        status: "Cancelled",
+        notes: updatedNotes,
+        cancellationReason: trimmedReason,
+      },
+    });
+  } catch (err: any) {
+    console.error("[OrderController] cancelOrder error:", err);
+    return res.status(500).json({ success: false, error: "Failed to cancel order." });
+  }
+}
+
 export async function updatePaymentStatus(req: Request, res: Response) {
   try {
     const { id } = req.params;

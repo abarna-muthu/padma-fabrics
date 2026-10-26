@@ -228,6 +228,16 @@ export const orderServices = {
   },
 
   /**
+   * Cancel customer order with reason and optional notes
+   */
+  async cancelOrder(id, reason, notes = "") {
+    return apiClient(`/api/orders/${id}/cancel`, {
+      method: "POST",
+      body: JSON.stringify({ reason, notes }),
+    });
+  },
+
+  /**
    * TODO: Missing backend endpoint for customer order tracking history.
    * Mock implementation below reads and filters from customer session / local orders.
    */

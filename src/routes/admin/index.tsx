@@ -2544,6 +2544,14 @@ function AdminDashboardPage() {
                             <div className="font-medium text-foreground">{o.customerName}</div>
                             <div className="text-xs font-sans tabular-nums text-muted-foreground mt-0.5">{o.customerPhone}</div>
                             <div className="text-xs text-muted-foreground">{o.customerEmail}</div>
+                            {o.status === "Cancelled" && (
+                              <div
+                                className="mt-1 inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] bg-destructive/15 text-destructive font-medium border border-destructive/20 max-w-[200px] truncate"
+                                title={o.notes || "Order Cancelled"}
+                              >
+                                <span>Cancelled</span>
+                              </div>
+                            )}
                           </td>
                           <td className="p-3.5 font-sans tabular-nums text-xs font-semibold text-foreground">
                             {o.date || (o.createdAt ? o.createdAt.split("T")[0] : new Date().toISOString().split("T")[0])}
@@ -4769,7 +4777,21 @@ function AdminDashboardPage() {
                 </div>
               </div>
 
-              {selectedOrder.notes && (
+              {selectedOrder.status === "Cancelled" && (
+                <div className="p-3 bg-destructive/10 border border-destructive/30 rounded text-xs text-destructive space-y-1">
+                  <div className="flex items-center gap-1.5 font-semibold">
+                    <AlertCircle className="size-4 shrink-0" />
+                    <span>Order Cancelled</span>
+                  </div>
+                  {selectedOrder.notes && (
+                    <p className="text-[11px] text-destructive/90 pl-5.5 leading-relaxed font-mono whitespace-pre-line">
+                      {selectedOrder.notes}
+                    </p>
+                  )}
+                </div>
+              )}
+
+              {selectedOrder.notes && selectedOrder.status !== "Cancelled" && (
                 <div className="p-2.5 bg-secondary/30 text-[11px] text-muted-foreground border border-border">
                   <strong>Notes:</strong> {selectedOrder.notes}
                 </div>

@@ -293,6 +293,18 @@ export const orderApi = {
       body: JSON.stringify({ paymentStatus }),
     });
   },
+
+  async cancel(id: string, reason: string, notes?: string) {
+    return apiRequest<{
+      success: boolean;
+      message: string;
+      order?: any;
+      error?: string;
+    }>(`/api/orders/${id}/cancel`, {
+      method: "POST",
+      body: JSON.stringify({ reason, notes }),
+    });
+  },
 };
 
 // ----------------------------------------------------

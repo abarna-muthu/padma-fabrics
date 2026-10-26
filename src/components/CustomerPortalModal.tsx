@@ -20,6 +20,7 @@ import {
   KeyRound,
   X,
   Lock,
+  XCircle,
 } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -28,6 +29,7 @@ import { useCustomerAuth } from "@/context/CustomerAuthContext";
 import { useStore } from "@/context/StoreContext";
 import { money, type Order } from "@/lib/catalog";
 import { OrderTrackingModal } from "@/components/OrderTrackingModal";
+import { CancelOrderModal } from "@/components/CancelOrderModal";
 import { computeOrderTracking } from "@/lib/orderTracking";
 
 export function CustomerPortalModal() {
@@ -54,6 +56,7 @@ export function CustomerPortalModal() {
   // Live order tracking modal states
   const [trackingModalOrder, setTrackingModalOrder] = useState<Order | null>(null);
   const [trackingModalProduct, setTrackingModalProduct] = useState<any | null>(null);
+  const [cancellingOrder, setCancellingOrder] = useState<Order | null>(null);
 
   // Filter orders for customer (session or recently placed)
   const lastPlacedOrderId = typeof window !== "undefined" ? localStorage.getItem("pf_last_placed_order_id") : null;
@@ -116,6 +119,13 @@ export function CustomerPortalModal() {
 
   const getStatusBadge = (status: Order["status"]) => {
     switch (status) {
+      case "Cancelled":
+        return {
+          label: "Order Cancelled",
+          bg: "bg-destructive/10 text-destructive border-destructive/20 font-semibold",
+          icon: <XCircle className="size-3.5 text-destructive" />,
+          step: 0,
+        };
       case "Delivered":
         return {
           label: "Delivered Successfully",
@@ -387,164 +397,179 @@ export function CustomerPortalModal() {
                             </div>
                           </div>
 
-                          {/* MOBILE VERTICAL TRACKER (sm:hidden) - Solves horizontal scroll */}
-                          <div className="sm:hidden p-3 bg-secondary/35 border border-border/60 rounded-lg space-y-2.5">
-                            <div className="flex items-center justify-between pb-1.5 border-b border-border/40 text-[11px]">
-                              <span className="font-semibold text-muted-foreground uppercase tracking-wider">
-                                Order Tracking Progress
-                              </span>
-                              <span className="font-bold text-primary">
-                                {order.status === "Delivered"
-                                  ? "Delivered"
-                                  : order.status === "Shipped"
-                                    ? "In Transit"
-                                    : order.status === "Packing"
-                                      ? "Packing"
-                                      : "Order Placed"}
-                              </span>
+                          {/* If Order is Cancelled: Show cancellation banner instead of live progress */}
+                          {order.status === "Cancelled" ? (
+                            <div className="p-3.5 bg-destructive/10 border border-destructive/25 rounded-lg text-xs text-destructive space-y-1.5">
+                              <div className="flex items-center gap-1.5 font-semibold text-sm">
+                                <XCircle className="size-4 shrink-0" />
+                                <span>Order Cancelled</span>
+                              </div>
+                              <p className="text-[11px] text-destructive/85 pl-5.5 leading-relaxed">
+                                {order.notes || "This order was cancelled. Reserved items have been restored to store inventory."}
+                              </p>
                             </div>
-
-                            {/* Clean Vertical Steps */}
-                            <div className="space-y-2 pt-0.5">
-                              {/* Step 1: Order Placed */}
-                              <div className="flex items-center gap-2.5 text-xs">
-                                <span className={`size-3 rounded-full flex items-center justify-center shrink-0 ${
-                                  badge.step >= 1 ? "bg-emerald-500 text-white" : "bg-muted-foreground/30"
-                                }`}>
-                                  {badge.step >= 1 && <span className="text-[8px] font-bold">✓</span>}
-                                </span>
-                                <span className={badge.step >= 1 ? "font-semibold text-foreground" : "text-muted-foreground"}>
-                                  1. Order Placed & Confirmed
-                                </span>
-                                {badge.step >= 1 && (
-                                  <span className="text-[10px] text-emerald-600 font-medium ml-auto">Completed</span>
-                                )}
-                              </div>
-
-                              {/* Step 2: Packing */}
-                              <div className="flex items-center gap-2.5 text-xs">
-                                <span className={`size-3 rounded-full flex items-center justify-center shrink-0 ${
-                                  badge.step >= 2 ? "bg-emerald-500 text-white" : "bg-muted-foreground/30"
-                                }`}>
-                                  {badge.step >= 2 && <span className="text-[8px] font-bold">✓</span>}
-                                </span>
-                                <span className={badge.step >= 2 ? "font-semibold text-foreground" : "text-muted-foreground"}>
-                                  2. Packing & Quality Checked
-                                </span>
-                                {badge.step >= 2 ? (
-                                  <span className="text-[10px] text-emerald-600 font-medium ml-auto">Completed</span>
-                                ) : badge.step === 1 ? (
-                                  <span className="text-[10px] text-amber-600 font-medium ml-auto">Pending</span>
-                                ) : null}
-                              </div>
-
-                              {/* Step 3: Shipped */}
-                              <div className="flex items-center gap-2.5 text-xs">
-                                <span className={`size-3 rounded-full flex items-center justify-center shrink-0 ${
-                                  badge.step >= 3
-                                    ? badge.step === 3
-                                      ? "bg-indigo-600 text-white animate-pulse"
-                                      : "bg-emerald-500 text-white"
-                                    : "bg-muted-foreground/30"
-                                }`}>
-                                  {badge.step > 3 ? (
-                                    <span className="text-[8px] font-bold">✓</span>
-                                  ) : badge.step === 3 ? (
-                                    <span className="size-1 rounded-full bg-white" />
-                                  ) : null}
-                                </span>
-                                <span className={
-                                  badge.step === 3
-                                    ? "font-bold text-indigo-600 dark:text-indigo-400"
-                                    : badge.step > 3
-                                      ? "font-semibold text-foreground"
-                                      : "text-muted-foreground"
-                                }>
-                                  3. Shipped (In Transit from Ambattur)
-                                </span>
-                                {badge.step === 3 ? (
-                                  <span className="text-[10px] font-bold text-indigo-600 bg-indigo-50 dark:bg-indigo-950/40 px-1.5 py-0.5 rounded ml-auto">
-                                    Active
+                          ) : (
+                            <>
+                              {/* MOBILE VERTICAL TRACKER (sm:hidden) - Solves horizontal scroll */}
+                              <div className="sm:hidden p-3 bg-secondary/35 border border-border/60 rounded-lg space-y-2.5">
+                                <div className="flex items-center justify-between pb-1.5 border-b border-border/40 text-[11px]">
+                                  <span className="font-semibold text-muted-foreground uppercase tracking-wider">
+                                    Order Tracking Progress
                                   </span>
-                                ) : badge.step > 3 ? (
-                                  <span className="text-[10px] text-emerald-600 font-medium ml-auto">Completed</span>
-                                ) : null}
+                                  <span className="font-bold text-primary">
+                                    {order.status === "Delivered"
+                                      ? "Delivered"
+                                      : order.status === "Shipped"
+                                        ? "In Transit"
+                                        : order.status === "Packing"
+                                          ? "Packing"
+                                          : "Order Placed"}
+                                  </span>
+                                </div>
+
+                                {/* Clean Vertical Steps */}
+                                <div className="space-y-2 pt-0.5">
+                                  {/* Step 1: Order Placed */}
+                                  <div className="flex items-center gap-2.5 text-xs">
+                                    <span className={`size-3 rounded-full flex items-center justify-center shrink-0 ${
+                                      badge.step >= 1 ? "bg-emerald-500 text-white" : "bg-muted-foreground/30"
+                                    }`}>
+                                      {badge.step >= 1 && <span className="text-[8px] font-bold">✓</span>}
+                                    </span>
+                                    <span className={badge.step >= 1 ? "font-semibold text-foreground" : "text-muted-foreground"}>
+                                      1. Order Placed & Confirmed
+                                    </span>
+                                    {badge.step >= 1 && (
+                                      <span className="text-[10px] text-emerald-600 font-medium ml-auto">Completed</span>
+                                    )}
+                                  </div>
+
+                                  {/* Step 2: Packing */}
+                                  <div className="flex items-center gap-2.5 text-xs">
+                                    <span className={`size-3 rounded-full flex items-center justify-center shrink-0 ${
+                                      badge.step >= 2 ? "bg-emerald-500 text-white" : "bg-muted-foreground/30"
+                                    }`}>
+                                      {badge.step >= 2 && <span className="text-[8px] font-bold">✓</span>}
+                                    </span>
+                                    <span className={badge.step >= 2 ? "font-semibold text-foreground" : "text-muted-foreground"}>
+                                      2. Packing & Quality Checked
+                                    </span>
+                                    {badge.step >= 2 ? (
+                                      <span className="text-[10px] text-emerald-600 font-medium ml-auto">Completed</span>
+                                    ) : badge.step === 1 ? (
+                                      <span className="text-[10px] text-amber-600 font-medium ml-auto">Pending</span>
+                                    ) : null}
+                                  </div>
+
+                                  {/* Step 3: Shipped */}
+                                  <div className="flex items-center gap-2.5 text-xs">
+                                    <span className={`size-3 rounded-full flex items-center justify-center shrink-0 ${
+                                      badge.step >= 3
+                                        ? badge.step === 3
+                                          ? "bg-indigo-600 text-white animate-pulse"
+                                          : "bg-emerald-500 text-white"
+                                        : "bg-muted-foreground/30"
+                                    }`}>
+                                      {badge.step > 3 ? (
+                                        <span className="text-[8px] font-bold">✓</span>
+                                      ) : badge.step === 3 ? (
+                                        <span className="size-1 rounded-full bg-white" />
+                                      ) : null}
+                                    </span>
+                                    <span className={
+                                      badge.step === 3
+                                        ? "font-bold text-indigo-600 dark:text-indigo-400"
+                                        : badge.step > 3
+                                          ? "font-semibold text-foreground"
+                                          : "text-muted-foreground"
+                                    }>
+                                      3. Shipped (In Transit from Ambattur)
+                                    </span>
+                                    {badge.step === 3 ? (
+                                      <span className="text-[10px] font-bold text-indigo-600 bg-indigo-50 dark:bg-indigo-950/40 px-1.5 py-0.5 rounded ml-auto">
+                                        Active
+                                      </span>
+                                    ) : badge.step > 3 ? (
+                                      <span className="text-[10px] text-emerald-600 font-medium ml-auto">Completed</span>
+                                    ) : null}
+                                  </div>
+
+                                  {/* Step 4: Delivered */}
+                                  <div className="flex items-center gap-2.5 text-xs">
+                                    <span className={`size-3 rounded-full flex items-center justify-center shrink-0 ${
+                                      badge.step >= 4 ? "bg-emerald-500 text-white" : "bg-muted-foreground/30"
+                                    }`}>
+                                      {badge.step >= 4 && <span className="text-[8px] font-bold">✓</span>}
+                                    </span>
+                                    <span className={badge.step >= 4 ? "font-semibold text-foreground" : "text-muted-foreground"}>
+                                      4. Delivered at Doorstep
+                                    </span>
+                                    {badge.step >= 4 && (
+                                      <span className="text-[10px] text-emerald-600 font-bold ml-auto">Delivered</span>
+                                    )}
+                                  </div>
+                                </div>
+
+                                {/* Progress bar line */}
+                                <div className="w-full bg-secondary h-1.5 rounded-full overflow-hidden mt-1.5">
+                                  <div
+                                    className="bg-primary h-full rounded-full transition-all duration-500"
+                                    style={{
+                                      width:
+                                        badge.step === 4
+                                          ? "100%"
+                                          : badge.step === 3
+                                            ? "75%"
+                                            : badge.step === 2
+                                              ? "50%"
+                                              : "25%",
+                                    }}
+                                  />
+                                </div>
                               </div>
 
-                              {/* Step 4: Delivered */}
-                              <div className="flex items-center gap-2.5 text-xs">
-                                <span className={`size-3 rounded-full flex items-center justify-center shrink-0 ${
-                                  badge.step >= 4 ? "bg-emerald-500 text-white" : "bg-muted-foreground/30"
-                                }`}>
-                                  {badge.step >= 4 && <span className="text-[8px] font-bold">✓</span>}
-                                </span>
-                                <span className={badge.step >= 4 ? "font-semibold text-foreground" : "text-muted-foreground"}>
-                                  4. Delivered at Doorstep
-                                </span>
-                                {badge.step >= 4 && (
-                                  <span className="text-[10px] text-emerald-600 font-bold ml-auto">Delivered</span>
-                                )}
+                              {/* DESKTOP / TABLET HORIZONTAL TRACKER (hidden sm:block) */}
+                              <div className="hidden sm:block py-2.5 px-3.5 bg-secondary/40 border border-border/60 rounded-lg space-y-2">
+                                <div className="flex items-center justify-between text-[11px] font-medium text-foreground">
+                                  <span className="flex items-center gap-1">
+                                    <span className={`size-2 rounded-full ${badge.step >= 1 ? "bg-emerald-500" : "bg-muted"}`} />
+                                    Order Placed
+                                  </span>
+                                  <span className="flex items-center gap-1">
+                                    <span className={`size-2 rounded-full ${badge.step >= 2 ? "bg-emerald-500" : "bg-muted"}`} />
+                                    Packing
+                                  </span>
+                                  <span className="flex items-center gap-1">
+                                    <span className={`size-2 rounded-full ${badge.step >= 3 ? "bg-indigo-600 animate-ping" : "bg-muted"}`} />
+                                    <strong className={order.status === "Shipped" ? "text-indigo-600 dark:text-indigo-400" : ""}>
+                                      Shipped (In Transit)
+                                    </strong>
+                                  </span>
+                                  <span className="flex items-center gap-1">
+                                    <span className={`size-2 rounded-full ${badge.step >= 4 ? "bg-emerald-500" : "bg-muted"}`} />
+                                    Delivered
+                                  </span>
+                                </div>
+
+                                {/* Progress bar line */}
+                                <div className="w-full bg-secondary h-1.5 rounded-full overflow-hidden">
+                                  <div
+                                    className="bg-primary h-full rounded-full transition-all duration-500"
+                                    style={{
+                                      width:
+                                        badge.step === 4
+                                          ? "100%"
+                                          : badge.step === 3
+                                            ? "75%"
+                                            : badge.step === 2
+                                              ? "50%"
+                                              : "25%",
+                                    }}
+                                  />
+                                </div>
                               </div>
-                            </div>
-
-                            {/* Progress bar line */}
-                            <div className="w-full bg-secondary h-1.5 rounded-full overflow-hidden mt-1.5">
-                              <div
-                                className="bg-primary h-full rounded-full transition-all duration-500"
-                                style={{
-                                  width:
-                                    badge.step === 4
-                                      ? "100%"
-                                      : badge.step === 3
-                                        ? "75%"
-                                        : badge.step === 2
-                                          ? "50%"
-                                          : "25%",
-                                }}
-                              />
-                            </div>
-                          </div>
-
-                          {/* DESKTOP / TABLET HORIZONTAL TRACKER (hidden sm:block) */}
-                          <div className="hidden sm:block py-2.5 px-3.5 bg-secondary/40 border border-border/60 rounded-lg space-y-2">
-                            <div className="flex items-center justify-between text-[11px] font-medium text-foreground">
-                              <span className="flex items-center gap-1">
-                                <span className={`size-2 rounded-full ${badge.step >= 1 ? "bg-emerald-500" : "bg-muted"}`} />
-                                Order Placed
-                              </span>
-                              <span className="flex items-center gap-1">
-                                <span className={`size-2 rounded-full ${badge.step >= 2 ? "bg-emerald-500" : "bg-muted"}`} />
-                                Packing
-                              </span>
-                              <span className="flex items-center gap-1">
-                                <span className={`size-2 rounded-full ${badge.step >= 3 ? "bg-indigo-600 animate-ping" : "bg-muted"}`} />
-                                <strong className={order.status === "Shipped" ? "text-indigo-600 dark:text-indigo-400" : ""}>
-                                  Shipped (In Transit)
-                                </strong>
-                              </span>
-                              <span className="flex items-center gap-1">
-                                <span className={`size-2 rounded-full ${badge.step >= 4 ? "bg-emerald-500" : "bg-muted"}`} />
-                                Delivered
-                              </span>
-                            </div>
-
-                            {/* Progress bar line */}
-                            <div className="w-full bg-secondary h-1.5 rounded-full overflow-hidden">
-                              <div
-                                className="bg-primary h-full rounded-full transition-all duration-500"
-                                style={{
-                                  width:
-                                    badge.step === 4
-                                      ? "100%"
-                                      : badge.step === 3
-                                        ? "75%"
-                                        : badge.step === 2
-                                          ? "50%"
-                                          : "25%",
-                                }}
-                              />
-                            </div>
-                          </div>
+                            </>
+                          )}
 
                           {/* Items List - Clickable for live tracking */}
                           <div className="space-y-2 text-xs">
@@ -629,19 +654,33 @@ export function CustomerPortalModal() {
                               <span className="break-words">{order.shippingAddress || "Chennai, Tamil Nadu"}</span>
                             </div>
 
-                            <div className="grid grid-cols-2 sm:flex items-center gap-2 w-full sm:w-auto shrink-0">
-                              <Button
-                                variant="default"
-                                size="sm"
-                                className="w-full sm:w-auto min-h-[38px] h-auto py-2 px-3 text-xs bg-primary hover:bg-primary/90 text-primary-foreground font-semibold flex items-center justify-center gap-1.5 cursor-pointer rounded-lg"
-                                onClick={() => {
-                                  setTrackingModalOrder(order);
-                                  setTrackingModalProduct(null);
-                                }}
-                              >
-                                <Truck className="size-3.5 shrink-0" />
-                                <span>Track Shipment</span>
-                              </Button>
+                            <div className="grid grid-cols-2 sm:flex items-center gap-2 w-full sm:w-auto shrink-0 flex-wrap">
+                              {order.status !== "Cancelled" && (
+                                <Button
+                                  variant="default"
+                                  size="sm"
+                                  className="w-full sm:w-auto min-h-[38px] h-auto py-2 px-3 text-xs bg-primary hover:bg-primary/90 text-primary-foreground font-semibold flex items-center justify-center gap-1.5 cursor-pointer rounded-lg"
+                                  onClick={() => {
+                                    setTrackingModalOrder(order);
+                                    setTrackingModalProduct(null);
+                                  }}
+                                >
+                                  <Truck className="size-3.5 shrink-0" />
+                                  <span>Track Shipment</span>
+                                </Button>
+                              )}
+
+                              {order.status !== "Cancelled" && order.status !== "Delivered" && (
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  className="w-full sm:w-auto min-h-[38px] h-auto py-2 px-3 text-xs text-destructive hover:text-destructive hover:bg-destructive/10 border-destructive/30 flex items-center justify-center gap-1.5 cursor-pointer rounded-lg font-medium"
+                                  onClick={() => setCancellingOrder(order)}
+                                >
+                                  <XCircle className="size-3.5 shrink-0" />
+                                  <span>Cancel Order</span>
+                                </Button>
+                              )}
 
                               <Button
                                 variant="outline"
@@ -651,7 +690,7 @@ export function CustomerPortalModal() {
                               >
                                 <a
                                   href={`https://wa.me/919940145700?text=${encodeURIComponent(
-                                    `Hi Padmanabha Fabrics, I would like to check the tracking status of my Order #${order.id}. Current status shown: ${order.status}.`,
+                                    `Hi Padmanabha Fabrics, I would like to check my Order #${order.id}. Current status shown: ${order.status}.`,
                                   )}`}
                                   target="_blank"
                                   rel="noreferrer"
@@ -821,6 +860,13 @@ export function CustomerPortalModal() {
           setTrackingModalProduct(null);
         }}
         clickedProduct={trackingModalProduct}
+      />
+
+      {/* Cancel Order Modal */}
+      <CancelOrderModal
+        order={cancellingOrder}
+        isOpen={!!cancellingOrder}
+        onClose={() => setCancellingOrder(null)}
       />
     </Dialog>
   );

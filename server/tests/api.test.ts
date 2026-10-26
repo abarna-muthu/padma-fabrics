@@ -186,4 +186,65 @@ describe("Padma Fabrics Backend API Test Suite", () => {
       expect(res.body.order.orderNumber).toBeDefined();
     });
   });
+
+  describe("Customer Order Cancellation API", () => {
+    let testOrderId: string;
+
+    it("POST /api/orders/checkout creates an order for cancellation test", async () => {
+      const res = await request(app)
+        .post("/api/orders/checkout")
+        .send({
+          customer_name: "Karthik Subramanian",
+          customer_email: "karthik.sub@example.com",
+          customer_phone: "+91 98401 55667",
+          shipping_address: "Flat 2B, Anna Nagar, Chennai - 600040",
+          payment_method: "COD",
+          items: [{ id: "wine-silk", quantity: 1 }],
+        });
+
+      expect(res.status).toBe(201);
+      expect(res.body.success).toBe(true);
+      testOrderId = res.body.order.id;
+      expect(testOrderId).toBeDefined();
+    });
+
+    it("POST /api/orders/:id/cancel requires a cancellation reason", async () => {
+      const res = await request(app)
+        .post(`/api/orders/${testOrderId}/cancel`)
+        .send({
+          reason: "",
+        });
+
+      expect(res.status).toBe(400);
+      expect(res.body.success).toBe(false);
+      expect(res.body.error).toContain("reason is required");
+    });
+
+    it("POST /api/orders/:id/cancel successfully cancels order and logs reason", async () => {
+      const res = await request(app)
+        .post(`/api/orders/${testOrderId}/cancel`)
+        .send({
+          reason: "Ordered by mistake / Duplicate order",
+          notes: "Customer contacted via portal to cancel duplicate fabric purchase.",
+        });
+
+      expect(res.status).toBe(200);
+      expect(res.body.success).toBe(true);
+      expect(res.body.order.status).toBe("Cancelled");
+      expect(res.body.order.notes).toContain("Ordered by mistake");
+    });
+
+    it("POST /api/orders/:id/cancel rejects re-cancelling an already cancelled order", async () => {
+      const res = await request(app)
+        .post(`/api/orders/${testOrderId}/cancel`)
+        .send({
+          reason: "Attempting second cancellation",
+        });
+
+      expect(res.status).toBe(400);
+      expect(res.body.success).toBe(false);
+      expect(res.body.error).toContain("already cancelled");
+    });
+  });
 });
+

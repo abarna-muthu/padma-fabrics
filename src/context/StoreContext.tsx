@@ -74,6 +74,7 @@ interface StoreContextType {
   updateOrderDays: (orderId: string, days: number) => void;
   updateOrderDetails: (orderId: string, updates: Partial<Order>) => void;
   deleteOrder: (orderId: string) => void;
+  cancelOrder: (orderId: string, reason: string, notes?: string) => Promise<{ success: boolean; message?: string; error?: string }>;
   createCheckoutOrder: (details: {
     customerName: string;
     customerEmail: string;
@@ -946,6 +947,64 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     saveOrders(updated);
   };
 
+  const cancelOrder = async (
+    orderId: string,
+    reason: string,
+    notes?: string,
+  ): Promise<{ success: boolean; message?: string; error?: string }> => {
+    try {
+      const res = await orderApi.cancel(orderId, reason, notes);
+      if (!res.success) {
+        return { success: false, error: res.error || "Failed to cancel order" };
+      }
+
+      const dateStr = new Date().toLocaleString("en-IN");
+      const cancellationStamp = `[Cancelled by Customer on ${dateStr}. Reason: ${reason}${notes ? ` | Details: ${notes}` : ""}]`;
+
+      const targetOrder = orders.find(
+        (o) => o.id === orderId || (o as any).orderNumber === orderId,
+      );
+
+      const updated = orders.map((o) => {
+        if (o.id === orderId || (o as any).orderNumber === orderId) {
+          return {
+            ...o,
+            status: "Cancelled" as const,
+            manualStatusOverride: true,
+            notes: o.notes ? `${o.notes}\n${cancellationStamp}` : cancellationStamp,
+          };
+        }
+        return o;
+      });
+      saveOrders(updated);
+
+      // Restore stock in local productsList if order items exist
+      if (targetOrder && targetOrder.items) {
+        const orderItems = Array.isArray(targetOrder.items) ? targetOrder.items : [];
+        if (orderItems.length > 0) {
+          const updatedProducts = productsList.map((p) => {
+            const matchedItem = orderItems.find(
+              (i) =>
+                i.productId === p.id ||
+                (i.productName && i.productName.toLowerCase() === p.name.toLowerCase()),
+            );
+            if (matchedItem) {
+              const restored = p.stock + (Number(matchedItem.quantity) || 1);
+              return { ...p, stock: restored };
+            }
+            return p;
+          });
+          saveProducts(updatedProducts);
+        }
+      }
+
+      return { success: true, message: res.message || "Order cancelled successfully." };
+    } catch (err: any) {
+      console.error("Cancel order error:", err);
+      return { success: false, error: err.message || "Network error while cancelling order." };
+    }
+  };
+
   // Checkout action with backend stock validation & order creation
   const createCheckoutOrder = async (details: {
     customerName: string;
@@ -1256,6 +1315,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         updateOrderDays,
         updateOrderDetails,
         deleteOrder,
+        cancelOrder,
         createCheckoutOrder,
       }}
     >

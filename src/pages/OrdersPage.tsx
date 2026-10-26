@@ -20,11 +20,13 @@ import {
   Download,
   AlertCircle,
   FileText,
+  XCircle,
 } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+import { CancelOrderModal } from "@/components/CancelOrderModal";
 
 export function OrdersPage() {
   const { customer, isLoggedIn } = useCustomerAuth();
@@ -36,6 +38,7 @@ export function OrdersPage() {
   const [trackedProduct, setTrackedProduct] = useState<any | null>(null);
   const [searchError, setSearchError] = useState<string | null>(null);
   const [showSearchBox, setShowSearchBox] = useState(false);
+  const [cancellingOrder, setCancellingOrder] = useState<Order | null>(null);
 
   // Tab & Timeframe state matching reference UI
   const [orderTab, setOrderTab] = useState<"all" | "not-shipped" | "cancelled">("all");
@@ -496,7 +499,20 @@ export function OrdersPage() {
                       </strong>
                     </div>
 
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      {order.status !== "Cancelled" && order.status !== "Delivered" && (
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setCancellingOrder(order)}
+                          className="h-8 px-3 text-xs font-semibold rounded-lg border-destructive/40 text-destructive hover:bg-destructive/10 transition-colors shadow-2xs"
+                        >
+                          <XCircle className="size-3.5 mr-1" />
+                          Cancel Order
+                        </Button>
+                      )}
+
                       <Button
                         type="button"
                         variant="outline"
@@ -670,6 +686,13 @@ export function OrdersPage() {
           setTrackedProduct(null);
         }}
         clickedProduct={trackedProduct}
+      />
+
+      {/* Cancel Order Reason & Confirmation Modal */}
+      <CancelOrderModal
+        order={cancellingOrder}
+        isOpen={!!cancellingOrder}
+        onClose={() => setCancellingOrder(null)}
       />
     </div>
   );
