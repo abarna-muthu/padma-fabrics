@@ -1048,15 +1048,15 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
         saveOrders([newAdminOrder, ...orders.filter((o) => o.id !== resolvedOrderId)]);
 
-        // Refresh orders list from backend if available
-        try {
-          const refreshedOrders = await orderApi.getAll();
-          if (refreshedOrders.success && Array.isArray(refreshedOrders.data)) {
-            saveOrders(refreshedOrders.data);
-          }
-        } catch (fetchErr) {
-          console.debug("Backend orders refresh note:", fetchErr);
-        }
+        // Refresh orders list from backend asynchronously in background without blocking
+        orderApi
+          .getAll()
+          .then((refreshedOrders) => {
+            if (refreshedOrders.success && Array.isArray(refreshedOrders.data)) {
+              saveOrders(refreshedOrders.data);
+            }
+          })
+          .catch(() => {});
 
         return {
           success: true,

@@ -132,102 +132,107 @@ export async function createCheckoutOrder(req: Request, res: Response) {
     ]);
     if (existingCust.length > 0) {
       customerId = existingCust[0].id;
-      await db.execute("UPDATE customers SET name = ?, phone = ? WHERE id = ?", [
+      db.execute("UPDATE customers SET name = ?, phone = ? WHERE id = ?", [
         customer_name.trim(),
         customer_phone.trim(),
         customerId,
-      ]);
+      ]).catch(() => {});
     } else {
       customerId = `cust-${Date.now().toString(36)}-${Math.random().toString(36).substring(2, 6)}`;
-      await db.execute("INSERT INTO customers (id, name, email, phone) VALUES (?, ?, ?, ?)", [
-        customerId,
-        customer_name.trim(),
-        customer_email.trim().toLowerCase(),
-        customer_phone.trim(),
-      ]);
-    }
-
-    // Save Customer Address
-    if (shipping_address) {
-      const addrId = `addr-${Date.now().toString(36)}-${Math.random().toString(36).substring(2, 6)}`;
-      await db.execute(
-        "INSERT INTO customer_addresses (id, customer_id, address_line1, city, state, postal_code, country) VALUES (?, ?, ?, ?, ?, ?, ?)",
-        [
-          addrId,
+      await db
+        .execute("INSERT INTO customers (id, name, email, phone) VALUES (?, ?, ?, ?)", [
           customerId,
-          shipping_address.trim(),
-          "Chennai",
-          "Tamil Nadu",
-          "600053",
-          "India",
-        ],
-      );
+          customer_name.trim(),
+          customer_email.trim().toLowerCase(),
+          customer_phone.trim(),
+        ])
+        .catch(() => {});
     }
 
-    // Create Order Record
-    await db.execute(
-      `INSERT INTO orders (id, order_number, customer_id, customer_name, customer_email, customer_phone, shipping_address, subtotal, shipping_fee, discount_amount, total_amount, order_status, payment_method, payment_status, notes)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      [
-        orderId,
-        orderNumber,
-        customerId,
-        customer_name,
-        customer_email,
-        customer_phone,
-        shipping_address,
-        calculatedSubtotal,
-        shippingFee,
-        discountAmount,
-        totalAmount,
-        "Pending",
-        payment_method,
-        paymentStatus,
-        notes,
-      ],
-    );
+    const addrId = `addr-${Date.now().toString(36)}-${Math.random().toString(36).substring(2, 6)}`;
 
-    // Create Order Items and deduct inventory stock atomically
-    for (const vItem of validatedItems) {
-      const oiId = `oi-${Date.now().toString(36)}-${Math.random().toString(36).substring(2, 6)}`;
-      await db.execute(
-        `INSERT INTO order_items (id, order_id, product_id, product_name, product_sku, unit_price, quantity, unit, size, total_price)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    // Create Order Record and save customer address in parallel
+    await Promise.all([
+      db.execute(
+        `INSERT INTO orders (id, order_number, customer_id, customer_name, customer_email, customer_phone, shipping_address, subtotal, shipping_fee, discount_amount, total_amount, order_status, payment_method, payment_status, notes)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
-          oiId,
           orderId,
-          vItem.product.id,
-          vItem.product.name,
-          vItem.product.sku,
-          vItem.unitPrice,
-          vItem.quantity,
-          vItem.product.unit || "piece",
-          vItem.size,
-          vItem.lineTotal,
+          orderNumber,
+          customerId,
+          customer_name,
+          customer_email,
+          customer_phone,
+          shipping_address,
+          calculatedSubtotal,
+          shippingFee,
+          discountAmount,
+          totalAmount,
+          "Pending",
+          payment_method,
+          paymentStatus,
+          notes,
         ],
-      );
+      ),
+      shipping_address
+        ? db
+            .execute(
+              "INSERT INTO customer_addresses (id, customer_id, address_line1, city, state, postal_code, country) VALUES (?, ?, ?, ?, ?, ?, ?)",
+              [
+                addrId,
+                customerId,
+                shipping_address.trim(),
+                "Chennai",
+                "Tamil Nadu",
+                "600053",
+                "India",
+              ],
+            )
+            .catch(() => {})
+        : Promise.resolve(),
+    ]);
 
-      // Decrement inventory
-      const newStock = vItem.product.stock_quantity - vItem.quantity;
-      await db.execute("UPDATE products SET stock_quantity = ? WHERE id = ?", [
-        newStock,
-        vItem.product.id,
-      ]);
-
-      // Record inventory deduction log
-      await db.execute(
-        `INSERT INTO inventory_logs (id, product_id, previous_stock, new_stock, change_amount, reason)
-         VALUES (?, ?, ?, ?, ?, ?)`,
-        [
-          `LOG-${Date.now().toString(36)}-${Math.random().toString(36).substring(2, 5)}`,
-          vItem.product.id,
-          vItem.product.stock_quantity,
-          newStock,
-          -vItem.quantity,
-          `Order ${orderNumber} customer fulfillment deduction`,
-        ],
-      );
-    }
+    // Create Order Items and deduct inventory stock in parallel
+    await Promise.all(
+      validatedItems.map(async (vItem) => {
+        const oiId = `oi-${Date.now().toString(36)}-${Math.random().toString(36).substring(2, 6)}`;
+        const newStock = Math.max(0, vItem.product.stock_quantity - vItem.quantity);
+        return Promise.all([
+          db.execute(
+            `INSERT INTO order_items (id, order_id, product_id, product_name, product_sku, unit_price, quantity, unit, size, total_price)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            [
+              oiId,
+              orderId,
+              vItem.product.id,
+              vItem.product.name,
+              vItem.product.sku,
+              vItem.unitPrice,
+              vItem.quantity,
+              vItem.product.unit || "piece",
+              vItem.size,
+              vItem.lineTotal,
+            ],
+          ),
+          db.execute("UPDATE products SET stock_quantity = ? WHERE id = ?", [
+            newStock,
+            vItem.product.id,
+          ]),
+          db.execute(
+            `INSERT INTO inventory_logs (id, product_id, previous_stock, new_stock, change_amount, reason)
+             VALUES (?, ?, ?, ?, ?, ?)`,
+            [
+              `LOG-${Date.now().toString(36)}-${Math.random().toString(36).substring(2, 5)}`,
+              vItem.product.id,
+              vItem.product.stock_quantity,
+              newStock,
+              -vItem.quantity,
+              `Order ${orderNumber} customer fulfillment deduction`,
+            ],
+          ),
+        ]);
+      }),
+    );
 
     return res.status(201).json({
       success: true,

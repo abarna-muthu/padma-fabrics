@@ -130,13 +130,10 @@ export function CheckoutModal({ isOpen, onClose, onOrderSuccess }: CheckoutModal
       }
 
       if (paymentMethod === "online") {
-        setPaymentStatusText("Connecting to Secure Payment Gateway…");
-        await new Promise((resolve) => setTimeout(resolve, 600));
-        setPaymentStatusText("Verifying UPI / Bank Gateway Authorization…");
-        await new Promise((resolve) => setTimeout(resolve, 500));
+        setPaymentStatusText("Connecting to Payment Gateway…");
       }
 
-      // Create order in backend and local store
+      // Create order in backend and local store immediately
       const res = await createCheckoutOrder({
         customerName: name,
         customerEmail: email,
@@ -161,13 +158,10 @@ export function CheckoutModal({ isOpen, onClose, onOrderSuccess }: CheckoutModal
           }
         }
 
-        // Automatically sign in customer with password: customer123
-        try {
-          await loginCustomer(email, "customer123", name, phone);
-          updateCustomerProfile({ address: fullAddress });
-        } catch (authErr) {
-          console.debug("Customer auto-login notice:", authErr);
-        }
+        // Automatically sign in customer in background without stalling order confirmation
+        loginCustomer(email, "customer123", name, phone)
+          .then(() => updateCustomerProfile({ address: fullAddress }))
+          .catch((authErr) => console.debug("Customer auto-login notice:", authErr));
 
         const orderInfo = {
           orderNumber: resolvedOrderNumber,
@@ -525,25 +519,26 @@ export function CheckoutModal({ isOpen, onClose, onOrderSuccess }: CheckoutModal
               <div className="pt-2">
                 <Button
                   type="submit"
-                  variant="editorial"
-                  size="lg"
-                  className="w-full h-12 text-sm uppercase tracking-wider font-bold shadow-md bg-gradient-to-r from-[#9B2242] via-[#8B1D36] to-[#731429] text-white hover:brightness-110 flex items-center justify-center gap-2 cursor-pointer transition-all"
+                  size="default"
+                  className="w-full !rounded-xl !h-auto min-h-[50px] py-3.5 px-3 sm:px-6 text-xs sm:text-sm font-bold uppercase tracking-wide shadow-md bg-gradient-to-r from-[#9B2242] via-[#8B1D36] to-[#731429] text-white hover:brightness-110 flex items-center justify-center gap-2 cursor-pointer transition-all active:scale-[0.99] overflow-hidden"
                   disabled={isSubmittingOrder}
                 >
                   {isSubmittingOrder ? (
-                    <span className="flex items-center gap-2">
-                      <Loader2 className="size-4 animate-spin" />
-                      {paymentStatusText || "Processing Order & Saving Details…"}
+                    <span className="flex items-center justify-center gap-2 text-center text-xs sm:text-sm">
+                      <Loader2 className="size-4 shrink-0 animate-spin" />
+                      <span>{paymentStatusText || "Placing Order…"}</span>
                     </span>
                   ) : paymentMethod === "online" ? (
                     <>
-                      <Zap className="size-4.5 fill-amber-300 text-amber-300" />
-                      <span>Proceed to Pay & Confirm · {money(totalAmount)}</span>
+                      <Zap className="size-4 shrink-0 fill-amber-300 text-amber-300" />
+                      <span className="truncate sm:hidden">Pay & Confirm · {money(totalAmount)}</span>
+                      <span className="hidden sm:inline">Proceed to Pay & Confirm · {money(totalAmount)}</span>
                     </>
                   ) : (
                     <>
-                      <CheckCircle2 className="size-4.5 text-white" />
-                      <span>Confirm Cash on Delivery Order · {money(totalAmount)}</span>
+                      <CheckCircle2 className="size-4 shrink-0 text-white" />
+                      <span className="truncate sm:hidden">Confirm COD Order · {money(totalAmount)}</span>
+                      <span className="hidden sm:inline">Confirm Cash on Delivery Order · {money(totalAmount)}</span>
                     </>
                   )}
                 </Button>
