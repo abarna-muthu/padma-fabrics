@@ -47,6 +47,7 @@ import {
   Image as ImageIcon,
   Truck,
   Camera,
+  Clipboard,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
@@ -555,12 +556,9 @@ function AdminDashboardPage() {
   const [imageUploadStatus, setImageUploadStatus] = useState<string>("");
   const [isUploadingImage, setIsUploadingImage] = useState<boolean>(false);
 
-  const handleImageFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
+  const processAndUploadImageFile = (file: File) => {
     if (!file.type.startsWith("image/")) {
-      toast.error("Please select a valid image file (JPG, PNG, WebP).");
+      toast.error("Please select or paste a valid image file (JPG, PNG, WebP).");
       return;
     }
 
@@ -609,18 +607,18 @@ function AdminDashboardPage() {
             const cloudUrl = uploadRes.secure_url || uploadRes.url;
             setProdImage(cloudUrl);
             setProdImages((prev) => Array.from(new Set([...prev, cloudUrl])));
-            setImageUploadStatus(`Cloudinary: ${file.name} (uploaded)`);
+            setImageUploadStatus(`Cloudinary: ${file.name || "Pasted photo"} (uploaded)`);
             toast.success("Photo uploaded to Cloudinary (padma_products)!");
           } else {
             setProdImage(base64Data);
             setProdImages((prev) => Array.from(new Set([...prev, base64Data])));
-            setImageUploadStatus(`${file.name} (local preview)`);
+            setImageUploadStatus(`${file.name || "Pasted photo"} (local preview)`);
           }
         } catch (uploadErr: any) {
           console.warn("Cloudinary upload fallback to local preview:", uploadErr);
           setProdImage(base64Data);
           setProdImages((prev) => Array.from(new Set([...prev, base64Data])));
-          setImageUploadStatus(`${file.name} (local preview)`);
+          setImageUploadStatus(`${file.name || "Pasted photo"} (local preview)`);
         } finally {
           setIsUploadingImage(false);
         }
@@ -628,7 +626,7 @@ function AdminDashboardPage() {
       img.onerror = () => {
         setProdImage(result);
         setProdImages((prev) => Array.from(new Set([...prev, result])));
-        setImageUploadStatus(`${file.name}`);
+        setImageUploadStatus(`${file.name || "Pasted photo"}`);
         setIsUploadingImage(false);
       };
       img.src = result;
@@ -639,8 +637,63 @@ function AdminDashboardPage() {
       toast.error("Failed to read image file.");
     };
     reader.readAsDataURL(file);
+  };
+
+  const handleImageFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    processAndUploadImageFile(file);
     // Reset file input value so selecting the same file again triggers onChange
     e.target.value = "";
+  };
+
+  const handlePasteImageFromClipboard = async () => {
+    try {
+      if (navigator.clipboard && navigator.clipboard.read) {
+        const items = await navigator.clipboard.read();
+        for (const item of items) {
+          const imageType = item.types.find((t) => t.startsWith("image/"));
+          if (imageType) {
+            const blob = await item.getType(imageType);
+            const ext = imageType.split("/")[1] || "png";
+            const file = new File([blob], `pasted-photo-${Date.now()}.${ext}`, {
+              type: imageType,
+            });
+            toast.info("Pasting copied image...");
+            processAndUploadImageFile(file);
+            return;
+          }
+        }
+        toast.error("No copied image found in clipboard. Copy an image first, then click paste.");
+      } else {
+        toast.info("Please press Ctrl+V on your keyboard to paste the copied image.");
+      }
+    } catch (err: any) {
+      console.warn("Clipboard read error, fallback to Ctrl+V hint:", err);
+      toast.info("Please press Ctrl+V on your keyboard to paste your copied image.");
+    }
+  };
+
+  const handleGalleryPaste = (e: React.ClipboardEvent) => {
+    const items = e.clipboardData?.items;
+    if (!items || items.length === 0) return;
+
+    for (let i = 0; i < items.length; i++) {
+      const item = items[i];
+      if (item.type.indexOf("image") !== -1) {
+        e.preventDefault();
+        const blob = item.getAsFile();
+        if (blob) {
+          const ext = blob.type.split("/")[1] || "png";
+          const file = new File([blob], `pasted-photo-${Date.now()}.${ext}`, {
+            type: blob.type,
+          });
+          toast.info("Pasted image detected. Uploading...");
+          processAndUploadImageFile(file);
+          return;
+        }
+      }
+    }
   };
 
   // Stock adjustment modal states
@@ -4443,7 +4496,11 @@ function AdminDashboardPage() {
               </div>
 
               {/* 3. Product Gallery & Multi-Angle Photos */}
-              <div className="space-y-3 p-3.5 bg-secondary/15 border border-border rounded-sm">
+              <div
+                className="space-y-3 p-3.5 bg-secondary/15 border border-border rounded-sm focus:outline-none focus:ring-1 focus:ring-[#D15608]/40"
+                tabIndex={0}
+                onPaste={handleGalleryPaste}
+              >
                 <input
                   type="file"
                   ref={fileInputRef}
@@ -4459,10 +4516,22 @@ function AdminDashboardPage() {
                       <span>Product Gallery & Angles (Front, Back, Side, Close-up)</span>
                     </label>
                     <p className="text-[11px] text-muted-foreground">
-                      Upload multi-angle photos. First image is used as the primary cover.
+                      Upload or paste (Ctrl+V) multi-angle photos. First image is used as the primary cover.
                     </p>
                   </div>
                   <div className="flex items-center gap-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="h-8 text-xs flex items-center gap-1.5 border-dashed border-[#D15608]/70 text-[#D15608] hover:bg-[#D15608]/10 cursor-pointer"
+                      onClick={handlePasteImageFromClipboard}
+                      disabled={isUploadingImage}
+                      title="Paste image directly from clipboard (Ctrl+V)"
+                    >
+                      <Clipboard className="size-3.5" />
+                      <span>Paste Image (Ctrl+V)</span>
+                    </Button>
                     <Button
                       type="button"
                       variant="editorial"
@@ -4565,10 +4634,10 @@ function AdminDashboardPage() {
                     </div>
                     <div>
                       <p className="text-xs font-semibold text-foreground">
-                        Click here to Upload Multi-Angle Photos Directly
+                        Click to Upload Photo, or Paste (Ctrl+V) Copied Image
                       </p>
                       <p className="text-[11px] text-muted-foreground mt-0.5">
-                        Add front view, back view, side angle, or close-up fabric detail shots (JPG, PNG, WebP)
+                        Add front view, back view, side angle shots (JPG, PNG, WebP) · Copy any image and click Paste Image or press Ctrl+V
                       </p>
                     </div>
                   </div>

@@ -1,600 +1,89 @@
-import { useState, useEffect, useMemo } from "react";
-import { Link, useNavigate } from "@tanstack/react-router";
-import {
-  ArrowRight,
-  Truck,
-  RotateCcw,
-  ShieldCheck,
-  Headphones,
-  Check,
-  ChevronLeft,
-  ChevronRight,
-} from "lucide-react";
-import { MicroLabel } from "@/components/MicroLabel";
-import { ProductCard } from "@/components/ProductCard";
-import { ProductGridSkeleton } from "@/components/SkeletonLoader";
-import { FeaturedCollectionCarousel } from "@/components/FeaturedCollectionCarousel";
-import { productServices } from "@/services/api";
-import { useStore } from "@/context/StoreContext";
-import { toast } from "sonner";
-
-// Local imagery from src/assets
-import newsletterFabrics from "@/assets/newsletter-fabrics.jpg";
-import everydayEleganceBanner from "@/assets/everyday-elegance-banner.jpg";
-import newStylesBanner from "@/assets/new-styles-banner.jpg";
-import silkSareesCategory from "@/assets/silk-sarees-category.jpg";
-import chuditharCategory from "@/assets/chudithar-ensembles-category.jpg";
-import coordsetsCategory from "@/assets/artisanal-coordsets-category.jpg";
-import maxisCategory from "@/assets/flowing-maxis-category.jpg";
-
-// =========================================================================
-// HERO SECTION BANNERS (Auto-rotating slider linked to /shop)
-// =========================================================================
-const HERO_BANNERS = [
-  {
-    id: 1,
-    image: "/hero-banner-1.jpg",
-    alt: "Padmanabha Fabrics - Timeless Ethnic Elegance, Style Woven With Tradition",
-  },
-  {
-    id: 2,
-    image: "/hero-banner-2.png",
-    alt: "Padmanabha Fabrics - Timeless Ethnic Elegance, Explore Collection",
-  },
-  {
-    id: 3,
-    image: "/hero-banner-3.jpg",
-    alt: "Padmanabha Fabrics - Timeless Elegance in Every Thread, Premium Sarees",
-  },
-];
-
-
-// =========================================================================
-// EDITORIAL IMAGE CARDS DATA (Find Your Perfect Style)
-// =========================================================================
-const EDITORIAL_COLLECTIONS = [
-  {
-    title: "Silk Sarees & Brocades",
-    slug: "Saree",
-    image: silkSareesCategory,
-    tag: "Loom Heritage",
-  },
-  {
-    title: "Chudithar Ensembles",
-    slug: "Chudithar",
-    image: chuditharCategory,
-    tag: "Everyday & Festive",
-  },
-  {
-    title: "Artisanal Coordsets",
-    slug: "Coordset",
-    image: coordsetsCategory,
-    tag: "Contemporary Fit",
-  },
-  {
-    title: "Flowing Maxis & Silhouettes",
-    slug: "Maxi",
-    image: maxisCategory,
-    tag: "Relaxed Grace",
-  },
-];
-
-// =========================================================================
-// BENEFITS STRIP DATA
-// =========================================================================
-const BENEFITS = [
-  {
-    icon: Truck,
-    title: "Free Shipping",
-    description: "Complimentary delivery on domestic orders over ₹999.",
-  },
-  {
-    icon: RotateCcw,
-    title: "Easy Returns",
-    description: "7-day hassle-free exchange on unworn, tagged apparel.",
-  },
-  {
-    icon: ShieldCheck,
-    title: "Secure Payments",
-    description: "100% encrypted checkout via Cards, UPI & NetBanking.",
-  },
-  {
-    icon: Headphones,
-    title: "Customer Support",
-    description: "Dedicated assistance via phone & WhatsApp desk.",
-    link: "/contact",
-  },
-];
+import { useState } from "react";
+import { HeroCarousel } from "@/components/landing/HeroCarousel";
+import { PopularCategories } from "@/components/landing/PopularCategories";
+import { OurBestsellers } from "@/components/landing/OurBestsellers";
+import { ShopByOccasion } from "@/components/landing/ShopByOccasion";
+import { ShopByPattern } from "@/components/landing/ShopByPattern";
+import { LovedByCelebs } from "@/components/landing/LovedByCelebs";
+import { BrandColourPalette } from "@/components/landing/BrandColourPalette";
+import { CustomerReviews } from "@/components/landing/CustomerReviews";
+import { OnlineExclusive } from "@/components/landing/OnlineExclusive";
+import { TrendJournal } from "@/components/landing/TrendJournal";
+import { FindAStoreStrip } from "@/components/landing/FindAStoreStrip";
+import { TrustStrip } from "@/components/landing/TrustStrip";
+import { LandingFooter } from "@/components/landing/LandingFooter";
+import { MobileBottomNav } from "@/components/landing/MobileBottomNav";
+import { LoginModal } from "@/components/landing/LoginModal";
+import { SizeSelectorModal } from "@/components/landing/SizeSelectorModal";
+import type { LandingProduct } from "@/components/landing/ProductCard";
 
 export function HomePage() {
-  const navigate = useNavigate();
-  const { setFilter, activeProducts, categoriesList } = useStore();
+  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
+  const [sizeModalProduct, setSizeModalProduct] = useState<LandingProduct | null>(null);
 
-  // Hero banner slider state
-  const [currentSlide, setCurrentSlide] = useState(0);
-
-  // Auto-advance banner slides every 5 seconds
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setCurrentSlide((prev) => (prev + 1) % HERO_BANNERS.length);
-    }, 5000);
-    return () => clearInterval(timer);
-  }, []);
-
-  // Featured Products state
-  const [selectedCategory, setSelectedCategory] = useState("All");
-  const [products, setProducts] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  // Newsletter state
-  const [newsletterEmail, setNewsletterEmail] = useState("");
-  const [isSubscribed, setIsSubscribed] = useState(false);
-
-  // Fetch live products through src/services/api.js with fallback to cached store
-  const fetchProducts = async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const res = await productServices.getAllProducts();
-      if (res.success && Array.isArray(res.data) && res.data.length > 0) {
-        setProducts(res.data);
-      } else if (activeProducts && activeProducts.length > 0) {
-        setProducts(activeProducts);
-      } else {
-        setProducts([]);
-      }
-    } catch (err: any) {
-      console.warn("API load failed, falling back to cached catalog:", err);
-      if (activeProducts && activeProducts.length > 0) {
-        setProducts(activeProducts);
-      } else {
-        setError("Unable to connect to product catalog. Please verify your connection.");
-      }
-    } finally {
-      setLoading(false);
-    }
+  const handleOpenLogin = () => {
+    setIsLoginModalOpen(true);
   };
 
-  useEffect(() => {
-    if (activeProducts && activeProducts.length > 0) {
-      setProducts(activeProducts);
-      setLoading(false);
-    } else {
-      fetchProducts();
-    }
-  }, [activeProducts]);
-
-  const handleCategoryNav = (catSlug: string) => {
-    setFilter(catSlug);
-    navigate({ to: "/shop", search: { category: catSlug } as any });
+  const handleOpenQuickSize = (product: LandingProduct) => {
+    setSizeModalProduct(product);
   };
-
-  const handleNewsletterSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newsletterEmail || !newsletterEmail.includes("@")) {
-      toast.error("Please enter a valid email address.");
-      return;
-    }
-    setIsSubscribed(true);
-    toast.success("Thank you for subscribing to Padmanabha Fabrics style updates.");
-    setNewsletterEmail("");
-  };
-
-  // Prioritize activeProducts (manually added/managed original products in admin portal)
-  const catalogToDisplay = activeProducts && activeProducts.length > 0 ? activeProducts : products;
-
-  // Filter products for "Our Most Loved Styles"
-  const filteredProducts = catalogToDisplay.filter((p) => {
-    if (!p) return false;
-    if (selectedCategory === "All") return true;
-    const cat = typeof p.category === "string" ? p.category.toLowerCase() : (p.category ? String(p.category).toLowerCase() : "");
-    return cat === selectedCategory.toLowerCase();
-  });
-
-  // Strictly single "All" pill with deduplicated category names
-  const availableCategories = useMemo(() => {
-    const raw = categoriesList && categoriesList.length > 0
-      ? categoriesList
-      : ["Saree", "Chudithar", "Coordset", "Maxi", "Nighty"];
-
-    const uniqueNonAll = Array.from(
-      new Set(
-        raw
-          .map((c) => (typeof c === "string" ? c.trim() : (c as any)?.name?.trim() || String(c)))
-          .filter((c) => c && c.toLowerCase() !== "all")
-      )
-    );
-
-    return ["All", ...uniqueNonAll];
-  }, [categoriesList]);
 
   return (
-    <div className="bg-[#FAF7F2] text-[#0E0E0E] min-h-screen selection:bg-[#D15608]/20 selection:text-[#0E0E0E]">
-      {/* ===================================================================
-          1. HERO SECTION — FULL-WIDTH EDITORIAL BANNER SLIDER
-          Direct click to /shop collection page as requested.
-         =================================================================== */}
-      <section className="relative w-full bg-[#FAF7F2] border-b border-[rgba(14,14,14,0.06)] overflow-hidden">
-        <div className="relative w-full aspect-[16/9] sm:aspect-[2/1] md:aspect-[2.1/1] max-h-[640px] overflow-hidden bg-[#FAF7F2]">
-          {HERO_BANNERS.map((banner, index) => (
-            <div
-              key={banner.id}
-              className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${
-                index === currentSlide ? "opacity-100 z-10 pointer-events-auto" : "opacity-0 z-0 pointer-events-none"
-              }`}
-            >
-              <Link
-                to="/shop"
-                className="block w-full h-full relative cursor-pointer group"
-                aria-label={banner.alt}
-              >
-                <img
-                  src={banner.image}
-                  alt={banner.alt}
-                  className="w-full h-full object-cover object-center transition-transform duration-700 ease-out group-hover:scale-[1.01]"
-                  loading={index === 0 ? "eager" : "lazy"}
-                />
-              </Link>
-            </div>
-          ))}
+    <div className="min-h-screen bg-white text-[#222222] font-['Poppins'] flex flex-col relative pb-16 md:pb-0">
+      {/* HERO CAROUSEL */}
+      <HeroCarousel />
 
-          {/* Navigation Arrows */}
-          <button
-            type="button"
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              setCurrentSlide((prev) => (prev - 1 + HERO_BANNERS.length) % HERO_BANNERS.length);
-            }}
-            className="absolute left-3 sm:left-6 top-1/2 -translate-y-1/2 z-20 size-8 sm:size-11 rounded-full bg-black/35 hover:bg-black/65 text-white flex items-center justify-center backdrop-blur-xs transition-all cursor-pointer border border-white/20 active:scale-95 shadow-md"
-            aria-label="Previous banner"
-          >
-            <ChevronLeft className="size-4 sm:size-6" />
-          </button>
+      {/* SECTION 6 - POPULAR CATEGORIES */}
+      <PopularCategories />
 
-          <button
-            type="button"
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              setCurrentSlide((prev) => (prev + 1) % HERO_BANNERS.length);
-            }}
-            className="absolute right-3 sm:right-6 top-1/2 -translate-y-1/2 z-20 size-8 sm:size-11 rounded-full bg-black/35 hover:bg-black/65 text-white flex items-center justify-center backdrop-blur-xs transition-all cursor-pointer border border-white/20 active:scale-95 shadow-md"
-            aria-label="Next banner"
-          >
-            <ChevronRight className="size-4 sm:size-6" />
-          </button>
+      {/* SECTION 7 - OUR BESTSELLERS (cream background) */}
+      <OurBestsellers onOpenQuickSize={handleOpenQuickSize} />
 
-          {/* Dot Indicators */}
-          <div className="absolute bottom-3 sm:bottom-5 left-1/2 -translate-x-1/2 z-20 flex items-center gap-2 px-3 py-1.5 rounded-full bg-black/35 backdrop-blur-xs border border-white/20">
-            {HERO_BANNERS.map((_, idx) => (
-              <button
-                key={idx}
-                type="button"
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  setCurrentSlide(idx);
-                }}
-                className={`transition-all rounded-full cursor-pointer ${
-                  idx === currentSlide
-                    ? "w-6 sm:w-8 h-2 bg-[#EDBC3D]"
-                    : "w-2 h-2 bg-white/60 hover:bg-white"
-                }`}
-                aria-label={`Go to slide ${idx + 1}`}
-              />
-            ))}
-          </div>
-        </div>
-      </section>
+      {/* SECTION 8 - SHOP BY OCCASION (bento grid) */}
+      <ShopByOccasion />
 
-      {/* ===================================================================
-          2. FEATURED COLLECTION — PREMIUM WOMEN'S FASHION CAROUSEL
-         =================================================================== */}
-      <FeaturedCollectionCarousel />
+      {/* SECTION 9 - SHOP BY PATTERN (progress bar + tall portrait cards) */}
+      <ShopByPattern />
 
-      {/* ===================================================================
-          4. SHOP BY CATEGORY — EDITORIAL IMAGE CARDS
-          "Find Your Perfect Style", eyebrow "EXPLORE COLLECTIONS",
-          4 cards in single row (desktop), 2 cols (tablet/mobile), ~4:5 aspect ratio.
-         =================================================================== */}
-      <section
-        className="w-full py-20 sm:py-24 bg-[#F4F0E8] border-b border-[rgba(14,14,14,0.06)] select-none"
-        aria-label="Editorial Collections"
-      >
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center max-w-xl mx-auto mb-12 sm:mb-16">
-            <MicroLabel className="mb-2">EXPLORE COLLECTIONS</MicroLabel>
-            <h2 className="font-['Cormorant_Garamond'] text-3xl sm:text-4xl md:text-5xl font-medium tracking-tight text-[#0E0E0E]">
-              Find Your Perfect Style
-            </h2>
-            <p className="text-xs sm:text-sm text-[#0E0E0E]/70 font-light mt-2 max-w-md mx-auto">
-              Curated edits designed for everyday comfort, grand celebrations, and timeless wardrobe elegance.
-            </p>
-          </div>
+      {/* SECTION 10 - LOVED BY CELEBS (1:2 cards with sparkle) */}
+      <LovedByCelebs />
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {EDITORIAL_COLLECTIONS.map((col) => (
-              <button
-                key={col.slug}
-                type="button"
-                onClick={() => handleCategoryNav(col.slug)}
-                className="group relative aspect-4/5 w-full rounded-[2px] overflow-hidden bg-[#EBE6DC] border border-[rgba(14,14,14,0.08)] block text-left cursor-pointer transition-all hover:border-[#D15608] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[#D15608]"
-              >
-                <img
-                  src={col.image}
-                  alt={col.title}
-                  loading="lazy"
-                  className="w-full h-full object-cover object-center transition-transform duration-700 ease-[cubic-bezier(0.2,0.7,0.2,1)] group-hover:scale-104"
-                />
+      {/* SECTION 11 - THE BRAND COLOUR PALETTE (~330px lifestyle cards) */}
+      <BrandColourPalette />
 
-                {/* Dark bottom gradient overlay */}
-                <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/25 to-transparent pointer-events-none" />
+      {/* SECTION 12 - CUSTOMER REVIEWS (black rounded cards) */}
+      <CustomerReviews />
 
-                {/* Tag Top-Left */}
-                <div className="absolute top-4 left-4 z-10 pointer-events-none">
-                  <span className="text-[10px] uppercase tracking-[0.16em] font-medium text-white/90 bg-black/40 backdrop-blur-xs px-2.5 py-1 rounded-full">
-                    {col.tag}
-                  </span>
-                </div>
+      {/* SECTION 13 - ONLINE EXCLUSIVE (split layout) */}
+      <OnlineExclusive onOpenQuickSize={handleOpenQuickSize} />
 
-                {/* Title & Explore Link Bottom-Left */}
-                <div className="absolute bottom-5 left-5 right-5 z-10 text-white pointer-events-none">
-                  <h3 className="font-['Manrope'] text-lg sm:text-xl font-medium tracking-tight leading-snug">
-                    {col.title}
-                  </h3>
-                  <div className="mt-2.5 inline-flex items-center gap-1.5 text-xs uppercase tracking-[0.14em] font-medium text-[#EDBC3D] group-hover:text-white transition-colors">
-                    <span>Explore Collection</span>
-                    <ArrowRight className="size-3.5 transition-transform duration-300 group-hover:translate-x-1" strokeWidth={1.5} />
-                  </div>
-                </div>
-              </button>
-            ))}
-          </div>
-        </div>
-      </section>
+      {/* SECTION 14 - TREND JOURNAL (3 blog articles) */}
+      <TrendJournal />
 
-      {/* ===================================================================
-          4. PROMOTIONAL BANNERS
-          Banner A ("Everyday Elegance") & Banner B ("New Styles, Fresh Looks")
-          Soft cream/beige background, refined black CTA buttons, balanced layout.
-         =================================================================== */}
-      <section className="w-full py-16 sm:py-20 bg-[#FAF7F2] border-b border-[rgba(14,14,14,0.06)] relative overflow-hidden">
-        {/* Soft atmospheric background lighting / shadow gradient */}
-        <div className="absolute top-1/2 left-1/4 -translate-y-1/2 w-96 h-96 bg-[#D8BE9A]/20 rounded-full blur-3xl pointer-events-none" />
-        <div className="absolute top-1/2 right-1/4 -translate-y-1/2 w-96 h-96 bg-[#D8BE9A]/20 rounded-full blur-3xl pointer-events-none" />
+      {/* SECTION 15 - FIND A STORE STRIP (red pin + gold watermark) */}
+      <FindAStoreStrip />
 
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 lg:gap-10">
-            {/* BANNER A: Everyday Elegance */}
-            <Link
-              to="/shop"
-              aria-label="Special Collection - Everyday Elegance - Shop Collection"
-              className="group relative block rounded-2xl overflow-hidden bg-[#FAF7F2] border border-[rgba(14,14,14,0.08)] shadow-[0_16px_40px_-10px_rgba(30,22,12,0.18),0_6px_20px_rgba(30,22,12,0.08)] hover:shadow-[0_28px_56px_-12px_rgba(30,22,12,0.28),0_12px_28px_rgba(30,22,12,0.14)] transition-all duration-500 hover:-translate-y-1.5 focus:outline-none focus:ring-2 focus:ring-[#D15608]/50"
-            >
-              <div className="relative w-full aspect-[1024/705] overflow-hidden">
-                <img
-                  src={everydayEleganceBanner}
-                  alt="Special Collection - Everyday Elegance - Shop Collection"
-                  className="w-full h-full object-cover object-center transform transition-transform duration-700 ease-out group-hover:scale-[1.03]"
-                  loading="lazy"
-                />
-                {/* Subtle soft sheen highlight on hover */}
-                <div className="absolute inset-0 bg-gradient-to-t from-black/15 via-transparent to-white/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
-              </div>
-            </Link>
+      {/* SECTION 16 - TRUST STRIP (3 pillars with outline SVGs) */}
+      <TrustStrip />
 
-            {/* BANNER B: New Styles, Fresh Looks */}
-            <Link
-              to="/shop"
-              search={{ filter: "new" } as any}
-              aria-label="Just Arrived - New Styles, Fresh Looks - Explore New Arrivals"
-              className="group relative block rounded-2xl overflow-hidden bg-[#FAF7F2] border border-[rgba(14,14,14,0.08)] shadow-[0_16px_40px_-10px_rgba(30,22,12,0.18),0_6px_20px_rgba(30,22,12,0.08)] hover:shadow-[0_28px_56px_-12px_rgba(30,22,12,0.28),0_12px_28px_rgba(30,22,12,0.14)] transition-all duration-500 hover:-translate-y-1.5 focus:outline-none focus:ring-2 focus:ring-[#D15608]/50"
-            >
-              <div className="relative w-full aspect-[1024/705] overflow-hidden">
-                <img
-                  src={newStylesBanner}
-                  alt="Just Arrived - New Styles, Fresh Looks - Explore New Arrivals"
-                  className="w-full h-full object-cover object-center transform transition-transform duration-700 ease-out group-hover:scale-[1.03]"
-                  loading="lazy"
-                />
-                {/* Subtle soft sheen highlight on hover */}
-                <div className="absolute inset-0 bg-gradient-to-t from-black/15 via-transparent to-white/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
-              </div>
-            </Link>
-          </div>
-        </div>
-      </section>
+      {/* SECTION 17 - FOOTER (soft grey #F2F2F2, compact) */}
+      <LandingFooter />
 
-      {/* ===================================================================
-          5. BESTSELLING / FEATURED PRODUCTS
-          "Our Most Loved Styles", eyebrow "CUSTOMER FAVOURITES",
-          "View All Products →", live product data, loading & empty states.
-         =================================================================== */}
-      <section
-        className="w-full py-20 sm:py-28 bg-[#FAF7F2] border-b border-[rgba(14,14,14,0.06)]"
-        aria-label="Our Most Loved Styles"
-      >
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-10">
-            <div>
-              <MicroLabel className="mb-2">CUSTOMER FAVOURITES</MicroLabel>
-              <h2 className="font-['Cormorant_Garamond'] text-3xl sm:text-4xl md:text-5xl font-medium tracking-tight text-[#0E0E0E]">
-                Our Most Loved Styles
-              </h2>
-              <p className="text-xs sm:text-sm text-[#0E0E0E]/70 font-light mt-1 max-w-md">
-                Handpicked customer favourites crafted with precision weaving and timeless comfort.
-              </p>
-            </div>
+      {/* MOBILE BOTTOM NAV (fixed at bottom on mobile) */}
+      <MobileBottomNav onOpenLogin={handleOpenLogin} />
 
-            <Link
-              to="/shop"
-              className="inline-flex items-center gap-1.5 text-xs uppercase tracking-[0.16em] font-medium text-[#D15608] hover:underline shrink-0"
-            >
-              <span>View All Products</span>
-              <ArrowRight className="size-4" strokeWidth={1.5} />
-            </Link>
-          </div>
+      {/* UI-ONLY OVERLAYS */}
+      <LoginModal
+        isOpen={isLoginModalOpen}
+        onClose={() => setIsLoginModalOpen(false)}
+      />
 
-          {/* Category Filter Chips */}
-          <div className="flex items-center gap-2 overflow-x-auto pb-4 mb-8 no-scrollbar">
-            {availableCategories.slice(0, 7).map((cat) => (
-              <button
-                key={cat}
-                type="button"
-                onClick={() => setSelectedCategory(cat)}
-                className={`px-3.5 sm:px-4 py-1.5 sm:py-2 rounded-full text-xs font-semibold uppercase tracking-wider transition-all cursor-pointer shrink-0 whitespace-nowrap min-h-[34px] touch-manipulation flex items-center justify-center ${
-                  selectedCategory === cat
-                    ? "bg-[#D15608] text-white shadow-xs"
-                    : "bg-black/5 text-[#0E0E0E]/80 hover:bg-black/10 border border-[rgba(14,14,14,0.08)]"
-                }`}
-              >
-                {cat}
-              </button>
-            ))}
-          </div>
-
-          {/* Product Grid State Handling */}
-          {loading && (!catalogToDisplay || catalogToDisplay.length === 0) ? (
-            <ProductGridSkeleton count={8} />
-          ) : error && (!catalogToDisplay || catalogToDisplay.length === 0) ? (
-            <div className="text-center py-16 px-4 bg-[#EBE6DC]/50 rounded-2xl border border-[rgba(14,14,14,0.08)] shadow-xs">
-              <p className="text-sm text-[#9F160A] font-medium">{error}</p>
-              <button
-                onClick={fetchProducts}
-                className="mt-4 px-6 py-2 rounded-full bg-[#D15608] text-white text-xs uppercase tracking-wider hover:bg-[#9F160A] cursor-pointer"
-              >
-                Try Again
-              </button>
-            </div>
-          ) : filteredProducts.length === 0 ? (
-            <div className="text-center py-16 px-4 bg-[#EBE6DC]/50 rounded-2xl border border-[rgba(14,14,14,0.08)] shadow-xs">
-              <p className="text-sm text-[#0E0E0E]/70 font-light">
-                No products found in this category right now.
-              </p>
-              <Link
-                to="/shop"
-                className="mt-4 inline-block px-6 py-2 rounded-full bg-[#D15608] text-white text-xs uppercase tracking-wider hover:bg-[#9F160A]"
-              >
-                Explore Full Shop
-              </Link>
-            </div>
-          ) : (
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-6">
-              {filteredProducts.slice(0, 8).map((product) => (
-                <ProductCard key={product.id} product={product} />
-              ))}
-            </div>
-          )}
-        </div>
-      </section>
-
-      {/* ===================================================================
-          6. BENEFITS STRIP
-          4 evenly spaced items: Free Shipping, Easy Returns, Secure Payments, Customer Support.
-         =================================================================== */}
-      <section
-        className="w-full py-16 bg-[#FAF7F2] border-b border-[rgba(14,14,14,0.06)] select-none"
-        aria-label="Customer Benefits"
-      >
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
-            {BENEFITS.map((b) => {
-              const Icon = b.icon;
-              return (
-                <div key={b.title} className="flex items-start gap-4 p-2">
-                  <div className="size-11 rounded-full bg-[#EBE6DC] border border-[rgba(14,14,14,0.08)] flex items-center justify-center shrink-0 text-[#0E0E0E]">
-                    <Icon className="size-5 text-[#D15608]" strokeWidth={1.5} />
-                  </div>
-                  <div className="space-y-1">
-                    <h4 className="font-['Manrope'] text-sm font-semibold uppercase tracking-wider text-[#0E0E0E]">
-                      {b.title}
-                    </h4>
-                    <p className="text-xs text-[#0E0E0E]/70 font-light leading-relaxed">
-                      {b.description}
-                    </p>
-                    {b.link && (
-                      <Link
-                        to={b.link}
-                        className="text-[11px] font-medium text-[#D15608] hover:underline uppercase tracking-wider block pt-1"
-                      >
-                        Contact Team →
-                      </Link>
-                    )}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      </section>
-
-      {/* ===================================================================
-          7. NEWSLETTER / PROMOTIONAL SECTION
-          Fashion photograph on the left, soft beige content on the right,
-          elegant serif heading, email input, black Subscribe button.
-         =================================================================== */}
-      <section className="w-full py-16 sm:py-24 bg-[#FAF7F2]">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="rounded-[2px] overflow-hidden bg-[#EBE6DC] border border-[rgba(14,14,14,0.08)] grid grid-cols-1 lg:grid-cols-12 shadow-xs">
-            {/* LEFT: Fashion photograph */}
-            <div className="lg:col-span-5 relative aspect-4/3 lg:aspect-auto min-h-[300px]">
-              <img
-                src={newsletterFabrics}
-                alt="Padmanabha Fabrics Chennai artisan weaves and brocades"
-                className="w-full h-full object-cover object-center"
-                loading="lazy"
-              />
-              <div className="absolute inset-0 bg-black/5 pointer-events-none" />
-            </div>
-
-            {/* RIGHT: Content & Subscription Form */}
-            <div className="lg:col-span-7 p-8 sm:p-12 lg:p-16 flex flex-col justify-center space-y-4">
-              <MicroLabel className="text-[#D15608]">STAY IN STYLE</MicroLabel>
-
-              <h2 className="font-['Cormorant_Garamond'] text-3xl sm:text-4xl md:text-5xl font-medium tracking-tight text-[#0E0E0E] leading-tight">
-                A Little More Style in Your Inbox
-              </h2>
-
-              <p className="text-xs sm:text-sm text-[#0E0E0E]/70 font-light leading-relaxed max-w-lg">
-                Discover new arrivals, collection highlights, and updates from Padmanabha Fabrics. Be the first to preview exclusive artisan weaves and seasonal drops.
-              </p>
-
-              {isSubscribed ? (
-                <div className="pt-4 flex items-center gap-2 text-sm text-[#2E6F40] font-medium">
-                  <Check className="size-4" strokeWidth={2} />
-                  <span>You are subscribed to Padmanabha Fabrics style updates.</span>
-                </div>
-              ) : (
-                <form
-                  onSubmit={handleNewsletterSubmit}
-                  className="pt-3 flex flex-col sm:flex-row gap-2 max-w-md"
-                >
-                  <input
-                    type="email"
-                    placeholder="Enter your email address"
-                    value={newsletterEmail}
-                    onChange={(e) => setNewsletterEmail(e.target.value)}
-                    required
-                    className="flex-1 bg-white border border-[rgba(14,14,14,0.15)] rounded-full px-5 py-3 text-xs text-[#0E0E0E] placeholder:text-[#0E0E0E]/40 focus:outline-none focus:border-[#D15608] shadow-2xs"
-                  />
-                  <button
-                    type="submit"
-                    className="px-8 py-3 rounded-full bg-[#D15608] text-white hover:bg-[#9F160A] transition-colors text-xs uppercase tracking-[0.16em] font-medium cursor-pointer shadow-xs whitespace-nowrap active:scale-98"
-                  >
-                    Subscribe
-                  </button>
-                </form>
-              )}
-
-              <p className="text-[10px] text-[#0E0E0E]/50 font-light pt-1">
-                By subscribing, you agree to our Privacy Policy. Unsubscribe anytime.
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
+      <SizeSelectorModal
+        product={sizeModalProduct}
+        isOpen={Boolean(sizeModalProduct)}
+        onClose={() => setSizeModalProduct(null)}
+      />
     </div>
   );
 }

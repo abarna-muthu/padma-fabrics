@@ -93,6 +93,11 @@
   --wine: #9F160A;
   --orange: #D15608;
   --deep-red: #9F160A;
+
+  /* Landing page shared radius tokens */
+  --lp-radius-card: 14px;
+  --lp-radius-sm: 8px;
+  --lp-radius-pill: 999px;
 }
 
 .dark, [data-theme="dark"] {
