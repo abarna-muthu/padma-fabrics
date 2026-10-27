@@ -7,6 +7,8 @@ import {
   ShieldCheck,
   Headphones,
   Check,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 import { MicroLabel } from "@/components/MicroLabel";
 import { ProductCard } from "@/components/ProductCard";
@@ -24,7 +26,22 @@ import silkSareesCategory from "@/assets/silk-sarees-category.jpg";
 import chuditharCategory from "@/assets/chudithar-ensembles-category.jpg";
 import coordsetsCategory from "@/assets/artisanal-coordsets-category.jpg";
 import maxisCategory from "@/assets/flowing-maxis-category.jpg";
-import heroEthnicBanner from "@/assets/hero-ethnic-collection.jpg";
+
+// =========================================================================
+// HERO SECTION BANNERS (Auto-rotating slider linked to /shop)
+// =========================================================================
+const HERO_BANNERS = [
+  {
+    id: 1,
+    image: "/hero-banner-1.jpg",
+    alt: "Padmanabha Fabrics - Timeless Ethnic Elegance, Style Woven With Tradition",
+  },
+  {
+    id: 2,
+    image: "/hero-banner-2.png",
+    alt: "Padmanabha Fabrics - Timeless Ethnic Elegance, Explore Collection",
+  },
+];
 
 
 // =========================================================================
@@ -87,6 +104,17 @@ const BENEFITS = [
 export function HomePage() {
   const navigate = useNavigate();
   const { setFilter, activeProducts, categoriesList } = useStore();
+
+  // Hero banner slider state
+  const [currentSlide, setCurrentSlide] = useState(0);
+
+  // Auto-advance banner slides every 5 seconds
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentSlide((prev) => (prev + 1) % HERO_BANNERS.length);
+    }, 5000);
+    return () => clearInterval(timer);
+  }, []);
 
   // Featured Products state
   const [selectedCategory, setSelectedCategory] = useState("All");
@@ -179,72 +207,79 @@ export function HomePage() {
   return (
     <div className="bg-[#FAF7F2] text-[#0E0E0E] min-h-screen selection:bg-[#D15608]/20 selection:text-[#0E0E0E]">
       {/* ===================================================================
-          1. HERO SECTION — MAIN VISUAL FOCUS (Split Layout)
-          Left: ~50% width content on warm ivory.
-          Right: ~50% width large fashion photography in neutral tones.
+          1. HERO SECTION — FULL-WIDTH EDITORIAL BANNER SLIDER
+          Direct click to /shop collection page as requested.
          =================================================================== */}
       <section className="relative w-full bg-[#FAF7F2] border-b border-[rgba(14,14,14,0.06)] overflow-hidden">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 lg:py-20">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
-            {/* LEFT CONTENT: ~50% width */}
-            <div className="lg:col-span-6 flex flex-col justify-center space-y-6 lg:pr-6">
-              <MicroLabel className="text-[#D15608]">
-                THE NEW SEASON
-              </MicroLabel>
-
-              <h1 className="font-['Cormorant_Garamond'] text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-normal leading-[1.05] tracking-tight text-[#0E0E0E]">
-                Style That Feels <br className="hidden sm:inline" />
-                <span className="italic font-light">Like You.</span>
-              </h1>
-
-              <p className="text-sm sm:text-base md:text-lg text-[#0E0E0E]/70 font-light leading-relaxed max-w-lg">
-                Discover thoughtfully selected styles for every occasion, from everyday essentials to statement pieces handcrafted direct from master looms in Chennai.
-              </p>
-
-              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 sm:gap-3 pt-2">
-                <Link
-                  to="/shop"
-                  className="inline-flex items-center justify-center px-5 sm:px-8 py-3 sm:py-3.5 rounded-full bg-[#D15608] text-white hover:bg-[#9F160A] transition-colors text-xs font-semibold uppercase tracking-[0.08em] sm:tracking-[0.14em] cursor-pointer shadow-xs active:scale-98 text-center w-full sm:w-auto touch-manipulation"
-                >
-                  Shop Collection
-                </Link>
-
-                <Link
-                  to="/shop"
-                  search={{ filter: "new" } as any}
-                  className="inline-flex items-center justify-center px-5 sm:px-8 py-3 sm:py-3.5 rounded-full border border-[rgba(14,14,14,0.25)] text-[#0E0E0E] hover:border-[#D15608] hover:text-[#D15608] hover:bg-black/5 transition-all text-xs font-semibold uppercase tracking-[0.08em] sm:tracking-[0.14em] cursor-pointer active:scale-98 text-center w-full sm:w-auto touch-manipulation"
-                >
-                  Explore New Arrivals
-                </Link>
-              </div>
-
-              {/* Editorial provenance note */}
-              <div className="pt-6 border-t border-[rgba(14,14,14,0.08)] flex flex-wrap items-center gap-x-4 gap-y-1 sm:gap-6 text-[10px] sm:text-[11px] uppercase tracking-[0.16em] text-[#0E0E0E]/60">
-                <span>Hand-inspected Weaves</span>
-                <span>·</span>
-                <span>Retail & Wholesale</span>
-                <span>·</span>
-                <span>Direct Loom Dispatch</span>
-              </div>
-            </div>
-
-            {/* RIGHT SIDE: Large fashion photograph */}
-            <div className="lg:col-span-6 flex items-center justify-center">
-              <div className="relative aspect-[4/5] w-full max-w-[480px] lg:max-w-[500px] rounded-2xl overflow-hidden bg-[#FAF7F2] border border-[rgba(14,14,14,0.08)] shadow-[0_16px_40px_-10px_rgba(30,22,12,0.18),0_6px_20px_rgba(30,22,12,0.08)] group">
+        <div className="relative w-full aspect-[16/9] sm:aspect-[2/1] md:aspect-[2.1/1] max-h-[640px] overflow-hidden bg-[#FAF7F2]">
+          {HERO_BANNERS.map((banner, index) => (
+            <div
+              key={banner.id}
+              className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${
+                index === currentSlide ? "opacity-100 z-10 pointer-events-auto" : "opacity-0 z-0 pointer-events-none"
+              }`}
+            >
+              <Link
+                to="/shop"
+                className="block w-full h-full relative cursor-pointer group"
+                aria-label={banner.alt}
+              >
                 <img
-                  src={heroEthnicBanner}
-                  alt="Padmanabha Fabrics contemporary ethnic collection"
-                  className="w-full h-full object-cover object-center transition-transform duration-700 ease-out group-hover:scale-[1.02]"
-                  loading="eager"
+                  src={banner.image}
+                  alt={banner.alt}
+                  className="w-full h-full object-cover object-center transition-transform duration-700 ease-out group-hover:scale-[1.01]"
+                  loading={index === 0 ? "eager" : "lazy"}
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/35 via-transparent to-transparent pointer-events-none" />
-
-                <div className="absolute bottom-4 left-4 right-4 z-10 flex items-center justify-between text-white text-xs tracking-wider uppercase font-medium bg-black/45 backdrop-blur-xs px-4 py-2.5 rounded-lg border border-white/10">
-                  <span>Contemporary Ready-to-Wear</span>
-                  <span className="text-[#EDBC3D]">Edition 2026</span>
-                </div>
-              </div>
+              </Link>
             </div>
+          ))}
+
+          {/* Navigation Arrows */}
+          <button
+            type="button"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              setCurrentSlide((prev) => (prev - 1 + HERO_BANNERS.length) % HERO_BANNERS.length);
+            }}
+            className="absolute left-3 sm:left-6 top-1/2 -translate-y-1/2 z-20 size-8 sm:size-11 rounded-full bg-black/35 hover:bg-black/65 text-white flex items-center justify-center backdrop-blur-xs transition-all cursor-pointer border border-white/20 active:scale-95 shadow-md"
+            aria-label="Previous banner"
+          >
+            <ChevronLeft className="size-4 sm:size-6" />
+          </button>
+
+          <button
+            type="button"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              setCurrentSlide((prev) => (prev + 1) % HERO_BANNERS.length);
+            }}
+            className="absolute right-3 sm:right-6 top-1/2 -translate-y-1/2 z-20 size-8 sm:size-11 rounded-full bg-black/35 hover:bg-black/65 text-white flex items-center justify-center backdrop-blur-xs transition-all cursor-pointer border border-white/20 active:scale-95 shadow-md"
+            aria-label="Next banner"
+          >
+            <ChevronRight className="size-4 sm:size-6" />
+          </button>
+
+          {/* Dot Indicators */}
+          <div className="absolute bottom-3 sm:bottom-5 left-1/2 -translate-x-1/2 z-20 flex items-center gap-2 px-3 py-1.5 rounded-full bg-black/35 backdrop-blur-xs border border-white/20">
+            {HERO_BANNERS.map((_, idx) => (
+              <button
+                key={idx}
+                type="button"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  setCurrentSlide(idx);
+                }}
+                className={`transition-all rounded-full cursor-pointer ${
+                  idx === currentSlide
+                    ? "w-6 sm:w-8 h-2 bg-[#EDBC3D]"
+                    : "w-2 h-2 bg-white/60 hover:bg-white"
+                }`}
+                aria-label={`Go to slide ${idx + 1}`}
+              />
+            ))}
           </div>
         </div>
       </section>
