@@ -495,8 +495,9 @@ function AdminDashboardPage() {
     setVariantStockInput("10");
   };
 
-  const handleRemoveColourVariant = (colourToRemove: string) => {
-    setProdVariants((prev) => prev.filter((v) => v.colour !== colourToRemove));
+  const handleRemoveColourVariant = (indexToRemove: number, colourName?: string) => {
+    setProdVariants((prev) => prev.filter((_, idx) => idx !== indexToRemove));
+    toast.success(colourName ? `Removed colour variant "${colourName}"` : "Colour variant removed");
   };
 
   const handleAddImageFromUrl = () => {
@@ -4282,9 +4283,25 @@ function AdminDashboardPage() {
                       Add multiple colours (Rani Pink, Teal Blue, Bottle Green, etc.) with custom price, stock & photo
                     </p>
                   </div>
-                  <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-primary/10 text-primary">
-                    {prodVariants.length} {prodVariants.length === 1 ? "variant" : "variants"}
-                  </span>
+                  <div className="flex items-center gap-2">
+                    {prodVariants.length > 1 && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (window.confirm("Remove all colour variants?")) {
+                            setProdVariants([]);
+                            toast.success("All variants removed");
+                          }
+                        }}
+                        className="text-[11px] text-destructive hover:underline cursor-pointer"
+                      >
+                        Clear All
+                      </button>
+                    )}
+                    <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-primary/10 text-primary">
+                      {prodVariants.length} {prodVariants.length === 1 ? "variant" : "variants"}
+                    </span>
+                  </div>
                 </div>
 
                 {/* Variant Quick-Add Fields */}
@@ -4461,7 +4478,7 @@ function AdminDashboardPage() {
                                 type="button"
                                 variant="outline"
                                 size="sm"
-                                className="h-7 text-[11px] px-2 py-0 border-border text-foreground hover:bg-muted cursor-pointer"
+                                className="h-7 text-[11px] px-2.5 py-0 border-border text-foreground hover:bg-muted cursor-pointer font-medium"
                                 onClick={() => {
                                   setTargetVariantIndexForUpload(vIdx);
                                   variantRowFileInputRef.current?.click();
@@ -4472,15 +4489,17 @@ function AdminDashboardPage() {
                                 {variantPhoto ? "Change Photo" : "+ Add Photo"}
                               </Button>
 
+                              {/* Delete Variant Button with clear label and icon */}
                               <Button
                                 type="button"
-                                variant="ghost"
+                                variant="outline"
                                 size="sm"
-                                className="h-7 w-7 p-0 text-destructive hover:bg-destructive/10 cursor-pointer"
-                                onClick={() => handleRemoveColourVariant(v.colour)}
-                                title="Remove colour variant"
+                                className="h-7 text-[11px] px-2.5 py-0 border-destructive/40 text-destructive bg-destructive/5 hover:bg-destructive hover:text-white transition-colors cursor-pointer font-medium shadow-2xs"
+                                onClick={() => handleRemoveColourVariant(vIdx, v.colour)}
+                                title={`Delete "${v.colour}" variant`}
                               >
-                                <Trash2 className="size-3.5" />
+                                <Trash2 className="size-3 mr-1" />
+                                Delete
                               </Button>
                             </div>
                           </div>

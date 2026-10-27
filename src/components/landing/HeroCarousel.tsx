@@ -1,74 +1,31 @@
 import { useState, useEffect, useRef } from "react";
 import { Link } from "@tanstack/react-router";
-import { Button } from "./Button";
 
-interface SlideData {
+interface HeroBanner {
   id: number;
-  headline: string;
-  tagline: string;
-  subtext: string;
   image: string;
-  buttonText: string;
+  alt: string;
   href: string;
-  focalY?: number;
-  mobileFocalY?: number;
 }
 
-const HERO_SLIDES: SlideData[] = [
+const HERO_BANNERS: HeroBanner[] = [
   {
     id: 1,
-    headline: "Indo Fusion",
-    tagline: "E D I T",
-    subtext: "Effortless and versatile styles made for everyday, travel, and beyond.",
-    image: "https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=1600&q=85",
-    buttonText: "SHOP NOW",
-    href: "/shop?category=Kurtas",
-    focalY: 30,
-    mobileFocalY: 20,
+    image: "/hero-banner-3.jpg",
+    alt: "Padmanabha Fabrics - Timeless Elegance in Every Thread, Premium Sarees",
+    href: "/shop",
   },
   {
     id: 2,
-    headline: "Pure Silks",
-    tagline: "H E R I T A G E",
-    subtext: "Artisanal woven silks crafted with timeless Chennai zari work.",
-    image: "https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?w=1600&q=85",
-    buttonText: "SHOP NOW",
-    href: "/shop?category=Saree",
-    focalY: 22,
-    mobileFocalY: 20,
+    image: "/hero-banner-2.png",
+    alt: "Padmanabha Fabrics - Timeless Ethnic Elegance, Explore Collection",
+    href: "/shop",
   },
   {
     id: 3,
-    headline: "Modern Sets",
-    tagline: "F E S T I V E",
-    subtext: "Coordinated silhouettes tailored for intimate celebrations.",
-    image: "https://images.unsplash.com/photo-1596783049586-e414c54b2a84?w=1600&q=85",
-    buttonText: "SHOP NOW",
-    href: "/shop?category=Kurta Sets",
-    focalY: 30,
-    mobileFocalY: 20,
-  },
-  {
-    id: 4,
-    headline: "Fluid Drapes",
-    tagline: "C O N T E M P O R A R Y",
-    subtext: "Breathable chanderis and light organza ensembles for the season.",
-    image: "https://images.unsplash.com/photo-1617627143750-d86bc21e42bb?w=1600&q=85",
-    buttonText: "SHOP NOW",
-    href: "/shop?category=Dresses",
-    focalY: 30,
-    mobileFocalY: 20,
-  },
-  {
-    id: 5,
-    headline: "Royal Weaves",
-    tagline: "E X C L U S I V E",
-    subtext: "Limited editions designed to shine from day to dusk.",
-    image: "https://images.unsplash.com/photo-1509631179647-0177331693ae?w=1600&q=85",
-    buttonText: "SHOP NOW",
-    href: "/shop?exclusive=true",
-    focalY: 30,
-    mobileFocalY: 20,
+    image: "/hero-banner-1.jpg",
+    alt: "Padmanabha Fabrics - Timeless Ethnic Elegance, Style Woven With Tradition",
+    href: "/shop",
   },
 ];
 
@@ -77,16 +34,16 @@ export function HeroCarousel() {
   const [isHovered, setIsHovered] = useState(false);
   const touchStartX = useRef(0);
 
-  // Autoplay 5s, pause on hover
+  // Auto-play 5s, pause on hover
   useEffect(() => {
     if (isHovered) return;
     const interval = setInterval(() => {
-      setCurrentSlide((prev) => (prev + 1) % HERO_SLIDES.length);
+      setCurrentSlide((prev) => (prev + 1) % HERO_BANNERS.length);
     }, 5000);
     return () => clearInterval(interval);
   }, [isHovered]);
 
-  // Touch swipe support
+  // Touch swipe support for mobile
   const handleTouchStart = (e: React.TouchEvent) => {
     touchStartX.current = e.touches[0].clientX;
   };
@@ -94,94 +51,66 @@ export function HeroCarousel() {
   const handleTouchEnd = (e: React.TouchEvent) => {
     const diff = touchStartX.current - e.changedTouches[0].clientX;
     if (diff > 50) {
-      setCurrentSlide((prev) => (prev + 1) % HERO_SLIDES.length);
+      setCurrentSlide((prev) => (prev + 1) % HERO_BANNERS.length);
     } else if (diff < -50) {
-      setCurrentSlide((prev) => (prev - 1 + HERO_SLIDES.length) % HERO_SLIDES.length);
+      setCurrentSlide((prev) => (prev - 1 + HERO_BANNERS.length) % HERO_BANNERS.length);
     }
   };
 
   return (
     <section
-      aria-label="Hero Carousel"
+      aria-label="Hero Banners"
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
       onTouchStart={handleTouchStart}
       onTouchEnd={handleTouchEnd}
-      className="relative block w-full overflow-hidden select-none mb-0 pb-0 bg-[#111111] leading-none h-[clamp(420px,40vw,570px)] max-sm:aspect-[4/5] max-sm:h-auto"
+      className="relative w-full bg-[#FAF7F2] overflow-hidden select-none border-b border-[rgba(14,14,14,0.06)]"
     >
-      <style>{`
-        @media (max-width: 639px) {
-          .hero-slide-img {
-            object-position: center var(--mobile-focal, 20%) !important;
-          }
-        }
-      `}</style>
-
-      {/* 5 slides with fade transition */}
-      {HERO_SLIDES.map((slide, idx) => {
-        const isActive = idx === currentSlide;
-        return (
-          <div
-            key={slide.id}
-            className={`absolute inset-0 w-full h-full transition-opacity duration-1000 ease-in-out ${
-              isActive ? "opacity-100 z-10 pointer-events-auto" : "opacity-0 z-0 pointer-events-none"
-            }`}
-          >
-            {/* Background Image: display block, w-full h-full, object-fit: cover, per-slide focal point */}
-            <img
-              src={slide.image}
-              alt={slide.headline}
-              className="hero-slide-img block w-full h-full object-cover"
-              style={{
-                objectPosition: `center ${slide.focalY ?? 30}%`,
-                ["--mobile-focal" as any]: `${slide.mobileFocalY ?? 20}%`,
-              }}
-            />
-
-            {/* Left-to-right gradient overlay (rgba(0,0,0,0.35) to transparent) */}
-            <div className="absolute inset-0 bg-gradient-to-r from-black/75 via-black/40 to-transparent pointer-events-none" />
-
-            {/* Left-aligned overlay block ~12% from left, vertically centered */}
-            <div className="absolute inset-y-0 left-[6%] md:left-[12%] flex flex-col justify-center max-w-md text-white z-20 pt-8 leading-normal">
-              <h1 className="font-['Cormorant_Garamond'] text-[38px] sm:text-[48px] md:text-[56px] font-light leading-[1.05] tracking-[0.06em] drop-shadow-md">
-                {slide.headline}
-              </h1>
-              <p className="font-['Poppins'] text-[13px] md:text-[16px] font-light tracking-[0.5em] text-[#EDBC3D] uppercase mt-1 mb-2.5">
-                {slide.tagline}
-              </p>
-              <p className="font-['Poppins'] text-[12px] md:text-[14px] text-white/90 font-normal leading-relaxed max-w-[320px] mb-6">
-                {slide.subtext}
-              </p>
-              <div>
-                <Link to={slide.href}>
-                  <Button
-                    variant="hero"
-                    className="w-[150px] h-[40px] text-[11px] font-bold"
-                  >
-                    {slide.buttonText}
-                  </Button>
-                </Link>
-              </div>
+      <div className="relative w-full aspect-[2/1] max-h-[640px] overflow-hidden bg-[#FAF7F2]">
+        {HERO_BANNERS.map((banner, index) => {
+          const isActive = index === currentSlide;
+          return (
+            <div
+              key={banner.id}
+              className={`absolute inset-0 w-full h-full transition-opacity duration-1000 ease-in-out ${
+                isActive ? "opacity-100 z-10 pointer-events-auto" : "opacity-0 z-0 pointer-events-none"
+              }`}
+            >
+              <Link
+                to={banner.href}
+                className="block w-full h-full relative cursor-pointer"
+                aria-label={banner.alt}
+              >
+                <img
+                  src={banner.image}
+                  alt={banner.alt}
+                  className="w-full h-full object-cover object-center"
+                  loading={index === 0 ? "eager" : "lazy"}
+                />
+              </Link>
             </div>
-          </div>
-        );
-      })}
+          );
+        })}
 
-      {/* 5 Dots centered 24px from bottom: absolute, bottom: 24px, left: 50%, -translate-x-1/2, z-30 */}
-      <div className="absolute bottom-[24px] left-1/2 -translate-x-1/2 z-30 flex items-center justify-center gap-2 pointer-events-auto">
-        {HERO_SLIDES.map((_, i) => (
-          <button
-            key={i}
-            type="button"
-            onClick={() => setCurrentSlide(i)}
-            aria-label={`Go to slide ${i + 1}`}
-            className={`h-[7px] rounded-full transition-all duration-300 cursor-pointer ${
-              i === currentSlide
-                ? "w-[24px] bg-white"
-                : "w-[7px] bg-white/40 hover:bg-white/70"
-            }`}
-          />
-        ))}
+        {/* Minimal dot indicators centered at bottom */}
+        <div className="absolute bottom-3 sm:bottom-5 left-1/2 -translate-x-1/2 z-20 flex items-center justify-center gap-2 pointer-events-auto">
+          {HERO_BANNERS.map((_, i) => (
+            <button
+              key={i}
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                setCurrentSlide(i);
+              }}
+              aria-label={`Go to slide ${i + 1}`}
+              className={`h-1.5 sm:h-2 rounded-full transition-all duration-300 cursor-pointer ${
+                i === currentSlide
+                  ? "w-6 sm:w-8 bg-[#EDBC3D] shadow-xs"
+                  : "w-1.5 sm:w-2 bg-white/70 hover:bg-white shadow-xs"
+              }`}
+            />
+          ))}
+        </div>
       </div>
     </section>
   );
