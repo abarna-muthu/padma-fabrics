@@ -1,812 +1,595 @@
-import { useState, useEffect, useMemo, useRef } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
 import {
-  ChevronLeft,
-  ChevronRight,
+  ArrowRight,
   Truck,
   RotateCcw,
   ShieldCheck,
-  Star,
-  Sparkles,
-  ArrowRight,
-  TrendingUp,
-  Clock,
-  Layers,
+  Headphones,
+  Check,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
+import { MicroLabel } from "@/components/MicroLabel";
 import { ProductCard } from "@/components/ProductCard";
 import { ProductGridSkeleton } from "@/components/SkeletonLoader";
+import { FeaturedCollectionCarousel } from "@/components/FeaturedCollectionCarousel";
+import { productServices } from "@/services/api";
 import { useStore } from "@/context/StoreContext";
-import { reviewServices } from "@/services/api";
+import { toast } from "sonner";
 
-// Assets
+// Local imagery from src/assets
+import newsletterFabrics from "@/assets/newsletter-fabrics.jpg";
+import everydayEleganceBanner from "@/assets/everyday-elegance-banner.jpg";
+import newStylesBanner from "@/assets/new-styles-banner.jpg";
 import silkSareesCategory from "@/assets/silk-sarees-category.jpg";
 import chuditharCategory from "@/assets/chudithar-ensembles-category.jpg";
 import coordsetsCategory from "@/assets/artisanal-coordsets-category.jpg";
 import maxisCategory from "@/assets/flowing-maxis-category.jpg";
-import everydayEleganceBanner from "@/assets/everyday-elegance-banner.jpg";
-import newStylesBanner from "@/assets/new-styles-banner.jpg";
-import burgundySilk from "@/assets/burgundy-silk.jpg";
-import ivoryBrocade from "@/assets/ivory-brocade.jpg";
-import sageFabric from "@/assets/sage-fabric.jpg";
-import shopByPatternBanner from "@/assets/shop-by-pattern-banner.png";
 
 // =========================================================================
-// 1. HERO BANNERS DATA (Full-width auto-playing slider)
+// HERO SECTION BANNERS (Auto-rotating slider linked to /shop)
 // =========================================================================
-const HERO_SLIDES = [
+const HERO_BANNERS = [
   {
     id: 1,
     image: "/hero-banner-1.jpg",
-    title: "The Festive Edit",
-    subtitle: "Style Woven With Authentic South Indian Tradition",
-    cta: "Explore Sarees",
-    link: "/shop?category=Saree",
+    alt: "Padmanabha Fabrics - Timeless Ethnic Elegance, Style Woven With Tradition",
   },
   {
     id: 2,
     image: "/hero-banner-2.png",
-    title: "Contemporary Sets",
-    subtitle: "Bespoke Chudithars & Coordinates for Modern Celebrations",
-    cta: "Shop Kurta Sets",
-    link: "/shop?category=Chudithar",
+    alt: "Padmanabha Fabrics - Timeless Ethnic Elegance, Explore Collection",
   },
   {
     id: 3,
     image: "/hero-banner-3.jpg",
-    title: "Handloom Heritage",
-    subtitle: "Pure Zari, Breathable Cottons & Everyday Grace",
-    cta: "View Collection",
-    link: "/shop?search=new",
+    alt: "Padmanabha Fabrics - Timeless Elegance in Every Thread, Premium Sarees",
   },
 ];
 
+
 // =========================================================================
-// 2. POPULAR CATEGORIES (Circular / rounded-square pills)
+// EDITORIAL IMAGE CARDS DATA (Find Your Perfect Style)
 // =========================================================================
-const POPULAR_CATEGORIES = [
+const EDITORIAL_COLLECTIONS = [
   {
-    title: "New Arrivals",
-    image: "/hero-banner-1.jpg",
-    param: { search: "new" },
+    title: "Silk Sarees & Brocades",
+    slug: "Saree",
+    image: silkSareesCategory,
+    tag: "Loom Heritage",
   },
   {
-    title: "Kurta Sets",
+    title: "Chudithar Ensembles",
+    slug: "Chudithar",
     image: chuditharCategory,
-    param: { category: "Chudithar" },
+    tag: "Everyday & Festive",
   },
   {
-    title: "Silk Sarees",
-    image: silkSareesCategory,
-    param: { category: "Saree" },
-  },
-  {
-    title: "Co-ord Sets",
+    title: "Artisanal Coordsets",
+    slug: "Coordset",
     image: coordsetsCategory,
-    param: { category: "Coordset" },
+    tag: "Contemporary Fit",
   },
   {
-    title: "Flowing Dresses",
+    title: "Flowing Maxis & Silhouettes",
+    slug: "Maxi",
     image: maxisCategory,
-    param: { category: "Maxi" },
-  },
-  {
-    title: "Everyday Tops",
-    image: newStylesBanner,
-    param: { category: "Chudithar Top" },
-  },
-  {
-    title: "Bottoms",
-    image: sageFabric,
-    param: { category: "2piece" },
-  },
-  {
-    title: "Festive Combos",
-    image: everydayEleganceBanner,
-    param: { category: "Combo Dresses" },
+    tag: "Relaxed Grace",
   },
 ];
 
 // =========================================================================
-// 3. SHOP BY OCCASION DATA
+// BENEFITS STRIP DATA
 // =========================================================================
-const OCCASIONS = [
+const BENEFITS = [
   {
-    title: "Haldi Celebration",
-    image: "/hero-banner-1.jpg",
-    subtitle: "Radiant yellows & festive prints",
-    param: { search: "yellow" },
+    icon: Truck,
+    title: "Free Shipping",
+    description: "Complimentary delivery on domestic orders over ₹999.",
   },
   {
-    title: "Mehndi Evening",
-    image: coordsetsCategory,
-    subtitle: "Lush greens & relaxed silhouettes",
-    param: { search: "green" },
+    icon: RotateCcw,
+    title: "Easy Returns",
+    description: "7-day hassle-free exchange on unworn, tagged apparel.",
   },
   {
-    title: "Sangeet Night",
-    image: silkSareesCategory,
-    subtitle: "Zari glamour & shimmer weaves",
-    param: { category: "Saree" },
+    icon: ShieldCheck,
+    title: "Secure Payments",
+    description: "100% encrypted checkout via Cards, UPI & NetBanking.",
   },
   {
-    title: "Bridesmaid Edit",
-    image: chuditharCategory,
-    subtitle: "Coordinated pastel suits & tunics",
-    param: { category: "Chudithar" },
-  },
-  {
-    title: "Everyday Festive",
-    image: maxisCategory,
-    subtitle: "Effortless comfort for celebrations",
-    param: { category: "Maxi" },
-  },
-  {
-    title: "Party & Reception",
-    image: ivoryBrocade,
-    subtitle: "Opulent brocades & rich jewel tones",
-    param: { search: "wine" },
-  },
-];
-
-// =========================================================================
-// 4. SHOP BY PATTERN DATA
-// =========================================================================
-const PATTERNS = [
-  {
-    title: "Solid Classics",
-    image: burgundySilk,
-    tag: "Minimalist & Chic",
-    param: { search: "solid" },
-  },
-  {
-    title: "Intricate Embroidery",
-    image: chuditharCategory,
-    tag: "Threadwork & Zari",
-    param: { search: "embroidery" },
-  },
-  {
-    title: "Botanical Florals",
-    image: maxisCategory,
-    tag: "Fresh Blooming Motifs",
-    param: { search: "floral" },
-  },
-  {
-    title: "Embellished & Zari",
-    image: silkSareesCategory,
-    tag: "Occasion Ready",
-    param: { search: "zari" },
-  },
-  {
-    title: "Artisanal Prints",
-    image: coordsetsCategory,
-    tag: "Traditional Block Prints",
-    param: { search: "print" },
-  },
-];
-
-// =========================================================================
-// 5. TREND JOURNAL (BLOG) DATA
-// =========================================================================
-const BLOG_POSTS = [
-  {
-    id: 1,
-    title: "The Art of Handloom: Weaving Tradition into Modern Wardrobes",
-    date: "October 18, 2026",
-    excerpt: "Discover why artisanal South Indian silks and soft cotton coordsets are reigning over modern ethnic fashion.",
-    image: silkSareesCategory,
-    category: "Heritage & Craft",
-    link: "/about",
-  },
-  {
-    id: 2,
-    title: "5 Festive Silhouettes Every Woman Needs This Wedding Season",
-    date: "October 12, 2026",
-    excerpt: "From breathable tiered maxis to statement 3-piece anarkalis, here is your definitive festive styling guide.",
-    image: everydayEleganceBanner,
-    category: "Style Guide",
-    link: "/shop?category=Chudithar",
-  },
-  {
-    id: 3,
-    title: "Caring for Your Silks & Brocades: Longevity Tips from Master Weavers",
-    date: "September 28, 2026",
-    excerpt: "Preserve the natural lustre and heirloom finish of your pure zari borders with our master weavers' care secrets.",
-    image: ivoryBrocade,
-    category: "Fabric Care",
-    link: "/about",
-  },
-];
-
-// =========================================================================
-// 6. CUSTOMER TESTIMONIALS DATA
-// =========================================================================
-const TESTIMONIALS = [
-  {
-    id: 1,
-    name: "Radha Krishnan",
-    city: "Chennai",
-    rating: 5,
-    quote: "Authentic weave and extraordinary fabric texture. The wine silk saree color matched the pictures perfectly! Excellent delivery to Anna Nagar.",
-  },
-  {
-    id: 2,
-    name: "Ananya Sundaram",
-    city: "Bangalore",
-    rating: 5,
-    quote: "The coordset fits like a dream! Soft cotton finish, beautiful fall, and the size guide was 100% accurate. My go-to store for ethnic wear.",
-  },
-  {
-    id: 3,
-    name: "Dr. Meenakshi Iyer",
-    city: "Coimbatore",
-    rating: 5,
-    quote: "Ordered multiple chudithar sets for my daughter's wedding events. The packaging and material richness exceeded our expectations. Highly recommended!",
-  },
-  {
-    id: 4,
-    name: "Pooja Venkatesh",
-    city: "Hyderabad",
-    rating: 5,
-    quote: "Prompt dispatch from Chennai and exceptional drape on the tiered maxi dress. The fabric is light and luxurious for festive gatherings.",
+    icon: Headphones,
+    title: "Customer Support",
+    description: "Dedicated assistance via phone & WhatsApp desk.",
+    link: "/contact",
   },
 ];
 
 export function HomePage() {
   const navigate = useNavigate();
-  const { productsList, activeProducts } = useStore();
+  const { setFilter, activeProducts, categoriesList } = useStore();
 
-  // 1. Hero banner slider state
-  const [currentHeroSlide, setCurrentHeroSlide] = useState(0);
+  // Hero banner slider state
+  const [currentSlide, setCurrentSlide] = useState(0);
 
+  // Auto-advance banner slides every 5 seconds
   useEffect(() => {
     const timer = setInterval(() => {
-      setCurrentHeroSlide((prev) => (prev + 1) % HERO_SLIDES.length);
-    }, 5500);
+      setCurrentSlide((prev) => (prev + 1) % HERO_BANNERS.length);
+    }, 5000);
     return () => clearInterval(timer);
   }, []);
 
-  const nextHeroSlide = () => setCurrentHeroSlide((prev) => (prev + 1) % HERO_SLIDES.length);
-  const prevHeroSlide = () => setCurrentHeroSlide((prev) => (prev - 1 + HERO_SLIDES.length) % HERO_SLIDES.length);
+  // Featured Products state
+  const [selectedCategory, setSelectedCategory] = useState("All");
+  const [products, setProducts] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  // 2. Bestsellers tab state
-  const BESTSELLER_TABS = [
-    { label: "All", filter: "All" },
-    { label: "Kurta Sets", filter: "Chudithar" },
-    { label: "Anarkali Sets", filter: "anarkali" },
-    { label: "Sarees", filter: "Saree" },
-    { label: "Co-ords", filter: "Coordset" },
-    { label: "Tops & Tunics", filter: "Chudithar Top" },
-    { label: "Sale", filter: "sale" },
-  ];
+  // Newsletter state
+  const [newsletterEmail, setNewsletterEmail] = useState("");
+  const [isSubscribed, setIsSubscribed] = useState(false);
 
-  const [activeTab, setActiveTab] = useState("All");
-
-  const catalog = activeProducts && activeProducts.length > 0 ? activeProducts : productsList;
-
-  // Filter products for bestsellers
-  const bestsellersProducts = useMemo(() => {
-    if (!catalog || catalog.length === 0) return [];
-    if (activeTab === "All") return catalog.slice(0, 8);
-
-    if (activeTab === "sale") {
-      return catalog.filter((p) => p.originalPrice && p.originalPrice > p.price).slice(0, 8);
-    }
-
-    if (activeTab === "anarkali") {
-      return catalog
-        .filter((p) => p.name.toLowerCase().includes("anarkali") || p.description?.toLowerCase().includes("anarkali"))
-        .slice(0, 8);
-    }
-
-    const filtered = catalog.filter(
-      (p) => p.category?.toLowerCase() === activeTab.toLowerCase(),
-    );
-    return filtered.length > 0 ? filtered.slice(0, 8) : catalog.slice(0, 8);
-  }, [catalog, activeTab]);
-
-  // Online exclusive / featured collection (6 items)
-  const exclusiveProducts = useMemo(() => {
-    if (!catalog || catalog.length === 0) return [];
-    return [...catalog].reverse().slice(0, 6);
-  }, [catalog]);
-
-  // Pattern slider scroll
-  const patternScrollRef = useRef<HTMLDivElement>(null);
-  const scrollPatterns = (direction: "left" | "right") => {
-    if (patternScrollRef.current) {
-      const scrollAmount = 320;
-      patternScrollRef.current.scrollBy({
-        left: direction === "left" ? -scrollAmount : scrollAmount,
-        behavior: "smooth",
-      });
+  // Fetch live products through src/services/api.js with fallback to cached store
+  const fetchProducts = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await productServices.getAllProducts();
+      if (res.success && Array.isArray(res.data) && res.data.length > 0) {
+        setProducts(res.data);
+      } else if (activeProducts && activeProducts.length > 0) {
+        setProducts(activeProducts);
+      } else {
+        setProducts([]);
+      }
+    } catch (err: any) {
+      console.warn("API load failed, falling back to cached catalog:", err);
+      if (activeProducts && activeProducts.length > 0) {
+        setProducts(activeProducts);
+      } else {
+        setError("Unable to connect to product catalog. Please verify your connection.");
+      }
+    } finally {
+      setLoading(false);
     }
   };
 
-  // Testimonial slider state
-  const [currentTestimonialIndex, setCurrentTestimonialIndex] = useState(0);
-  const nextTestimonial = () => setCurrentTestimonialIndex((prev) => (prev + 1) % TESTIMONIALS.length);
-  const prevTestimonial = () => setCurrentTestimonialIndex((prev) => (prev - 1 + TESTIMONIALS.length) % TESTIMONIALS.length);
+  useEffect(() => {
+    if (activeProducts && activeProducts.length > 0) {
+      setProducts(activeProducts);
+      setLoading(false);
+    } else {
+      fetchProducts();
+    }
+  }, [activeProducts]);
+
+  const handleCategoryNav = (catSlug: string) => {
+    setFilter(catSlug);
+    navigate({ to: "/shop", search: { category: catSlug } as any });
+  };
+
+  const handleNewsletterSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newsletterEmail || !newsletterEmail.includes("@")) {
+      toast.error("Please enter a valid email address.");
+      return;
+    }
+    setIsSubscribed(true);
+    toast.success("Thank you for subscribing to Padmanabha Fabrics style updates.");
+    setNewsletterEmail("");
+  };
+
+  // Prioritize activeProducts (manually added/managed original products in admin portal)
+  const catalogToDisplay = activeProducts && activeProducts.length > 0 ? activeProducts : products;
+
+  // Filter products for "Our Most Loved Styles"
+  const filteredProducts = catalogToDisplay.filter((p) => {
+    if (!p) return false;
+    if (selectedCategory === "All") return true;
+    const cat = typeof p.category === "string" ? p.category.toLowerCase() : (p.category ? String(p.category).toLowerCase() : "");
+    return cat === selectedCategory.toLowerCase();
+  });
+
+  // Strictly single "All" pill with deduplicated category names
+  const availableCategories = useMemo(() => {
+    const raw = categoriesList && categoriesList.length > 0
+      ? categoriesList
+      : ["Saree", "Chudithar", "Coordset", "Maxi", "Nighty"];
+
+    const uniqueNonAll = Array.from(
+      new Set(
+        raw
+          .map((c) => (typeof c === "string" ? c.trim() : (c as any)?.name?.trim() || String(c)))
+          .filter((c) => c && c.toLowerCase() !== "all")
+      )
+    );
+
+    return ["All", ...uniqueNonAll];
+  }, [categoriesList]);
 
   return (
-    <div className="bg-white text-[#0E0E0E] min-h-screen select-none">
-      {/* =========================================================================
-          SECTION 1: HERO BANNER SLIDER (Full-width with dots & arrows)
-      ========================================================================== */}
-      <section className="relative w-full overflow-hidden bg-[#FAF6EE] border-b border-[#EBE6DC]">
-        <div className="relative aspect-16/9 sm:aspect-21/9 md:aspect-24/9 lg:aspect-3/1 w-full overflow-hidden">
-          {HERO_SLIDES.map((slide, idx) => {
-            const isCurrent = currentHeroSlide === idx;
-            return (
-              <div
-                key={slide.id}
-                className={`absolute inset-0 transition-opacity duration-1000 ease-in-out cursor-pointer ${
-                  isCurrent ? "opacity-100 z-10" : "opacity-0 z-0 pointer-events-none"
-                }`}
-                onClick={() => navigate({ to: slide.link as any })}
+    <div className="bg-[#FAF7F2] text-[#0E0E0E] min-h-screen selection:bg-[#D15608]/20 selection:text-[#0E0E0E]">
+      {/* ===================================================================
+          1. HERO SECTION — FULL-WIDTH EDITORIAL BANNER SLIDER
+          Direct click to /shop collection page as requested.
+         =================================================================== */}
+      <section className="relative w-full bg-[#FAF7F2] border-b border-[rgba(14,14,14,0.06)] overflow-hidden">
+        <div className="relative w-full aspect-[16/9] sm:aspect-[2/1] md:aspect-[2.1/1] max-h-[640px] overflow-hidden bg-[#FAF7F2]">
+          {HERO_BANNERS.map((banner, index) => (
+            <div
+              key={banner.id}
+              className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${
+                index === currentSlide ? "opacity-100 z-10 pointer-events-auto" : "opacity-0 z-0 pointer-events-none"
+              }`}
+            >
+              <Link
+                to="/shop"
+                className="block w-full h-full relative cursor-pointer group"
+                aria-label={banner.alt}
               >
                 <img
-                  src={slide.image}
-                  alt={slide.title}
-                  className="w-full h-full object-cover object-center"
+                  src={banner.image}
+                  alt={banner.alt}
+                  className="w-full h-full object-cover object-center transition-transform duration-700 ease-out group-hover:scale-[1.01]"
+                  loading={index === 0 ? "eager" : "lazy"}
                 />
-                <div className="absolute inset-0 bg-gradient-to-r from-black/60 via-black/25 to-transparent flex items-center p-6 sm:p-12 lg:p-16">
-                  <div className="max-w-xl text-white space-y-2 sm:space-y-3 animate-in fade-in slide-in-from-left-6 duration-700">
-                    <span className="text-[10px] sm:text-xs font-bold uppercase tracking-[0.25em] text-[#EDBC3D]">
-                      Padmanabha Fabrics Edit
-                    </span>
-                    <h2 className="font-['Cormorant_Garamond'] text-2xl sm:text-4xl lg:text-5xl font-bold leading-tight drop-shadow-sm">
-                      {slide.title}
-                    </h2>
-                    <p className="text-xs sm:text-sm text-white/90 font-light max-w-md hidden sm:block">
-                      {slide.subtitle}
-                    </p>
-                    <div className="pt-2">
-                      <span className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-[#9F160A] hover:bg-[#7D1107] text-white text-xs font-bold uppercase tracking-wider shadow-lg transition-all">
-                        <span>{slide.cta}</span>
-                        <ArrowRight className="size-3.5" />
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            );
-          })}
+              </Link>
+            </div>
+          ))}
 
           {/* Navigation Arrows */}
           <button
             type="button"
             onClick={(e) => {
+              e.preventDefault();
               e.stopPropagation();
-              prevHeroSlide();
+              setCurrentSlide((prev) => (prev - 1 + HERO_BANNERS.length) % HERO_BANNERS.length);
             }}
-            className="absolute left-3 top-1/2 -translate-y-1/2 size-9 sm:size-11 rounded-full bg-white/80 hover:bg-white text-[#0E0E0E] flex items-center justify-center shadow-md z-20 cursor-pointer backdrop-blur-xs transition-all"
+            className="absolute left-3 sm:left-6 top-1/2 -translate-y-1/2 z-20 size-8 sm:size-11 rounded-full bg-black/35 hover:bg-black/65 text-white flex items-center justify-center backdrop-blur-xs transition-all cursor-pointer border border-white/20 active:scale-95 shadow-md"
             aria-label="Previous banner"
           >
-            <ChevronLeft className="size-5" />
+            <ChevronLeft className="size-4 sm:size-6" />
           </button>
+
           <button
             type="button"
             onClick={(e) => {
+              e.preventDefault();
               e.stopPropagation();
-              nextHeroSlide();
+              setCurrentSlide((prev) => (prev + 1) % HERO_BANNERS.length);
             }}
-            className="absolute right-3 top-1/2 -translate-y-1/2 size-9 sm:size-11 rounded-full bg-white/80 hover:bg-white text-[#0E0E0E] flex items-center justify-center shadow-md z-20 cursor-pointer backdrop-blur-xs transition-all"
+            className="absolute right-3 sm:right-6 top-1/2 -translate-y-1/2 z-20 size-8 sm:size-11 rounded-full bg-black/35 hover:bg-black/65 text-white flex items-center justify-center backdrop-blur-xs transition-all cursor-pointer border border-white/20 active:scale-95 shadow-md"
             aria-label="Next banner"
           >
-            <ChevronRight className="size-5" />
+            <ChevronRight className="size-4 sm:size-6" />
           </button>
 
-          {/* Indicator Dots */}
-          <div className="absolute bottom-3 inset-x-0 flex items-center justify-center gap-2 z-20">
-            {HERO_SLIDES.map((_, dotIdx) => (
+          {/* Dot Indicators */}
+          <div className="absolute bottom-3 sm:bottom-5 left-1/2 -translate-x-1/2 z-20 flex items-center gap-2 px-3 py-1.5 rounded-full bg-black/35 backdrop-blur-xs border border-white/20">
+            {HERO_BANNERS.map((_, idx) => (
               <button
-                key={dotIdx}
+                key={idx}
                 type="button"
-                onClick={() => setCurrentHeroSlide(dotIdx)}
-                className={`transition-all cursor-pointer rounded-full ${
-                  currentHeroSlide === dotIdx
-                    ? "w-8 h-2 bg-[#9F160A]"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  setCurrentSlide(idx);
+                }}
+                className={`transition-all rounded-full cursor-pointer ${
+                  idx === currentSlide
+                    ? "w-6 sm:w-8 h-2 bg-[#EDBC3D]"
                     : "w-2 h-2 bg-white/60 hover:bg-white"
                 }`}
-                aria-label={`Go to slide ${dotIdx + 1}`}
+                aria-label={`Go to slide ${idx + 1}`}
               />
             ))}
           </div>
         </div>
       </section>
 
-      {/* =========================================================================
-          SECTION 2: POPULAR CATEGORIES (Circular / Rounded-square cards row)
-      ========================================================================== */}
-      <section className="py-10 sm:py-14 border-b border-[#EBE6DC] bg-white">
+      {/* ===================================================================
+          2. FEATURED COLLECTION — PREMIUM WOMEN'S FASHION CAROUSEL
+         =================================================================== */}
+      <FeaturedCollectionCarousel />
+
+      {/* ===================================================================
+          4. SHOP BY CATEGORY — EDITORIAL IMAGE CARDS
+          "Find Your Perfect Style", eyebrow "EXPLORE COLLECTIONS",
+          4 cards in single row (desktop), 2 cols (tablet/mobile), ~4:5 aspect ratio.
+         =================================================================== */}
+      <section
+        className="w-full py-20 sm:py-24 bg-[#F4F0E8] border-b border-[rgba(14,14,14,0.06)] select-none"
+        aria-label="Editorial Collections"
+      >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-8">
-            <h2 className="font-['Cormorant_Garamond'] text-2xl sm:text-3xl font-bold uppercase tracking-tight text-[#0E0E0E]">
-              Popular Categories
+          <div className="text-center max-w-xl mx-auto mb-12 sm:mb-16">
+            <MicroLabel className="mb-2">EXPLORE COLLECTIONS</MicroLabel>
+            <h2 className="font-['Cormorant_Garamond'] text-3xl sm:text-4xl md:text-5xl font-medium tracking-tight text-[#0E0E0E]">
+              Find Your Perfect Style
             </h2>
-            <p className="text-xs text-[#5C5549] uppercase tracking-[0.16em] mt-1 font-medium">
-              Explore Our Signature Weaves & Silhouettes
+            <p className="text-xs sm:text-sm text-[#0E0E0E]/70 font-light mt-2 max-w-md mx-auto">
+              Curated edits designed for everyday comfort, grand celebrations, and timeless wardrobe elegance.
             </p>
           </div>
 
-          {/* Horizontal Scroll on Mobile, Flex on Desktop */}
-          <div className="flex items-center gap-4 sm:gap-6 overflow-x-auto pb-4 scrollbar-none justify-start lg:justify-center">
-            {POPULAR_CATEGORIES.map((cat, idx) => (
-              <div
-                key={idx}
-                onClick={() => navigate({ to: "/shop", search: cat.param as any })}
-                className="flex flex-col items-center gap-2.5 shrink-0 cursor-pointer group"
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            {EDITORIAL_COLLECTIONS.map((col) => (
+              <button
+                key={col.slug}
+                type="button"
+                onClick={() => handleCategoryNav(col.slug)}
+                className="group relative aspect-4/5 w-full rounded-[2px] overflow-hidden bg-[#EBE6DC] border border-[rgba(14,14,14,0.08)] block text-left cursor-pointer transition-all hover:border-[#D15608] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[#D15608]"
               >
-                <div className="size-20 sm:size-24 md:size-28 rounded-full overflow-hidden border-2 border-[#E5DAC4] group-hover:border-[#9F160A] transition-all p-1 bg-[#FAF6EE] shadow-xs group-hover:scale-105 duration-300">
-                  <img
-                    src={cat.image}
-                    alt={cat.title}
-                    className="w-full h-full object-cover rounded-full"
-                  />
+                <img
+                  src={col.image}
+                  alt={col.title}
+                  loading="lazy"
+                  className="w-full h-full object-cover object-center transition-transform duration-700 ease-[cubic-bezier(0.2,0.7,0.2,1)] group-hover:scale-104"
+                />
+
+                {/* Dark bottom gradient overlay */}
+                <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/25 to-transparent pointer-events-none" />
+
+                {/* Tag Top-Left */}
+                <div className="absolute top-4 left-4 z-10 pointer-events-none">
+                  <span className="text-[10px] uppercase tracking-[0.16em] font-medium text-white/90 bg-black/40 backdrop-blur-xs px-2.5 py-1 rounded-full">
+                    {col.tag}
+                  </span>
                 </div>
-                <span className="text-xs sm:text-[13px] font-semibold text-[#0E0E0E] group-hover:text-[#9F160A] transition-colors text-center whitespace-nowrap">
-                  {cat.title}
-                </span>
-              </div>
+
+                {/* Title & Explore Link Bottom-Left */}
+                <div className="absolute bottom-5 left-5 right-5 z-10 text-white pointer-events-none">
+                  <h3 className="font-['Manrope'] text-lg sm:text-xl font-medium tracking-tight leading-snug">
+                    {col.title}
+                  </h3>
+                  <div className="mt-2.5 inline-flex items-center gap-1.5 text-xs uppercase tracking-[0.14em] font-medium text-[#EDBC3D] group-hover:text-white transition-colors">
+                    <span>Explore Collection</span>
+                    <ArrowRight className="size-3.5 transition-transform duration-300 group-hover:translate-x-1" strokeWidth={1.5} />
+                  </div>
+                </div>
+              </button>
             ))}
           </div>
         </div>
       </section>
 
-      {/* =========================================================================
-          SECTION 3: OUR BESTSELLERS (Heading + Tabs + 4-col Grid)
-      ========================================================================== */}
-      <section className="py-12 sm:py-16 bg-[#FAF7F2] border-b border-[#EBE6DC]">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-8">
-            <span className="text-[11px] font-bold uppercase tracking-[0.22em] text-[#9F160A]">
-              Curated Favorites
-            </span>
-            <h2 className="font-['Cormorant_Garamond'] text-3xl sm:text-4xl font-bold text-[#0E0E0E] mt-1">
-              Our Bestsellers
-            </h2>
-            <p className="text-xs text-[#5C5549] max-w-md mx-auto mt-1.5 font-light">
-              Loved by thousands across India for their fine drape, authentic weave, and bespoke finishes.
-            </p>
+      {/* ===================================================================
+          4. PROMOTIONAL BANNERS
+          Banner A ("Everyday Elegance") & Banner B ("New Styles, Fresh Looks")
+          Soft cream/beige background, refined black CTA buttons, balanced layout.
+         =================================================================== */}
+      <section className="w-full py-16 sm:py-20 bg-[#FAF7F2] border-b border-[rgba(14,14,14,0.06)] relative overflow-hidden">
+        {/* Soft atmospheric background lighting / shadow gradient */}
+        <div className="absolute top-1/2 left-1/4 -translate-y-1/2 w-96 h-96 bg-[#D8BE9A]/20 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute top-1/2 right-1/4 -translate-y-1/2 w-96 h-96 bg-[#D8BE9A]/20 rounded-full blur-3xl pointer-events-none" />
 
-            {/* Bestseller Filter Tabs (W for Woman style) */}
-            <div className="flex items-center justify-center gap-2 sm:gap-3 flex-wrap mt-6">
-              {BESTSELLER_TABS.map((tab) => {
-                const isSelected = activeTab === tab.filter;
-                return (
-                  <button
-                    key={tab.label}
-                    type="button"
-                    onClick={() => setActiveTab(tab.filter)}
-                    className={`px-4 py-1.5 rounded-full text-xs font-semibold uppercase tracking-wider transition-all cursor-pointer ${
-                      isSelected
-                        ? "bg-[#9F160A] text-white shadow-sm"
-                        : "bg-white text-[#5C5549] hover:text-[#0E0E0E] border border-[#E5DAC4]"
-                    }`}
-                  >
-                    {tab.label}
-                  </button>
-                );
-              })}
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 lg:gap-10">
+            {/* BANNER A: Everyday Elegance */}
+            <Link
+              to="/shop"
+              aria-label="Special Collection - Everyday Elegance - Shop Collection"
+              className="group relative block rounded-2xl overflow-hidden bg-[#FAF7F2] border border-[rgba(14,14,14,0.08)] shadow-[0_16px_40px_-10px_rgba(30,22,12,0.18),0_6px_20px_rgba(30,22,12,0.08)] hover:shadow-[0_28px_56px_-12px_rgba(30,22,12,0.28),0_12px_28px_rgba(30,22,12,0.14)] transition-all duration-500 hover:-translate-y-1.5 focus:outline-none focus:ring-2 focus:ring-[#D15608]/50"
+            >
+              <div className="relative w-full aspect-[1024/705] overflow-hidden">
+                <img
+                  src={everydayEleganceBanner}
+                  alt="Special Collection - Everyday Elegance - Shop Collection"
+                  className="w-full h-full object-cover object-center transform transition-transform duration-700 ease-out group-hover:scale-[1.03]"
+                  loading="lazy"
+                />
+                {/* Subtle soft sheen highlight on hover */}
+                <div className="absolute inset-0 bg-gradient-to-t from-black/15 via-transparent to-white/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
+              </div>
+            </Link>
+
+            {/* BANNER B: New Styles, Fresh Looks */}
+            <Link
+              to="/shop"
+              search={{ filter: "new" } as any}
+              aria-label="Just Arrived - New Styles, Fresh Looks - Explore New Arrivals"
+              className="group relative block rounded-2xl overflow-hidden bg-[#FAF7F2] border border-[rgba(14,14,14,0.08)] shadow-[0_16px_40px_-10px_rgba(30,22,12,0.18),0_6px_20px_rgba(30,22,12,0.08)] hover:shadow-[0_28px_56px_-12px_rgba(30,22,12,0.28),0_12px_28px_rgba(30,22,12,0.14)] transition-all duration-500 hover:-translate-y-1.5 focus:outline-none focus:ring-2 focus:ring-[#D15608]/50"
+            >
+              <div className="relative w-full aspect-[1024/705] overflow-hidden">
+                <img
+                  src={newStylesBanner}
+                  alt="Just Arrived - New Styles, Fresh Looks - Explore New Arrivals"
+                  className="w-full h-full object-cover object-center transform transition-transform duration-700 ease-out group-hover:scale-[1.03]"
+                  loading="lazy"
+                />
+                {/* Subtle soft sheen highlight on hover */}
+                <div className="absolute inset-0 bg-gradient-to-t from-black/15 via-transparent to-white/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
+              </div>
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* ===================================================================
+          5. BESTSELLING / FEATURED PRODUCTS
+          "Our Most Loved Styles", eyebrow "CUSTOMER FAVOURITES",
+          "View All Products →", live product data, loading & empty states.
+         =================================================================== */}
+      <section
+        className="w-full py-20 sm:py-28 bg-[#FAF7F2] border-b border-[rgba(14,14,14,0.06)]"
+        aria-label="Our Most Loved Styles"
+      >
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-10">
+            <div>
+              <MicroLabel className="mb-2">CUSTOMER FAVOURITES</MicroLabel>
+              <h2 className="font-['Cormorant_Garamond'] text-3xl sm:text-4xl md:text-5xl font-medium tracking-tight text-[#0E0E0E]">
+                Our Most Loved Styles
+              </h2>
+              <p className="text-xs sm:text-sm text-[#0E0E0E]/70 font-light mt-1 max-w-md">
+                Handpicked customer favourites crafted with precision weaving and timeless comfort.
+              </p>
             </div>
+
+            <Link
+              to="/shop"
+              className="inline-flex items-center gap-1.5 text-xs uppercase tracking-[0.16em] font-medium text-[#D15608] hover:underline shrink-0"
+            >
+              <span>View All Products</span>
+              <ArrowRight className="size-4" strokeWidth={1.5} />
+            </Link>
           </div>
 
-          {/* 4-col Desktop / 2-col Mobile Product Grid */}
-          {bestsellersProducts.length === 0 ? (
+          {/* Category Filter Chips */}
+          <div className="flex items-center gap-2 overflow-x-auto pb-4 mb-8 no-scrollbar">
+            {availableCategories.slice(0, 7).map((cat) => (
+              <button
+                key={cat}
+                type="button"
+                onClick={() => setSelectedCategory(cat)}
+                className={`px-3.5 sm:px-4 py-1.5 sm:py-2 rounded-full text-xs font-semibold uppercase tracking-wider transition-all cursor-pointer shrink-0 whitespace-nowrap min-h-[34px] touch-manipulation flex items-center justify-center ${
+                  selectedCategory === cat
+                    ? "bg-[#D15608] text-white shadow-xs"
+                    : "bg-black/5 text-[#0E0E0E]/80 hover:bg-black/10 border border-[rgba(14,14,14,0.08)]"
+                }`}
+              >
+                {cat}
+              </button>
+            ))}
+          </div>
+
+          {/* Product Grid State Handling */}
+          {loading && (!catalogToDisplay || catalogToDisplay.length === 0) ? (
             <ProductGridSkeleton count={8} />
+          ) : error && (!catalogToDisplay || catalogToDisplay.length === 0) ? (
+            <div className="text-center py-16 px-4 bg-[#EBE6DC]/50 rounded-2xl border border-[rgba(14,14,14,0.08)] shadow-xs">
+              <p className="text-sm text-[#9F160A] font-medium">{error}</p>
+              <button
+                onClick={fetchProducts}
+                className="mt-4 px-6 py-2 rounded-full bg-[#D15608] text-white text-xs uppercase tracking-wider hover:bg-[#9F160A] cursor-pointer"
+              >
+                Try Again
+              </button>
+            </div>
+          ) : filteredProducts.length === 0 ? (
+            <div className="text-center py-16 px-4 bg-[#EBE6DC]/50 rounded-2xl border border-[rgba(14,14,14,0.08)] shadow-xs">
+              <p className="text-sm text-[#0E0E0E]/70 font-light">
+                No products found in this category right now.
+              </p>
+              <Link
+                to="/shop"
+                className="mt-4 inline-block px-6 py-2 rounded-full bg-[#D15608] text-white text-xs uppercase tracking-wider hover:bg-[#9F160A]"
+              >
+                Explore Full Shop
+              </Link>
+            </div>
           ) : (
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-6">
-              {bestsellersProducts.map((p) => (
-                <ProductCard key={p.id} product={p} />
+              {filteredProducts.slice(0, 8).map((product) => (
+                <ProductCard key={product.id} product={product} />
               ))}
             </div>
           )}
-
-          {/* View All Button */}
-          <div className="text-center mt-10">
-            <Link
-              to="/shop"
-              className="inline-flex items-center gap-2 px-8 py-3 rounded-full border-2 border-[#0E0E0E] text-[#0E0E0E] hover:bg-[#0E0E0E] hover:text-white text-xs font-bold uppercase tracking-[0.16em] transition-all cursor-pointer"
-            >
-              <span>Explore All Bestsellers</span>
-              <ArrowRight className="size-3.5" />
-            </Link>
-          </div>
         </div>
       </section>
 
-      {/* =========================================================================
-          SECTION 4: SHOP BY OCCASION & SHOP BY PATTERN
-      ========================================================================== */}
-      <section className="py-14 sm:py-18 bg-white border-b border-[#EBE6DC]">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-16">
-          {/* A. SHOP BY OCCASION */}
-          <div>
-            <div className="text-center mb-8">
-              <span className="text-[11px] font-bold uppercase tracking-[0.2em] text-[#9F160A]">
-                Celebrate with Padmanabha
-              </span>
-              <h2 className="font-['Cormorant_Garamond'] text-3xl sm:text-4xl font-bold text-[#0E0E0E] mt-1">
-                Shop By Occasion
-              </h2>
-            </div>
-
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4">
-              {OCCASIONS.map((occ, idx) => (
-                <div
-                  key={idx}
-                  onClick={() => navigate({ to: "/shop", search: occ.param as any })}
-                  className="group relative aspect-3/4 rounded-xl overflow-hidden cursor-pointer shadow-sm border border-[#E5DAC4]"
-                >
-                  <img
-                    src={occ.image}
-                    alt={occ.title}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/25 to-transparent flex flex-col justify-end p-3 text-white">
-                    <h3 className="font-['Cormorant_Garamond'] text-base sm:text-lg font-bold leading-tight">
-                      {occ.title}
-                    </h3>
-                    <p className="text-[10px] text-white/80 line-clamp-1 mt-0.5">
-                      {occ.subtitle}
+      {/* ===================================================================
+          6. BENEFITS STRIP
+          4 evenly spaced items: Free Shipping, Easy Returns, Secure Payments, Customer Support.
+         =================================================================== */}
+      <section
+        className="w-full py-16 bg-[#FAF7F2] border-b border-[rgba(14,14,14,0.06)] select-none"
+        aria-label="Customer Benefits"
+      >
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+            {BENEFITS.map((b) => {
+              const Icon = b.icon;
+              return (
+                <div key={b.title} className="flex items-start gap-4 p-2">
+                  <div className="size-11 rounded-full bg-[#EBE6DC] border border-[rgba(14,14,14,0.08)] flex items-center justify-center shrink-0 text-[#0E0E0E]">
+                    <Icon className="size-5 text-[#D15608]" strokeWidth={1.5} />
+                  </div>
+                  <div className="space-y-1">
+                    <h4 className="font-['Manrope'] text-sm font-semibold uppercase tracking-wider text-[#0E0E0E]">
+                      {b.title}
+                    </h4>
+                    <p className="text-xs text-[#0E0E0E]/70 font-light leading-relaxed">
+                      {b.description}
                     </p>
+                    {b.link && (
+                      <Link
+                        to={b.link}
+                        className="text-[11px] font-medium text-[#D15608] hover:underline uppercase tracking-wider block pt-1"
+                      >
+                        Contact Team →
+                      </Link>
+                    )}
                   </div>
                 </div>
-              ))}
-            </div>
-          </div>
-
-          {/* B. SHOP BY PATTERN (Horizontal Slider with Arrows) */}
-          <div>
-            <div className="flex items-end justify-between mb-6">
-              <div>
-                <span className="text-[11px] font-bold uppercase tracking-[0.2em] text-[#9F160A]">
-                  Textile Artistry
-                </span>
-                <h2 className="font-['Cormorant_Garamond'] text-2xl sm:text-3xl font-bold text-[#0E0E0E] mt-1">
-                  Shop By Pattern & Craft
-                </h2>
-              </div>
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => scrollPatterns("left")}
-                  className="size-8 rounded-full border border-[#E5DAC4] hover:bg-[#FAF6EE] text-[#0E0E0E] flex items-center justify-center cursor-pointer transition-colors"
-                  aria-label="Scroll left"
-                >
-                  <ChevronLeft className="size-4" />
-                </button>
-                <button
-                  type="button"
-                  onClick={() => scrollPatterns("right")}
-                  className="size-8 rounded-full border border-[#E5DAC4] hover:bg-[#FAF6EE] text-[#0E0E0E] flex items-center justify-center cursor-pointer transition-colors"
-                  aria-label="Scroll right"
-                >
-                  <ChevronRight className="size-4" />
-                </button>
-              </div>
-            </div>
-
-            <div
-              ref={patternScrollRef}
-              className="flex items-center gap-4 overflow-x-auto pb-4 scrollbar-none"
-            >
-              {PATTERNS.map((pat, idx) => (
-                <div
-                  key={idx}
-                  onClick={() => navigate({ to: "/shop", search: pat.param as any })}
-                  className="w-64 sm:w-72 shrink-0 group relative aspect-4/3 rounded-xl overflow-hidden cursor-pointer shadow-sm border border-[#E5DAC4]"
-                >
-                  <img
-                    src={pat.image}
-                    alt={pat.title}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent flex flex-col justify-end p-4 text-white">
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-[#EDBC3D]">
-                      {pat.tag}
-                    </span>
-                    <h3 className="font-['Cormorant_Garamond'] text-xl font-bold leading-tight mt-0.5">
-                      {pat.title}
-                    </h3>
-                  </div>
-                </div>
-              ))}
-            </div>
+              );
+            })}
           </div>
         </div>
       </section>
 
-      {/* =========================================================================
-          SECTION 5: FEATURED COLLECTION ("Online Exclusive")
-      ========================================================================== */}
-      <section className="py-14 sm:py-18 bg-[#FAF7F2] border-b border-[#EBE6DC]">
+      {/* ===================================================================
+          7. NEWSLETTER / PROMOTIONAL SECTION
+          Fashion photograph on the left, soft beige content on the right,
+          elegant serif heading, email input, black Subscribe button.
+         =================================================================== */}
+      <section className="w-full py-16 sm:py-24 bg-[#FAF7F2]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-8">
-            <div>
-              <span className="text-[11px] font-bold uppercase tracking-[0.22em] text-[#9F160A]">
-                Limited Availability
-              </span>
-              <h2 className="font-['Cormorant_Garamond'] text-3xl sm:text-4xl font-bold text-[#0E0E0E] mt-1">
-                Online Exclusive Weaves
+          <div className="rounded-[2px] overflow-hidden bg-[#EBE6DC] border border-[rgba(14,14,14,0.08)] grid grid-cols-1 lg:grid-cols-12 shadow-xs">
+            {/* LEFT: Fashion photograph */}
+            <div className="lg:col-span-5 relative aspect-4/3 lg:aspect-auto min-h-[300px]">
+              <img
+                src={newsletterFabrics}
+                alt="Padmanabha Fabrics Chennai artisan weaves and brocades"
+                className="w-full h-full object-cover object-center"
+                loading="lazy"
+              />
+              <div className="absolute inset-0 bg-black/5 pointer-events-none" />
+            </div>
+
+            {/* RIGHT: Content & Subscription Form */}
+            <div className="lg:col-span-7 p-8 sm:p-12 lg:p-16 flex flex-col justify-center space-y-4">
+              <MicroLabel className="text-[#D15608]">STAY IN STYLE</MicroLabel>
+
+              <h2 className="font-['Cormorant_Garamond'] text-3xl sm:text-4xl md:text-5xl font-medium tracking-tight text-[#0E0E0E] leading-tight">
+                A Little More Style in Your Inbox
               </h2>
-              <p className="text-xs text-[#5C5549] max-w-lg mt-1 font-light">
-                Curated silk borders and contemporary silhouettes available exclusively for direct website delivery.
+
+              <p className="text-xs sm:text-sm text-[#0E0E0E]/70 font-light leading-relaxed max-w-lg">
+                Discover new arrivals, collection highlights, and updates from Padmanabha Fabrics. Be the first to preview exclusive artisan weaves and seasonal drops.
               </p>
-            </div>
-            <Link
-              to="/shop"
-              search={{ search: "exclusive" } as any}
-              className="text-xs font-bold uppercase tracking-wider text-[#9F160A] hover:underline inline-flex items-center gap-1 shrink-0"
-            >
-              <span>View All Exclusives</span>
-              <ArrowRight className="size-3.5" />
-            </Link>
-          </div>
 
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4">
-            {exclusiveProducts.map((p) => (
-              <ProductCard key={p.id} product={p} />
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* =========================================================================
-          SECTION 6: CUSTOMER REVIEWS (Carousel of Testimonials)
-      ========================================================================== */}
-      <section className="py-14 sm:py-18 bg-white border-b border-[#EBE6DC]">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <span className="text-[11px] font-bold uppercase tracking-[0.22em] text-[#9F160A]">
-            Verified Customer Stories
-          </span>
-          <h2 className="font-['Cormorant_Garamond'] text-3xl sm:text-4xl font-bold text-[#0E0E0E] mt-1 mb-8">
-            Loved Across India
-          </h2>
-
-          <div className="relative bg-[#FAF7F2] rounded-2xl p-6 sm:p-10 border border-[#EBE6DC] shadow-xs">
-            <div className="flex justify-center mb-3 text-[#EDBC3D]">
-              {[...Array(TESTIMONIALS[currentTestimonialIndex]!.rating)].map((_, i) => (
-                <Star key={i} className="size-4 fill-[#EDBC3D]" />
-              ))}
-            </div>
-
-            <p className="font-['Cormorant_Garamond'] text-lg sm:text-2xl italic text-[#0E0E0E] leading-relaxed max-w-2xl mx-auto">
-              "{TESTIMONIALS[currentTestimonialIndex]!.quote}"
-            </p>
-
-            <div className="mt-6 flex items-center justify-center gap-3">
-              <div className="size-10 rounded-full bg-[#9F160A] text-white font-bold flex items-center justify-center text-sm shadow-xs">
-                {TESTIMONIALS[currentTestimonialIndex]!.name.charAt(0)}
-              </div>
-              <div className="text-left">
-                <h4 className="text-sm font-bold text-[#0E0E0E]">
-                  {TESTIMONIALS[currentTestimonialIndex]!.name}
-                </h4>
-                <p className="text-[11px] text-[#5C5549]">
-                  Verified Customer · {TESTIMONIALS[currentTestimonialIndex]!.city}
-                </p>
-              </div>
-            </div>
-
-            {/* Review Navigation Arrows */}
-            <button
-              type="button"
-              onClick={prevTestimonial}
-              className="absolute left-3 top-1/2 -translate-y-1/2 size-8 rounded-full bg-white border border-[#E5DAC4] text-[#0E0E0E] flex items-center justify-center shadow-xs cursor-pointer hover:bg-[#FAF6EE]"
-              aria-label="Previous review"
-            >
-              <ChevronLeft className="size-4" />
-            </button>
-            <button
-              type="button"
-              onClick={nextTestimonial}
-              className="absolute right-3 top-1/2 -translate-y-1/2 size-8 rounded-full bg-white border border-[#E5DAC4] text-[#0E0E0E] flex items-center justify-center shadow-xs cursor-pointer hover:bg-[#FAF6EE]"
-              aria-label="Next review"
-            >
-              <ChevronRight className="size-4" />
-            </button>
-          </div>
-        </div>
-      </section>
-
-      {/* =========================================================================
-          SECTION 7: TREND JOURNAL (BLOG CARDS)
-      ========================================================================== */}
-      <section className="py-14 sm:py-18 bg-[#FAF7F2] border-b border-[#EBE6DC]">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-10">
-            <span className="text-[11px] font-bold uppercase tracking-[0.2em] text-[#9F160A]">
-              Editorial Stories
-            </span>
-            <h2 className="font-['Cormorant_Garamond'] text-3xl sm:text-4xl font-bold text-[#0E0E0E] mt-1">
-              The Trend Journal
-            </h2>
-            <p className="text-xs text-[#5C5549] uppercase tracking-wider mt-1">
-              Styling Notes, Loom Stories & Seasonal Forecasts
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8">
-            {BLOG_POSTS.map((post) => (
-              <article
-                key={post.id}
-                onClick={() => navigate({ to: post.link as any })}
-                className="bg-white rounded-xl overflow-hidden border border-[#EBE6DC] shadow-xs hover:shadow-md transition-all group cursor-pointer flex flex-col justify-between"
-              >
-                <div className="aspect-16/10 overflow-hidden bg-[#FAF6EE]">
-                  <img
-                    src={post.image}
-                    alt={post.title}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+              {isSubscribed ? (
+                <div className="pt-4 flex items-center gap-2 text-sm text-[#2E6F40] font-medium">
+                  <Check className="size-4" strokeWidth={2} />
+                  <span>You are subscribed to Padmanabha Fabrics style updates.</span>
+                </div>
+              ) : (
+                <form
+                  onSubmit={handleNewsletterSubmit}
+                  className="pt-3 flex flex-col sm:flex-row gap-2 max-w-md"
+                >
+                  <input
+                    type="email"
+                    placeholder="Enter your email address"
+                    value={newsletterEmail}
+                    onChange={(e) => setNewsletterEmail(e.target.value)}
+                    required
+                    className="flex-1 bg-white border border-[rgba(14,14,14,0.15)] rounded-full px-5 py-3 text-xs text-[#0E0E0E] placeholder:text-[#0E0E0E]/40 focus:outline-none focus:border-[#D15608] shadow-2xs"
                   />
-                </div>
-                <div className="p-5 flex-1 flex flex-col justify-between space-y-3">
-                  <div>
-                    <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider text-[#9F160A]">
-                      <span>{post.category}</span>
-                      <span>·</span>
-                      <span className="text-[#5C5549]">{post.date}</span>
-                    </div>
-                    <h3 className="font-['Cormorant_Garamond'] text-lg sm:text-xl font-bold text-[#0E0E0E] leading-snug mt-1.5 group-hover:text-[#9F160A] transition-colors">
-                      {post.title}
-                    </h3>
-                    <p className="text-xs text-[#5C5549] leading-relaxed mt-2 line-clamp-3">
-                      {post.excerpt}
-                    </p>
-                  </div>
-                  <div className="pt-2">
-                    <span className="inline-flex items-center gap-1 text-xs font-bold uppercase tracking-wider text-[#9F160A] group-hover:underline">
-                      <span>Read More</span>
-                      <ArrowRight className="size-3" />
-                    </span>
-                  </div>
-                </div>
-              </article>
-            ))}
-          </div>
-        </div>
-      </section>
+                  <button
+                    type="submit"
+                    className="px-8 py-3 rounded-full bg-[#D15608] text-white hover:bg-[#9F160A] transition-colors text-xs uppercase tracking-[0.16em] font-medium cursor-pointer shadow-xs whitespace-nowrap active:scale-98"
+                  >
+                    Subscribe
+                  </button>
+                </form>
+              )}
 
-      {/* =========================================================================
-          SECTION 8: TRUST STRIP (Free Shipping, 7-Day Returns, Secure Payments)
-      ========================================================================== */}
-      <section className="py-8 sm:py-10 bg-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-center divide-y md:divide-y-0 md:divide-x divide-[#EBE6DC]">
-            <div className="flex flex-col items-center gap-2 pt-4 md:pt-0">
-              <div className="size-12 rounded-full bg-[#FAF6EE] text-[#9F160A] flex items-center justify-center">
-                <Truck className="size-6" strokeWidth={1.5} />
-              </div>
-              <h4 className="text-xs font-bold uppercase tracking-wider text-[#0E0E0E]">
-                Free Shipping
-              </h4>
-              <p className="text-[11px] text-[#5C5549] max-w-xs">
-                Complimentary standard delivery across India on domestic orders over ₹999.
-              </p>
-            </div>
-
-            <div className="flex flex-col items-center gap-2 pt-4 md:pt-0">
-              <div className="size-12 rounded-full bg-[#FAF6EE] text-[#9F160A] flex items-center justify-center">
-                <RotateCcw className="size-6" strokeWidth={1.5} />
-              </div>
-              <h4 className="text-xs font-bold uppercase tracking-wider text-[#0E0E0E]">
-                Easy 7-Day Returns
-              </h4>
-              <p className="text-[11px] text-[#5C5549] max-w-xs">
-                Hassle-free exchanges and returns on unworn, original tagged garments.
-              </p>
-            </div>
-
-            <div className="flex flex-col items-center gap-2 pt-4 md:pt-0">
-              <div className="size-12 rounded-full bg-[#FAF6EE] text-[#9F160A] flex items-center justify-center">
-                <ShieldCheck className="size-6" strokeWidth={1.5} />
-              </div>
-              <h4 className="text-xs font-bold uppercase tracking-wider text-[#0E0E0E]">
-                100% Secure Payments
-              </h4>
-              <p className="text-[11px] text-[#5C5549] max-w-xs">
-                Encrypted transactions via UPI, Credit/Debit cards & Cash on Delivery.
+              <p className="text-[10px] text-[#0E0E0E]/50 font-light pt-1">
+                By subscribing, you agree to our Privacy Policy. Unsubscribe anytime.
               </p>
             </div>
           </div>
