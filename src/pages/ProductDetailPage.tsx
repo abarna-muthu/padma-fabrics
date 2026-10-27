@@ -127,6 +127,10 @@ export function ProductDetailPage({ id }: ProductDetailPageProps) {
     if (activeVariant && Array.isArray(activeVariant.images) && activeVariant.images.length > 0) {
       return activeVariant.images.filter(Boolean);
     }
+    if (activeVariant && (activeVariant.image || activeVariant.imageUrl)) {
+      const vImg = activeVariant.image || activeVariant.imageUrl;
+      if (vImg) return [vImg];
+    }
     if (Array.isArray(product.images) && product.images.length > 0) {
       return product.images.filter(Boolean);
     }
@@ -497,14 +501,29 @@ export function ProductDetailPage({ id }: ProductDetailPageProps) {
                         }`}
                         title={v.colour}
                       >
-                        <span
-                          className="size-4 rounded-full border border-black/20 shadow-2xs shrink-0 flex items-center justify-center"
-                          style={{ backgroundColor: swatchHex }}
-                        >
-                          {isSelected && (
-                            <Check className={`size-2.5 ${swatchHex === "#FFFFFF" || swatchHex === "#FAF6EE" ? "text-black" : "text-white"}`} />
-                          )}
-                        </span>
+                        {v.image || v.images?.[0] ? (
+                          <div className="relative size-5 rounded-full overflow-hidden border border-black/20 shrink-0">
+                            <img
+                              src={v.image || v.images?.[0]}
+                              alt={v.colour}
+                              className="w-full h-full object-cover"
+                            />
+                            {isSelected && (
+                              <span className="absolute inset-0 bg-black/40 flex items-center justify-center">
+                                <Check className="size-2.5 text-white" />
+                              </span>
+                            )}
+                          </div>
+                        ) : (
+                          <span
+                            className="size-4 rounded-full border border-black/20 shadow-2xs shrink-0 flex items-center justify-center"
+                            style={{ backgroundColor: swatchHex }}
+                          >
+                            {isSelected && (
+                              <Check className={`size-2.5 ${swatchHex === "#FFFFFF" || swatchHex === "#FAF6EE" ? "text-black" : "text-white"}`} />
+                            )}
+                          </span>
+                        )}
                         <span className="text-xs capitalize">{v.colour}</span>
                       </button>
                     );

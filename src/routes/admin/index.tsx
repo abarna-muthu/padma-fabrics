@@ -46,6 +46,7 @@ import {
   Upload,
   Image as ImageIcon,
   Truck,
+  Camera,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
@@ -353,7 +354,103 @@ function AdminDashboardPage() {
   const [variantHexInput, setVariantHexInput] = useState("#9F160A");
   const [variantPriceInput, setVariantPriceInput] = useState("");
   const [variantStockInput, setVariantStockInput] = useState("10");
+  const [variantImageInput, setVariantImageInput] = useState("");
+  const [isUploadingVariantImage, setIsUploadingVariantImage] = useState(false);
+  const variantFileInputRef = useRef<HTMLInputElement | null>(null);
+  const variantRowFileInputRef = useRef<HTMLInputElement | null>(null);
+  const [targetVariantIndexForUpload, setTargetVariantIndexForUpload] = useState<number | null>(null);
   const [manualImageInput, setManualImageInput] = useState("");
+
+  const handleUploadVariantImageFile = async (
+    file: File,
+    variantIndex?: number | null,
+  ) => {
+    if (!file || !file.type.startsWith("image/")) {
+      toast.error("Please select a valid image file (JPG, PNG, WebP).");
+      return;
+    }
+    setIsUploadingVariantImage(true);
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const result = event.target?.result as string;
+      if (!result) {
+        setIsUploadingVariantImage(false);
+        return;
+      }
+      const img = new Image();
+      img.onload = async () => {
+        const canvas = document.createElement("canvas");
+        const maxDim = 1200;
+        let width = img.width;
+        let height = img.height;
+        if (width > maxDim || height > maxDim) {
+          if (width > height) {
+            height = Math.round((height * maxDim) / width);
+            width = maxDim;
+          } else {
+            width = Math.round((width * maxDim) / height);
+            height = maxDim;
+          }
+        }
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext("2d");
+        const base64Data = ctx
+          ? (ctx.drawImage(img, 0, 0, width, height), canvas.toDataURL("image/jpeg", 0.88))
+          : result;
+
+        try {
+          const uploadRes = await productApi.uploadImage(base64Data, "padma_products");
+          const finalUrl = uploadRes && uploadRes.success && (uploadRes.secure_url || uploadRes.url)
+            ? (uploadRes.secure_url || uploadRes.url)
+            : base64Data;
+
+          if (variantIndex !== undefined && variantIndex !== null && variantIndex >= 0) {
+            setProdVariants((prev) => {
+              const copy = [...prev];
+              if (copy[variantIndex]) {
+                copy[variantIndex] = {
+                  ...copy[variantIndex]!,
+                  image: finalUrl,
+                  images: [finalUrl],
+                };
+              }
+              return copy;
+            });
+            toast.success("Colour variant photo updated!");
+          } else {
+            setVariantImageInput(finalUrl);
+            toast.success("Colour variant photo uploaded!");
+          }
+          setProdImages((prev) => Array.from(new Set([...prev, finalUrl])));
+        } catch (err) {
+          console.warn("Upload fallback to local preview:", err);
+          if (variantIndex !== undefined && variantIndex !== null && variantIndex >= 0) {
+            setProdVariants((prev) => {
+              const copy = [...prev];
+              if (copy[variantIndex]) {
+                copy[variantIndex] = {
+                  ...copy[variantIndex]!,
+                  image: base64Data,
+                  images: [base64Data],
+                };
+              }
+              return copy;
+            });
+          } else {
+            setVariantImageInput(base64Data);
+          }
+          setProdImages((prev) => Array.from(new Set([...prev, base64Data])));
+        } finally {
+          setIsUploadingVariantImage(false);
+          setTargetVariantIndexForUpload(null);
+        }
+      };
+      img.src = result;
+    };
+    reader.readAsDataURL(file);
+  };
 
   const handleAddColourVariant = () => {
     const trimmed = variantColourInput.trim();
@@ -364,13 +461,15 @@ function AdminDashboardPage() {
     const existingIndex = prodVariants.findIndex(
       (v) => v.colour.toLowerCase() === trimmed.toLowerCase(),
     );
+    const chosenImage = variantImageInput.trim() || prodImage || "";
     const newVariant: ProductVariant = {
       id: `var-${Date.now().toString(36)}`,
       colour: trimmed,
       colourHex: variantHexInput || "#9F160A",
       price: variantPriceInput && Number(variantPriceInput) > 0 ? Number(variantPriceInput) : undefined,
       stock: variantStockInput && Number(variantStockInput) >= 0 ? Number(variantStockInput) : 10,
-      images: prodImage ? [prodImage] : [],
+      image: chosenImage || undefined,
+      images: chosenImage ? [chosenImage] : [],
     };
 
     if (existingIndex >= 0) {
@@ -385,7 +484,12 @@ function AdminDashboardPage() {
       toast.success(`Added colour variant "${trimmed}"`);
     }
 
+    if (chosenImage) {
+      setProdImages((prev) => Array.from(new Set([...prev, chosenImage])));
+    }
+
     setVariantColourInput("");
+    setVariantImageInput("");
     setVariantPriceInput("");
     setVariantStockInput("10");
   };
@@ -670,6 +774,7 @@ function AdminDashboardPage() {
     setVariantHexInput("#9F160A");
     setVariantPriceInput("");
     setVariantStockInput("10");
+    setVariantImageInput("");
     setManualImageInput("");
     setImageUploadStatus("");
     setIsProductModalOpen(true);
@@ -704,6 +809,7 @@ function AdminDashboardPage() {
     setVariantHexInput("#9F160A");
     setVariantPriceInput("");
     setVariantStockInput("10");
+    setVariantImageInput("");
     setManualImageInput("");
     setImageUploadStatus("");
     setIsProductModalOpen(true);
@@ -4066,13 +4172,39 @@ function AdminDashboardPage() {
 
               {/* 2. Colour Variants Management Section */}
               <div className="space-y-3 p-3.5 bg-secondary/15 border border-border rounded-sm">
+                {/* Hidden file input for quick-add colour variant photo */}
+                <input
+                  type="file"
+                  ref={variantFileInputRef}
+                  accept="image/png, image/jpeg, image/jpg, image/webp"
+                  onChange={(e) => {
+                    const f = e.target.files?.[0];
+                    if (f) handleUploadVariantImageFile(f, null);
+                    e.target.value = "";
+                  }}
+                  className="hidden"
+                />
+
+                {/* Hidden file input for existing variant row photo upload */}
+                <input
+                  type="file"
+                  ref={variantRowFileInputRef}
+                  accept="image/png, image/jpeg, image/jpg, image/webp"
+                  onChange={(e) => {
+                    const f = e.target.files?.[0];
+                    if (f) handleUploadVariantImageFile(f, targetVariantIndexForUpload);
+                    e.target.value = "";
+                  }}
+                  className="hidden"
+                />
+
                 <div className="flex items-center justify-between">
                   <div>
                     <label className="text-xs font-semibold uppercase tracking-wider text-foreground flex items-center gap-1.5">
                       <span>Colour Variants & Variant Stock</span>
                     </label>
                     <p className="text-[11px] text-muted-foreground">
-                      Add multiple colours (Rani Pink, Teal Blue, Bottle Green, etc.) with custom price & stock
+                      Add multiple colours (Rani Pink, Teal Blue, Bottle Green, etc.) with custom price, stock & photo
                     </p>
                   </div>
                   <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-primary/10 text-primary">
@@ -4081,8 +4213,9 @@ function AdminDashboardPage() {
                 </div>
 
                 {/* Variant Quick-Add Fields */}
-                <div className="grid grid-cols-1 sm:grid-cols-4 gap-2.5 p-3 bg-card border border-border rounded-xs">
-                  <div className="space-y-1">
+                <div className="grid grid-cols-1 sm:grid-cols-12 gap-2.5 p-3 bg-card border border-border rounded-xs items-end">
+                  {/* Colour Name: 3 cols */}
+                  <div className="sm:col-span-3 space-y-1">
                     <label className="text-[11px] font-medium text-foreground">Colour Name</label>
                     <Input
                       value={variantColourInput}
@@ -4092,7 +4225,8 @@ function AdminDashboardPage() {
                     />
                   </div>
 
-                  <div className="space-y-1">
+                  {/* Swatch Colour: 2 cols */}
+                  <div className="sm:col-span-2 space-y-1">
                     <label className="text-[11px] font-medium text-foreground">Swatch Colour</label>
                     <div className="flex items-center gap-1.5">
                       <input
@@ -4111,7 +4245,8 @@ function AdminDashboardPage() {
                     </div>
                   </div>
 
-                  <div className="space-y-1">
+                  {/* Price Override: 2 cols */}
+                  <div className="sm:col-span-2 space-y-1">
                     <label className="text-[11px] font-medium text-foreground">Price Override (₹)</label>
                     <Input
                       type="number"
@@ -4122,23 +4257,59 @@ function AdminDashboardPage() {
                     />
                   </div>
 
-                  <div className="space-y-1">
+                  {/* Stock Qty: 2 cols */}
+                  <div className="sm:col-span-2 space-y-1">
                     <label className="text-[11px] font-medium text-foreground">Stock Qty</label>
-                    <div className="flex items-center gap-1">
-                      <Input
-                        type="number"
-                        min="0"
-                        value={variantStockInput}
-                        onChange={(e) => setVariantStockInput(Math.max(0, parseInt(e.target.value || "0", 10)).toString())}
-                        placeholder="10"
-                        className="h-8 text-xs rounded-none tabular-nums"
-                      />
+                    <Input
+                      type="number"
+                      min="0"
+                      value={variantStockInput}
+                      onChange={(e) => setVariantStockInput(Math.max(0, parseInt(e.target.value || "0", 10)).toString())}
+                      placeholder="10"
+                      className="h-8 text-xs rounded-none tabular-nums"
+                    />
+                  </div>
+
+                  {/* Variant Photo & Add Button: 3 cols */}
+                  <div className="sm:col-span-3 space-y-1">
+                    <div className="flex items-center justify-between">
+                      <label className="text-[11px] font-medium text-foreground">Colour Photo</label>
+                      {variantImageInput && (
+                        <button
+                          type="button"
+                          onClick={() => setVariantImageInput("")}
+                          className="text-[10px] text-destructive hover:underline cursor-pointer"
+                        >
+                          Clear
+                        </button>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      {variantImageInput ? (
+                        <div className="relative size-8 rounded overflow-hidden border border-border shrink-0 bg-muted">
+                          <img src={variantImageInput} alt="Preview" className="w-full h-full object-cover" />
+                        </div>
+                      ) : null}
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        disabled={isUploadingVariantImage}
+                        onClick={() => variantFileInputRef.current?.click()}
+                        className="h-8 text-xs px-2 flex-1 border-dashed hover:border-primary truncate cursor-pointer"
+                        title="Upload photo for this colour variant"
+                      >
+                        <Upload className="size-3 mr-1 shrink-0" />
+                        <span className="truncate">
+                          {isUploadingVariantImage ? "Uploading..." : variantImageInput ? "Change" : "Add Photo"}
+                        </span>
+                      </Button>
                       <Button
                         type="button"
                         onClick={handleAddColourVariant}
                         size="sm"
                         variant="editorial"
-                        className="h-8 text-xs px-2.5 shrink-0"
+                        className="h-8 text-xs px-3 shrink-0"
                       >
                         <Plus className="size-3.5 mr-1" /> Add
                       </Button>
@@ -4150,39 +4321,96 @@ function AdminDashboardPage() {
                 {prodVariants.length > 0 ? (
                   <div className="border border-border rounded-xs overflow-hidden bg-card">
                     <div className="divide-y divide-border/60">
-                      {prodVariants.map((v, vIdx) => (
-                        <div key={vIdx} className="flex items-center justify-between p-2.5 text-xs hover:bg-muted/30">
-                          <div className="flex items-center gap-2.5">
-                            <span
-                              className="size-4 rounded-full border border-black/20 shadow-2xs"
-                              style={{ backgroundColor: v.colourHex || "#9F160A" }}
-                            />
-                            <span className="font-semibold text-foreground">{v.colour}</span>
-                            <span className="text-[11px] text-muted-foreground font-mono">
-                              {v.colourHex}
-                            </span>
-                          </div>
+                      {prodVariants.map((v, vIdx) => {
+                        const variantPhoto = v.image || v.images?.[0];
+                        return (
+                          <div key={vIdx} className="flex flex-wrap items-center justify-between p-2.5 text-xs hover:bg-muted/30 gap-2">
+                            <div className="flex items-center gap-2.5">
+                              {/* Variant Image Thumbnail */}
+                              {variantPhoto ? (
+                                <div className="relative group size-9 rounded overflow-hidden border border-border shrink-0 bg-muted">
+                                  <img
+                                    src={variantPhoto}
+                                    alt={v.colour}
+                                    className="w-full h-full object-cover"
+                                  />
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setTargetVariantIndexForUpload(vIdx);
+                                      variantRowFileInputRef.current?.click();
+                                    }}
+                                    className="absolute inset-0 bg-black/60 text-white opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity text-[10px] cursor-pointer"
+                                    title="Change image for this colour"
+                                  >
+                                    <Camera className="size-3.5" />
+                                  </button>
+                                </div>
+                              ) : (
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setTargetVariantIndexForUpload(vIdx);
+                                    variantRowFileInputRef.current?.click();
+                                  }}
+                                  className="size-9 rounded border border-dashed border-border hover:border-primary flex flex-col items-center justify-center text-[9px] text-muted-foreground hover:text-primary transition-colors shrink-0 bg-background cursor-pointer"
+                                  title="Upload photo for this colour variant"
+                                >
+                                  <Upload className="size-3" />
+                                  <span>Photo</span>
+                                </button>
+                              )}
 
-                          <div className="flex items-center gap-4">
-                            <span className="text-[11px] text-muted-foreground">
-                              Price: <span className="font-semibold text-foreground">{v.price ? `₹${v.price}` : "Default"}</span>
-                            </span>
-                            <span className="text-[11px] text-muted-foreground">
-                              Stock: <span className="font-semibold text-foreground">{v.stock ?? 10} pcs</span>
-                            </span>
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="sm"
-                              className="h-6 w-6 p-0 text-destructive hover:bg-destructive/10 cursor-pointer"
-                              onClick={() => handleRemoveColourVariant(v.colour)}
-                              title="Remove colour variant"
-                            >
-                              <Trash2 className="size-3.5" />
-                            </Button>
+                              <span
+                                className="size-4 rounded-full border border-black/20 shadow-2xs shrink-0"
+                                style={{ backgroundColor: v.colourHex || "#9F160A" }}
+                              />
+                              <div>
+                                <span className="font-semibold text-foreground block">{v.colour}</span>
+                                <span className="text-[10px] text-muted-foreground font-mono">
+                                  {v.colourHex}
+                                </span>
+                              </div>
+                            </div>
+
+                            <div className="flex items-center gap-3">
+                              <span className="text-[11px] text-muted-foreground">
+                                Price: <span className="font-semibold text-foreground">{v.price ? `₹${v.price}` : "Default"}</span>
+                              </span>
+                              <span className="text-[11px] text-muted-foreground">
+                                Stock: <span className="font-semibold text-foreground">{v.stock ?? 10} pcs</span>
+                              </span>
+
+                              {/* Upload/Change Photo Button */}
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                className="h-7 text-[11px] px-2 py-0 border-border text-foreground hover:bg-muted cursor-pointer"
+                                onClick={() => {
+                                  setTargetVariantIndexForUpload(vIdx);
+                                  variantRowFileInputRef.current?.click();
+                                }}
+                                title="Upload or change image for this colour"
+                              >
+                                <ImageIcon className="size-3 mr-1 text-primary" />
+                                {variantPhoto ? "Change Photo" : "+ Add Photo"}
+                              </Button>
+
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                className="h-7 w-7 p-0 text-destructive hover:bg-destructive/10 cursor-pointer"
+                                onClick={() => handleRemoveColourVariant(v.colour)}
+                                title="Remove colour variant"
+                              >
+                                <Trash2 className="size-3.5" />
+                              </Button>
+                            </div>
                           </div>
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   </div>
                 ) : (

@@ -41,6 +41,7 @@ export type ProductVariant = {
   stock?: number;
   sizes?: string[];
   sizeStock?: Record<string, number>;
+  image?: string;
   images?: string[];
   imageUrl?: string;
   sku?: string;
