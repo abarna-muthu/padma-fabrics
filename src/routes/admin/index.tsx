@@ -382,7 +382,7 @@ function AdminDashboardPage() {
       const img = new Image();
       img.onload = async () => {
         const canvas = document.createElement("canvas");
-        const maxDim = 1200;
+        const maxDim = 800;
         let width = img.width;
         let height = img.height;
         if (width > maxDim || height > maxDim) {
@@ -398,7 +398,7 @@ function AdminDashboardPage() {
         canvas.height = height;
         const ctx = canvas.getContext("2d");
         const base64Data = ctx
-          ? (ctx.drawImage(img, 0, 0, width, height), canvas.toDataURL("image/jpeg", 0.88))
+          ? (ctx.drawImage(img, 0, 0, width, height), canvas.toDataURL("image/jpeg", 0.78))
           : result;
 
         try {
@@ -578,7 +578,7 @@ function AdminDashboardPage() {
       const img = new Image();
       img.onload = async () => {
         const canvas = document.createElement("canvas");
-        const maxDim = 1200;
+        const maxDim = 1000;
         let width = img.width;
         let height = img.height;
 
@@ -596,7 +596,7 @@ function AdminDashboardPage() {
         canvas.height = height;
         const ctx = canvas.getContext("2d");
         const base64Data = ctx
-          ? (ctx.drawImage(img, 0, 0, width, height), canvas.toDataURL("image/jpeg", 0.88))
+          ? (ctx.drawImage(img, 0, 0, width, height), canvas.toDataURL("image/jpeg", 0.80))
           : result;
 
         // Immediately upload to Cloudinary into padma_products folder

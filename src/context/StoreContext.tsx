@@ -14,6 +14,7 @@ import {
   type StockLog,
 } from "@/lib/catalog";
 import { productApi, orderApi, inventoryApi } from "@/lib/api";
+import { idbSaveProducts, idbGetProducts } from "@/lib/indexedDb";
 import { toast } from "sonner";
 
 interface StoreContextType {
@@ -118,34 +119,9 @@ export const DEMO_PRODUCT_IDS = new Set([
 ]);
 
 export function isDemoProduct(p: any): boolean {
-  if (!p) return true;
+  if (!p) return false;
   const id = String(p.id || "");
-  if (DEMO_PRODUCT_IDS.has(id)) return true;
-  const name = (p.name || "").toLowerCase();
-  if (
-    name.includes("wine zari") ||
-    name.includes("royal indigo") ||
-    name.includes("sage buti") ||
-    name.includes("heritage silk") ||
-    name.includes("linen shirt") ||
-    name.includes("navy tee") ||
-    name.includes("pattu pavadai") ||
-    name.includes("maroon anarkali")
-  ) {
-    return true;
-  }
-  const img = p.image || p.imageUrl || p.image_url || "";
-  if (
-    typeof img === "string" &&
-    (img.includes("burgundy-silk") ||
-      img.includes("sage-fabric") ||
-      img.includes("ivory-brocade") ||
-      img.includes("fabric-hero") ||
-      img.startsWith("/assets/"))
-  ) {
-    return true;
-  }
-  return false;
+  return DEMO_PRODUCT_IDS.has(id);
 }
 
 const CATEGORY_MIGRATION: Record<string, string> = {
@@ -366,6 +342,28 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         saveProducts(loadedProds);
       }
       setProductsList(loadedProds);
+
+      // 1b. Check IndexedDB to restore any user-added products that may have exceeded localStorage quota
+      idbGetProducts().then((idbProds) => {
+        if (Array.isArray(idbProds) && idbProds.length > 0) {
+          setProductsList((currentList) => {
+            const currentMap = new Map(currentList.map((p) => [p.id, p]));
+            let changed = false;
+            for (const ip of idbProds) {
+              if (ip && ip.id && !currentMap.has(ip.id)) {
+                currentMap.set(ip.id, normalizeProduct(ip));
+                changed = true;
+              }
+            }
+            if (changed) {
+              const merged = Array.from(currentMap.values());
+              return merged;
+            }
+            return currentList;
+          });
+        }
+      }).catch(() => {});
+
       const storedOrders = localStorage.getItem(STORAGE_ORDERS_KEY);
       if (storedOrders) {
         const parsed = JSON.parse(storedOrders);
@@ -641,11 +639,15 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const saveProducts = (updated: Product[]) => {
     setProductsList(updated);
     if (typeof window !== "undefined") {
+      // 1. Always persist to IndexedDB (unlimited quota, never fails with QuotaExceededError)
+      idbSaveProducts(updated).catch(() => {});
+
+      // 2. Also save to localStorage for fast synchronous bootstrap
       try {
         localStorage.setItem(STORAGE_PRODUCTS_KEY, JSON.stringify(updated));
         window.dispatchEvent(new CustomEvent("pf_products_updated", { detail: updated }));
       } catch (err) {
-        console.warn("Could not save products to localStorage:", err);
+        console.warn("localStorage quota full (saved safely in IndexedDB):", err);
       }
     }
   };
