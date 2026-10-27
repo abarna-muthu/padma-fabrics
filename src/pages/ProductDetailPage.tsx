@@ -32,6 +32,8 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 
+import { productApi } from "@/lib/api";
+
 interface ProductDetailPageProps {
   id?: string;
 }
@@ -40,46 +42,77 @@ export function ProductDetailPage({ id }: ProductDetailPageProps) {
   const navigate = useNavigate();
   const { wishlist, toggleWishlist } = useWishlist();
   const { addToCart } = useCart();
-  const { productsList } = useStore();
+  const { productsList, updateProduct } = useStore();
 
   const allProducts: Product[] = useMemo(() => [
     ...productsList,
     ...staticCatalog.filter((sp) => !productsList.some((lp) => lp.id === sp.id)),
   ], [productsList]);
 
-  // Find product by id
-  const product = allProducts.find((p) => String(p.id) === String(id)) || allProducts[0];
+  // Find product by id or slug
+  const product = useMemo(() => {
+    if (!id) return allProducts[0];
+    const target = String(id).trim().toLowerCase();
+    return (
+      allProducts.find(
+        (p) =>
+          String(p.id).toLowerCase() === target ||
+          (p.slug && p.slug.toLowerCase() === target),
+      ) || allProducts[0]
+    );
+  }, [allProducts, id]);
 
-  // Variants list: combines product.colour, product.variants, and catalog sister items with matching title
+  // If newly opened or refreshed, fetch latest product details from backend
+  useEffect(() => {
+    if (!id) return;
+    productApi.getById(id).then((res) => {
+      const serverProd = (res as any)?.product || res?.data;
+      if (serverProd && serverProd.id) {
+        // If server returned variants or gallery images, update store state
+        if (
+          (Array.isArray(serverProd.variants) && serverProd.variants.length > 0) ||
+          (Array.isArray(serverProd.images) && serverProd.images.length > 1)
+        ) {
+          updateProduct(serverProd.id, serverProd);
+        }
+      }
+    }).catch(() => {});
+  }, [id]);
+
+  // Variants list: combines explicit product.variants, primary colour, and sister items
   const variants: ProductVariant[] = useMemo(() => {
     if (!product) return [];
     const list: ProductVariant[] = [];
 
-    // 1. Primary colour of current product
-    if (product.colour && product.colour !== "Custom") {
-      list.push({
-        id: `var-${product.id}-default`,
-        colour: product.colour,
-        colourHex: getColourHex(product.colour),
-        price: product.price,
-        stock: product.stock,
-        image: product.image,
-        images: product.images && product.images.length > 0 ? product.images : [product.image],
-      });
+    // 1. Explicit variants configured inside this product (from Admin)
+    if (Array.isArray(product.variants) && product.variants.length > 0) {
+      for (const v of product.variants) {
+        if (!v || !v.colour) continue;
+        const vImg = v.image || (Array.isArray(v.images) && v.images[0]) || product.image;
+        list.push({
+          ...v,
+          id: v.id || `var-${product.id}-${v.colour.toLowerCase().replace(/\s+/g, "-")}`,
+          colourHex: v.colourHex || getColourHex(v.colour),
+          price: v.price || product.price,
+          stock: v.stock !== undefined ? v.stock : product.stock,
+          image: vImg,
+          images: Array.isArray(v.images) && v.images.length > 0 ? v.images : (vImg ? [vImg] : [product.image]),
+        });
+      }
     }
 
-    // 2. Variants configured inside this product
-    if (Array.isArray(product.variants)) {
-      for (const v of product.variants) {
-        if (!v.colour) continue;
-        if (!list.some((existing) => existing.colour.toLowerCase() === v.colour.toLowerCase())) {
-          list.push({
-            ...v,
-            colourHex: v.colourHex || getColourHex(v.colour),
-            image: v.image || (v.images && v.images[0]) || product.image,
-            images: v.images && v.images.length > 0 ? v.images : (v.image ? [v.image] : [product.image]),
-          });
-        }
+    // 2. Primary colour of current product (if not already represented)
+    if (product.colour && product.colour !== "Custom") {
+      if (!list.some((existing) => existing.colour.toLowerCase() === product.colour.toLowerCase())) {
+        list.unshift({
+          id: `var-${product.id}-default`,
+          colour: product.colour,
+          colourHex: getColourHex(product.colour),
+          price: product.price,
+          stock: product.stock,
+          image: product.image,
+          images: product.images && product.images.length > 0 ? product.images : [product.image],
+        });
       }
     }
 
@@ -113,17 +146,23 @@ export function ProductDetailPage({ id }: ProductDetailPageProps) {
 
   // Selected colour state
   const [selectedColour, setSelectedColour] = useState<string>(() => {
-    return variants[0]?.colour || product?.colour || "";
+    return (
+      (Array.isArray(product?.variants) && product.variants[0]?.colour) ||
+      product?.colour ||
+      ""
+    );
   });
 
-  // Keep selectedColour in sync if product changes
+  // Keep selectedColour in sync only if the product identity itself changes
   useEffect(() => {
-    if (variants.length > 0) {
-      setSelectedColour(variants[0]!.colour);
-    } else if (product?.colour) {
-      setSelectedColour(product.colour);
+    if (product) {
+      const initialColour =
+        (Array.isArray(product.variants) && product.variants[0]?.colour) ||
+        product.colour ||
+        "";
+      setSelectedColour(initialColour);
     }
-  }, [product?.id, variants]);
+  }, [product?.id]);
 
   const activeVariant = useMemo(() => {
     return variants.find((v) => v.colour.toLowerCase() === selectedColour.toLowerCase()) || variants[0];
@@ -133,11 +172,15 @@ export function ProductDetailPage({ id }: ProductDetailPageProps) {
   const galleryImages: string[] = useMemo(() => {
     if (!product) return [];
     if (activeVariant && Array.isArray(activeVariant.images) && activeVariant.images.length > 0) {
-      return activeVariant.images.filter(Boolean);
+      const vImages = activeVariant.images.filter(Boolean);
+      if (vImages.length > 0) return vImages;
     }
     if (activeVariant && (activeVariant.image || activeVariant.imageUrl)) {
       const vImg = activeVariant.image || activeVariant.imageUrl;
-      if (vImg) return [vImg];
+      if (vImg) {
+        const others = (Array.isArray(product.images) ? product.images : []).filter((img) => img !== vImg);
+        return [vImg, ...others];
+      }
     }
     if (Array.isArray(product.images) && product.images.length > 0) {
       return product.images.filter(Boolean);

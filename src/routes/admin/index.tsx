@@ -839,7 +839,29 @@ function AdminDashboardPage() {
       }
     }
 
-    const galleryToSave = Array.from(new Set([finalImage, ...prodImages])).filter(Boolean);
+    // Process prodVariants: upload any pending base64 variant images to Cloudinary
+    const processedVariants: ProductVariant[] = [];
+    for (const v of prodVariants) {
+      let vImg = v.image;
+      if (vImg && vImg.startsWith("data:")) {
+        try {
+          const vCloudRes = await productApi.uploadImage(vImg, "padma_products");
+          if (vCloudRes && vCloudRes.success && (vCloudRes.secure_url || vCloudRes.url)) {
+            vImg = vCloudRes.secure_url || vCloudRes.url;
+          }
+        } catch (err) {
+          console.warn("Could not upload variant image to Cloudinary:", err);
+        }
+      }
+      processedVariants.push({
+        ...v,
+        image: vImg,
+        images: vImg ? [vImg] : (Array.isArray(v.images) ? v.images : []),
+      });
+    }
+
+    const variantImages = processedVariants.map((v) => v.image).filter(Boolean) as string[];
+    const galleryToSave = Array.from(new Set([finalImage, ...prodImages, ...variantImages])).filter(Boolean);
 
     try {
       if (editingProduct) {
@@ -856,7 +878,7 @@ function AdminDashboardPage() {
           sizes: prodSizes,
           image: finalImage,
           images: galleryToSave,
-          variants: prodVariants,
+          variants: processedVariants,
           status: editingProduct.status || "active",
           isActive: true,
         });
@@ -876,7 +898,7 @@ function AdminDashboardPage() {
           sizes: prodSizes,
           image: finalImage,
           images: galleryToSave,
-          variants: prodVariants,
+          variants: processedVariants,
           status: "active",
           isActive: true,
         });

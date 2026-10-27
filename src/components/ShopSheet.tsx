@@ -90,32 +90,35 @@ export function ShopSheet() {
     if (!currentProduct) return [];
     const options: ColourOption[] = [];
 
-    // 1. Current product primary colour
-    options.push({
-      id: `prod-${currentProduct.id}`,
-      colour: currentProduct.colour || "Primary",
-      colourHex: getColourHex(currentProduct.colour),
-      price: currentProduct.price,
-      image: currentProduct.image || currentProduct.imageUrl,
-      stock: currentProduct.stock,
-      isProductSwitch: false,
-    });
-
-    // 2. Variants configured inside this product
-    if (Array.isArray(currentProduct.variants)) {
+    // 1. Explicit variants configured inside this product (from Admin)
+    if (Array.isArray(currentProduct.variants) && currentProduct.variants.length > 0) {
       for (const v of currentProduct.variants) {
-        if (!v.colour) continue;
-        if (!options.some((o) => o.colour.toLowerCase() === v.colour.toLowerCase())) {
-          options.push({
-            id: v.id || `var-${v.colour}`,
-            colour: v.colour,
-            colourHex: v.colourHex || getColourHex(v.colour),
-            price: v.price || currentProduct.price,
-            image: v.image || (v.images && v.images[0]) || currentProduct.image,
-            stock: v.stock !== undefined ? v.stock : currentProduct.stock,
-            isProductSwitch: false,
-          });
-        }
+        if (!v || !v.colour) continue;
+        const vImg = v.image || (Array.isArray(v.images) && v.images[0]) || currentProduct.image;
+        options.push({
+          id: v.id || `var-${currentProduct.id}-${v.colour.toLowerCase().replace(/\s+/g, "-")}`,
+          colour: v.colour,
+          colourHex: v.colourHex || getColourHex(v.colour),
+          price: v.price || currentProduct.price,
+          image: vImg,
+          stock: v.stock !== undefined ? v.stock : currentProduct.stock,
+          isProductSwitch: false,
+        });
+      }
+    }
+
+    // 2. Current product primary colour (if not already represented)
+    if (currentProduct.colour && currentProduct.colour !== "Custom") {
+      if (!options.some((o) => o.colour.toLowerCase() === currentProduct.colour.toLowerCase())) {
+        options.unshift({
+          id: `prod-${currentProduct.id}`,
+          colour: currentProduct.colour,
+          colourHex: getColourHex(currentProduct.colour),
+          price: currentProduct.price,
+          image: currentProduct.image || currentProduct.imageUrl,
+          stock: currentProduct.stock,
+          isProductSwitch: false,
+        });
       }
     }
 

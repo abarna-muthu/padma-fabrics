@@ -825,6 +825,12 @@ export async function bulkSyncProducts(req: Request, res: Response) {
       const sizesJson = JSON.stringify(
         Array.isArray(p.sizes) ? p.sizes : typeof p.sizes === "string" ? JSON.parse(p.sizes) : [],
       );
+      const variantsJson = JSON.stringify(
+        Array.isArray(p.variants) ? p.variants : typeof p.variants === "string" ? JSON.parse(p.variants) : [],
+      );
+      const imagesJson = JSON.stringify(
+        Array.isArray(p.images) && p.images.length > 0 ? p.images : [image],
+      );
       const colour = p.colour || "Custom";
 
       // Check if product with this ID or SKU exists
@@ -834,7 +840,7 @@ export async function bulkSyncProducts(req: Request, res: Response) {
           `UPDATE products SET 
             name = ?, category_id = ?, colour = ?, price = ?, original_price = ?,
             unit = ?, stock_quantity = ?, badge = ?, description = ?, image_url = ?,
-            is_active = ?, is_featured = ?, sizes = ?, updated_at = CURRENT_TIMESTAMP
+            is_active = ?, is_featured = ?, sizes = ?, variants = ?, images = ?, updated_at = CURRENT_TIMESTAMP
            WHERE id = ?`,
           [
             p.name,
@@ -850,13 +856,15 @@ export async function bulkSyncProducts(req: Request, res: Response) {
             isActive,
             isFeatured,
             sizesJson,
+            variantsJson,
+            imagesJson,
             id,
           ],
         );
       } else {
         await db.execute(
-          `INSERT INTO products (id, sku, name, slug, category_id, colour, price, original_price, unit, stock_quantity, low_stock_threshold, badge, description, image_url, is_active, is_featured, sizes)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          `INSERT INTO products (id, sku, name, slug, category_id, colour, price, original_price, unit, stock_quantity, low_stock_threshold, badge, description, image_url, is_active, is_featured, sizes, variants, images)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
           [
             id,
             sku,
@@ -875,14 +883,16 @@ export async function bulkSyncProducts(req: Request, res: Response) {
             isActive,
             isFeatured,
             sizesJson,
+            variantsJson,
+            imagesJson,
           ],
         ).catch(async (insertErr: any) => {
           // If duplicate SKU error, append random suffix and retry
           if (insertErr.code === "ER_DUP_ENTRY") {
             const fallbackSku = `${sku}-${Math.floor(Math.random() * 1000)}`;
             await db.execute(
-              `INSERT INTO products (id, sku, name, slug, category_id, colour, price, original_price, unit, stock_quantity, low_stock_threshold, badge, description, image_url, is_active, is_featured, sizes)
-               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+              `INSERT INTO products (id, sku, name, slug, category_id, colour, price, original_price, unit, stock_quantity, low_stock_threshold, badge, description, image_url, is_active, is_featured, sizes, variants, images)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
               [
                 id,
                 fallbackSku,
@@ -901,6 +911,8 @@ export async function bulkSyncProducts(req: Request, res: Response) {
                 isActive,
                 isFeatured,
                 sizesJson,
+                variantsJson,
+                imagesJson,
               ],
             );
           } else {

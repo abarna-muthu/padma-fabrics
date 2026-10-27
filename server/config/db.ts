@@ -834,6 +834,12 @@ function executeMemoryCommand(sql: string, params: any[] = []): any {
         if (params.length >= 11 && params[10] !== undefined) {
           prod.sizes = typeof params[10] === "string" ? params[10] : JSON.stringify(params[10] || []);
         }
+        if (params.length >= 12 && params[11] !== undefined) {
+          prod.variants = typeof params[11] === "string" ? params[11] : JSON.stringify(params[11] || []);
+        }
+        if (params.length >= 13 && params[12] !== undefined) {
+          prod.images = typeof params[12] === "string" ? params[12] : JSON.stringify(params[12] || []);
+        }
         prod.updated_at = new Date().toISOString();
       }
       savePersistedProducts(memoryDb.products);
@@ -858,6 +864,8 @@ function executeMemoryCommand(sql: string, params: any[] = []): any {
           is_active: params[9] ? 1 : 0,
           is_featured: 0,
           sizes: params.length >= 11 && params[10] !== undefined ? (typeof params[10] === "string" ? params[10] : JSON.stringify(params[10])) : JSON.stringify([]),
+          variants: params.length >= 12 && params[11] !== undefined ? (typeof params[11] === "string" ? params[11] : JSON.stringify(params[11])) : JSON.stringify([]),
+          images: params.length >= 13 && params[12] !== undefined ? (typeof params[12] === "string" ? params[12] : JSON.stringify(params[12])) : JSON.stringify([params[8]]),
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
         };

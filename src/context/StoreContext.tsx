@@ -548,6 +548,20 @@ export function StoreProvider({ children }: { children: ReactNode }) {
                           ? lp.image
                           : sp.image || lp.image;
 
+                    const validVariants =
+                      Array.isArray(lp.variants) && lp.variants.length > 0
+                        ? lp.variants
+                        : Array.isArray(sp.variants) && sp.variants.length > 0
+                          ? sp.variants
+                          : [];
+
+                    const validImages =
+                      Array.isArray(lp.images) && lp.images.length > 1
+                        ? lp.images
+                        : Array.isArray(sp.images) && sp.images.length > 0
+                          ? sp.images
+                          : lp.images || [validImg];
+
                     const lpTime = lp.updatedAt ? new Date(lp.updatedAt).getTime() : 0;
                     const spTime =
                       (sp as any).updatedAt || (sp as any).updated_at
@@ -555,11 +569,38 @@ export function StoreProvider({ children }: { children: ReactNode }) {
                         : 0;
 
                     if (lpTime >= spTime) {
-                      mergedMap.set(lp.id, { ...sp, ...lp, image: validImg, imageUrl: validImg });
+                      mergedMap.set(lp.id, {
+                        ...sp,
+                        ...lp,
+                        image: validImg,
+                        imageUrl: validImg,
+                        variants: validVariants,
+                        images: validImages,
+                      });
                       // Synchronize latest admin edit to backend
-                      productApi.update(lp.id, { ...lp, image: validImg }).catch(() => {});
+                      productApi.update(lp.id, {
+                        ...lp,
+                        image: validImg,
+                        variants: validVariants,
+                        images: validImages,
+                      }).catch(() => {});
                     } else {
-                      mergedMap.set(lp.id, { ...lp, ...sp, image: validImg, imageUrl: validImg });
+                      mergedMap.set(lp.id, {
+                        ...lp,
+                        ...sp,
+                        image: validImg,
+                        imageUrl: validImg,
+                        variants: validVariants,
+                        images: validImages,
+                      });
+                      // If local has variants that server lacked, sync back to backend
+                      if (Array.isArray(lp.variants) && lp.variants.length > 0 && (!Array.isArray(sp.variants) || sp.variants.length === 0)) {
+                        productApi.update(lp.id, {
+                          ...sp,
+                          variants: validVariants,
+                          images: validImages,
+                        }).catch(() => {});
+                      }
                     }
                   }
                 }
