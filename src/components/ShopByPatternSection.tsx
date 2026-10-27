@@ -147,7 +147,7 @@ export function ShopByPatternSection() {
                 onClick={() => scrollByTile("left")}
                 disabled={!canScrollLeft}
                 aria-label="Previous patterns"
-                className="size-11 rounded-full border border-[rgba(14,14,14,0.2)] hover:border-[#B8913A] hover:text-[#B8913A] text-[#0E0E0E] flex items-center justify-center transition-all cursor-pointer disabled:opacity-20 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[#B8913A] active:scale-95"
+                className="size-11 rounded-full border border-[rgba(14,14,14,0.2)] hover:border-[#D15608] hover:text-[#D15608] text-[#0E0E0E] flex items-center justify-center transition-all cursor-pointer disabled:opacity-20 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[#D15608] active:scale-95"
               >
                 <ChevronLeft className="size-4" strokeWidth={1.5} />
               </button>
@@ -157,7 +157,7 @@ export function ShopByPatternSection() {
                 onClick={() => scrollByTile("right")}
                 disabled={!canScrollRight}
                 aria-label="Next patterns"
-                className="size-11 rounded-full border border-[rgba(14,14,14,0.2)] hover:border-[#B8913A] hover:text-[#B8913A] text-[#0E0E0E] flex items-center justify-center transition-all cursor-pointer disabled:opacity-20 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[#B8913A] active:scale-95"
+                className="size-11 rounded-full border border-[rgba(14,14,14,0.2)] hover:border-[#D15608] hover:text-[#D15608] text-[#0E0E0E] flex items-center justify-center transition-all cursor-pointer disabled:opacity-20 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[#D15608] active:scale-95"
               >
                 <ChevronRight className="size-4" strokeWidth={1.5} />
               </button>
@@ -170,7 +170,7 @@ export function ShopByPatternSection() {
               ref={sliderRef}
               tabIndex={0}
               aria-label="Pattern tiles gallery"
-              className="flex overflow-x-auto snap-x snap-mandatory gap-4 sm:gap-5 pb-4 no-scrollbar focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[#B8913A] rounded-[2px]"
+              className="flex overflow-x-auto snap-x snap-mandatory gap-4 sm:gap-5 pb-4 no-scrollbar focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[#D15608] rounded-[2px]"
             >
               {PATTERNS_DATA.map((pattern, idx) => (
                 <Link
@@ -179,7 +179,7 @@ export function ShopByPatternSection() {
                   search={{ pattern: pattern.slug } as any}
                   data-pattern-tile
                   style={{ animationDelay: `${idx * 60}ms` }}
-                  className="group relative aspect-3/4 rounded-[2px] overflow-hidden bg-[#EBE6DC] border border-[rgba(14,14,14,0.08)] block shrink-0 snap-start w-[45vw] min-w-[155px] max-w-[190px] md:w-[31%] md:min-w-[210px] lg:w-[calc(25%-15px)] lg:min-w-[205px] transition-all hover:border-[#B8913A] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[#B8913A]"
+                  className="group relative aspect-3/4 rounded-2xl overflow-hidden bg-[#EBE6DC] border border-[rgba(14,14,14,0.08)] shadow-[0_4px_20px_rgba(0,0,0,0.06)] hover:shadow-[0_12px_32px_rgba(0,0,0,0.12)] hover:-translate-y-1 block shrink-0 snap-start w-[45vw] min-w-[155px] max-w-[190px] md:w-[31%] md:min-w-[210px] lg:w-[calc(25%-15px)] lg:min-w-[205px] transition-all hover:border-[#D15608] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[#D15608]"
                 >
                   {/* Portrait 3:4 photo with slow zoom on hover (scale 1.04, 700ms) */}
                   <img
@@ -204,7 +204,7 @@ export function ShopByPatternSection() {
                     <h3 className="font-['Manrope'] text-base sm:text-lg font-medium tracking-tight leading-snug">
                       {pattern.name}
                     </h3>
-                    <div className="mt-2 inline-flex items-center gap-1.5 text-[11px] uppercase tracking-[0.14em] font-medium text-[#B8913A] group-hover:text-white transition-colors">
+                    <div className="mt-2 inline-flex items-center gap-1.5 text-[11px] uppercase tracking-[0.14em] font-medium text-[#EDBC3D] group-hover:text-white transition-colors">
                       <span>Shop Now</span>
                       <ArrowRight className="size-3 transition-transform duration-300 group-hover:translate-x-1" strokeWidth={1.5} />
                     </div>

@@ -42,7 +42,7 @@ export function Pagination({
         size="sm"
         disabled={currentPage <= 1}
         onClick={() => onPageChange(currentPage - 1)}
-        className="h-8 px-2.5 text-xs gap-1 border-[#E5DAC4] hover:border-[#B8913A] disabled:opacity-40"
+        className="h-8 px-2.5 text-xs gap-1 border-[#E5DAC4] hover:border-[#D15608] disabled:opacity-40"
         aria-label="Previous page"
       >
         <ChevronLeft className="size-3.5" />
@@ -70,8 +70,8 @@ export function Pagination({
               aria-current={isActive ? "page" : undefined}
               className={`size-8 text-xs font-semibold rounded-md transition-all cursor-pointer ${
                 isActive
-                  ? "bg-[#6B1E2E] text-white shadow-xs"
-                  : "bg-white dark:bg-[#262022] text-[#2A2A2A] dark:text-[#FAF6EE] border border-[#E5DAC4] hover:border-[#B8913A]"
+                  ? "bg-[#D15608] text-white shadow-xs"
+                  : "bg-white dark:bg-[#262022] text-[#2A2A2A] dark:text-[#FAF6EE] border border-[#E5DAC4] hover:border-[#D15608]"
               }`}
             >
               {pageNum}
@@ -85,7 +85,7 @@ export function Pagination({
         size="sm"
         disabled={currentPage >= totalPages}
         onClick={() => onPageChange(currentPage + 1)}
-        className="h-8 px-2.5 text-xs gap-1 border-[#E5DAC4] hover:border-[#B8913A] disabled:opacity-40"
+        className="h-8 px-2.5 text-xs gap-1 border-[#E5DAC4] hover:border-[#D15608] disabled:opacity-40"
         aria-label="Next page"
       >
         <span className="hidden sm:inline">Next</span>

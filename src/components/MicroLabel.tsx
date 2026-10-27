@@ -14,7 +14,7 @@ export function MicroLabel({ children, number, className = "", light = false }: 
         light ? "text-[#F4F0E8]/70" : "text-[#0E0E0E]/70"
       } ${className}`}
     >
-      {number && <span className="text-[#B8913A] font-semibold tracking-normal">{number}</span>}
+      {number && <span className="text-[#D15608] font-semibold tracking-normal">{number}</span>}
       {number && <span className="w-3 h-[1px] bg-current opacity-40 inline-block" />}
       <span>{children}</span>
     </div>

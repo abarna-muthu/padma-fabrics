@@ -13,8 +13,8 @@ export function ShopPage() {
         description="Filter by Saree, Chudithar, Coordset, Maxi, Nighty, Chudithar Top, 2piece, and Combo Dresses."
       />
 
-      <div className="p-8 border border-dashed border-[#B8913A]/40 rounded-lg bg-white/40 dark:bg-white/5 my-6 text-center">
-        <span className="text-xs uppercase font-bold tracking-widest text-[#B8913A]">
+      <div className="p-8 border border-dashed border-[#D15608]/40 rounded-lg bg-white/40 dark:bg-white/5 my-6 text-center">
+        <span className="text-xs uppercase font-bold tracking-widest text-[#D15608]">
           Catalog Grid Placeholder
         </span>
         <p className="text-sm text-[#5C5549] dark:text-[#B5AC9E] mt-1">

@@ -24,14 +24,12 @@
 @custom-variant dark (&:is(.dark *));
 
 /*
- * Padmanabha Fabrics Art Direction Design System:
- * - Alternating near-black ink (#0E0E0E) and warm ivory (#F4F0E8).
- * - Accents: Antique Gold (#B8913A) and Wine (#6B1E2E) used sparingly.
- * - Display Sans: Manrope (500) with italic light accent phrases.
- * - Editorial Serif: Cormorant Garamond.
- * - Body: Inter (14-15px).
- * - Radii: strict 2px on images/cards, full pill on buttons/badges.
- * - Hairline 1px borders instead of heavy shadows.
+ * Padmanabha Fabrics Approved Color Palette:
+ * - Deep Red: #9F160A
+ * - Orange: #D15608
+ * - Golden Yellow: #EDBC3D
+ * - Preserved background: Warm Ivory (#F4F0E8 / #FAF7F2) and White (#FFFFFF)
+ * - Preserved text: Near-black ink (#0E0E0E)
  */
 
 @theme inline {
@@ -43,8 +41,10 @@
   --color-ink: #0E0E0E;
   --color-ivory: #F4F0E8;
   --color-ivory-muted: #EBE6DC;
-  --color-gold: #B8913A;
-  --color-wine: #6B1E2E;
+  --color-gold: #EDBC3D;
+  --color-wine: #9F160A;
+  --color-orange: #D15608;
+  --color-deep-red: #9F160A;
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
@@ -74,23 +74,25 @@
   --card-foreground: #0E0E0E;
   --popover: #F4F0E8;
   --popover-foreground: #0E0E0E;
-  --primary: #0E0E0E;
-  --primary-foreground: #F4F0E8;
+  --primary: #D15608;
+  --primary-foreground: #FFFFFF;
   --secondary: #EBE6DC;
   --secondary-foreground: #0E0E0E;
   --muted: #EBE6DC;
   --muted-foreground: #6B6760;
-  --accent: #B8913A;
-  --accent-foreground: #0E0E0E;
-  --destructive: #B91C1C;
-  --destructive-foreground: #F4F0E8;
+  --accent: #D15608;
+  --accent-foreground: #FFFFFF;
+  --destructive: #9F160A;
+  --destructive-foreground: #FFFFFF;
   --border: rgba(14, 14, 14, 0.1);
   --input: rgba(14, 14, 14, 0.15);
-  --ring: #B8913A;
+  --ring: #D15608;
   --ink: #0E0E0E;
   --ivory: #F4F0E8;
-  --gold: #B8913A;
-  --wine: #6B1E2E;
+  --gold: #EDBC3D;
+  --wine: #9F160A;
+  --orange: #D15608;
+  --deep-red: #9F160A;
 }
 
 .dark, [data-theme="dark"] {
@@ -100,17 +102,17 @@
   --card-foreground: #F4F0E8;
   --popover: #141414;
   --popover-foreground: #F4F0E8;
-  --primary: #F4F0E8;
-  --primary-foreground: #0E0E0E;
+  --primary: #D15608;
+  --primary-foreground: #FFFFFF;
   --secondary: #1C1C1C;
   --secondary-foreground: #F4F0E8;
   --muted: #1E1E1E;
   --muted-foreground: #9E9A92;
-  --accent: #B8913A;
-  --accent-foreground: #F4F0E8;
+  --accent: #D15608;
+  --accent-foreground: #FFFFFF;
   --border: rgba(244, 240, 232, 0.1);
   --input: rgba(244, 240, 232, 0.15);
-  --ring: #B8913A;
+  --ring: #D15608;
 }
 
 @layer base {
@@ -155,8 +157,10 @@
   --color-ink: #0E0E0E;
   --color-ivory: #F4F0E8;
   --color-ivory-muted: #EBE6DC;
-  --color-gold: #B8913A;
-  --color-wine: #6B1E2E;
+  --color-gold: #EDBC3D;
+  --color-wine: #9F160A;
+  --color-orange: #D15608;
+  --color-deep-red: #9F160A;
 }
 
 /* Utility: Hide scrollbar across all browsers */
@@ -172,8 +176,8 @@
 
 /* =========================================================================
    ADMIN PORTAL — STOREFRONT BRAND AESTHETICS & ART DIRECTION
-   Translates all admin cards, sidebars, tables, buttons, inputs, and modals
-   to match Padmanabha Fabrics' luxury ivory, near-black ink, and antique gold identity.
+   Preserves existing admin layout, forms, tables, and settings, updating
+   accent & interactive colors to deep red #9F160A, orange #D15608, and golden yellow #EDBC3D.
    ========================================================================= */
 .admin-portal {
   --background: #FAF7F2 !important;
@@ -182,17 +186,19 @@
   --card-foreground: #0E0E0E !important;
   --popover: #FFFFFF !important;
   --popover-foreground: #0E0E0E !important;
-  --primary: #0E0E0E !important;
-  --primary-foreground: #FAF7F2 !important;
+  --primary: #D15608 !important;
+  --primary-foreground: #FFFFFF !important;
   --secondary: #F4EFEA !important;
   --secondary-foreground: #0E0E0E !important;
   --muted: #EBE6DC !important;
   --muted-foreground: rgba(14, 14, 14, 0.6) !important;
-  --accent: #B8913A !important;
-  --accent-foreground: #0E0E0E !important;
+  --accent: #D15608 !important;
+  --accent-foreground: #FFFFFF !important;
+  --destructive: #9F160A !important;
+  --destructive-foreground: #FFFFFF !important;
   --border: rgba(14, 14, 14, 0.08) !important;
   --input: rgba(14, 14, 14, 0.15) !important;
-  --ring: #B8913A !important;
+  --ring: #D15608 !important;
   background-color: #FAF7F2 !important;
   color: #0E0E0E !important;
   font-family: var(--font-body) !important;
@@ -210,7 +216,7 @@
 }
 
 .admin-portal aside .text-primary {
-  color: #F4F0E8 !important;
+  color: #D15608 !important;
 }
 
 .admin-portal aside .text-muted-foreground {
@@ -218,10 +224,10 @@
 }
 
 .admin-portal aside button.bg-primary {
-  background-color: #1A1A1A !important;
+  background-color: #D15608 !important;
   color: #FFFFFF !important;
-  box-shadow: inset 3px 0 0 #B8913A !important;
-  border-left: 3px solid #B8913A !important;
+  box-shadow: inset 3px 0 0 #EDBC3D !important;
+  border-left: 3px solid #EDBC3D !important;
 }
 
 .admin-portal aside button:not(.bg-primary):hover {
@@ -230,8 +236,8 @@
 }
 
 .admin-portal aside .bg-secondary {
-  background-color: rgba(184, 145, 58, 0.2) !important;
-  color: #B8913A !important;
+  background-color: rgba(209, 86, 8, 0.2) !important;
+  color: #D15608 !important;
 }
 
 .admin-portal aside .bg-secondary\/30 {
@@ -290,23 +296,23 @@
 .admin-portal input:focus,
 .admin-portal select:focus,
 .admin-portal textarea:focus {
-  border-color: #B8913A !important;
-  box-shadow: 0 0 0 1px #B8913A !important;
+  border-color: #D15608 !important;
+  box-shadow: 0 0 0 1px #D15608 !important;
   outline: none !important;
 }
 
 /* Buttons */
 .admin-portal button.btn-editorial,
 .admin-portal button[data-variant="editorial"] {
-  background-color: #0E0E0E !important;
-  color: #F4F0E8 !important;
+  background-color: #D15608 !important;
+  color: #FFFFFF !important;
   border-radius: 9999px !important;
   transition: all 0.2s ease !important;
 }
 
 .admin-portal button.btn-editorial:hover,
 .admin-portal button[data-variant="editorial"]:hover {
-  background-color: #6B1E2E !important;
+  background-color: #9F160A !important;
 }
 
 .admin-portal button[data-variant="outline"] {
@@ -318,9 +324,9 @@
 }
 
 .admin-portal button[data-variant="outline"]:hover {
-  border-color: #B8913A !important;
+  border-color: #D15608 !important;
   background-color: #FAF7F2 !important;
-  color: #0E0E0E !important;
+  color: #D15608 !important;
 }
 
 
@@ -335,8 +341,8 @@ html {
 }
 .announcement {
   min-height: 34px;
-  background: var(--primary);
-  color: var(--primary-foreground);
+  background: #9F160A;
+  color: #FFFFFF;
   font-size: 12.5px;
 }
 .brand-header {
@@ -384,7 +390,7 @@ html {
   transition: color 0.2s;
 }
 .desktop-nav a:hover {
-  color: var(--primary);
+  color: #D15608;
 }
 .header-actions {
   display: flex;
@@ -424,14 +430,14 @@ html {
   font-size: 10px;
   text-transform: uppercase;
   letter-spacing: 2px;
-  color: var(--primary);
+  color: #D15608;
   font-weight: 500;
 }
 .eyebrow::before {
   content: "";
   width: 28px;
   height: 1px;
-  background: var(--color-gold);
+  background: #D15608;
 }
 .hero h1 {
   font-family: var(--font-display);
@@ -441,7 +447,7 @@ html {
   margin-top: 22px;
 }
 .hero h1 em {
-  color: var(--primary);
+  color: #D15608;
   font-weight: 500;
 }
 .hero-description {
@@ -464,7 +470,7 @@ html {
   bottom: 22px;
   right: 48px;
   font-size: 10px;
-  color: var(--primary);
+  color: #D15608;
 }
 .hero-pagination {
   position: absolute;
@@ -477,14 +483,14 @@ html {
   width: 5px;
   height: 5px;
   border-radius: 50%;
-  background: var(--color-gold);
+  background: #EDBC3D;
   opacity: 0.4;
 }
 .hero-pagination span:first-child {
   width: 22px;
   border-radius: 4px;
   opacity: 1;
-  background: var(--primary);
+  background: #D15608;
 }
 .promise-strip {
   display: grid;
@@ -505,7 +511,7 @@ html {
 .promise svg {
   width: 22px;
   height: 22px;
-  color: var(--color-gold);
+  color: #D15608;
   stroke-width: 1.25;
 }
 .promise strong {
@@ -530,7 +536,7 @@ html {
 }
 .section-kicker {
   font-size: 11px;
-  color: var(--color-gold);
+  color: #D15608;
   letter-spacing: 2px;
   text-transform: uppercase;
   margin-bottom: 7px;
@@ -616,7 +622,7 @@ html {
   position: absolute;
   top: 12px;
   left: 12px;
-  background: linear-gradient(135deg, #9B2242 0%, #76152B 100%);
+  background: #9F160A;
   color: #ffffff;
   padding: 4px 8px;
   font-size: 8.5px;

@@ -63,18 +63,18 @@ export function Header() {
   return (
     <>
       {/* 1. THIN ANNOUNCEMENT BAR */}
-      <div className="bg-[#141414] text-[#F4F0E8] border-b border-black/10 text-[11px] font-medium uppercase tracking-[0.2em] py-2 px-4 select-none relative z-50">
+      <div className="bg-[#9F160A] text-white border-b border-black/10 text-[11px] font-medium uppercase tracking-[0.2em] py-2 px-4 select-none relative z-50">
         <div className="max-w-7xl mx-auto flex items-center justify-between text-center">
-          <span className="hidden md:inline text-[#F4F0E8]/60">
+          <span className="hidden md:inline text-white/80">
             Chennai Showroom · Ambattur
           </span>
-          <span className="w-full md:w-auto text-[#F4F0E8]/90 font-light">
+          <span className="w-full md:w-auto text-white font-light">
             Complimentary domestic shipping on orders over ₹999 · Desk:{" "}
-            <a href="tel:+919940135700" className="text-[#B8913A] hover:underline font-normal">
+            <a href="tel:+919940135700" className="text-[#EDBC3D] hover:underline font-normal">
               +91 99401 35700
             </a>
           </span>
-          <span className="hidden md:inline text-[#B8913A]">
+          <span className="hidden md:inline text-[#EDBC3D]">
             GST Invoicing Included
           </span>
         </div>
@@ -99,15 +99,15 @@ export function Header() {
               <img
                 src={typeof logo === "string" ? logo : (logo as any)?.url || "/padmanabha-logo.jpg"}
                 alt="Padmanabha Fabrics"
-                className="w-9 h-9 sm:w-12 sm:h-12 rounded-full object-cover ring-2 ring-[#B8913A]/50 shadow-xs transition-transform duration-300 group-hover:scale-105 shrink-0"
+                className="w-9 h-9 sm:w-12 sm:h-12 rounded-full object-cover ring-2 ring-[#D15608]/50 shadow-xs transition-transform duration-300 group-hover:scale-105 shrink-0"
                 width={48}
                 height={48}
               />
               <div className="flex flex-col min-w-0">
-                <span className="font-['Manrope'] text-sm sm:text-2xl font-semibold tracking-[0.16em] sm:tracking-[0.22em] text-[#0E0E0E] group-hover:text-[#B8913A] transition-colors leading-none truncate">
+                <span className="font-['Manrope'] text-sm sm:text-2xl font-semibold tracking-[0.16em] sm:tracking-[0.22em] text-[#0E0E0E] group-hover:text-[#D15608] transition-colors leading-none truncate">
                   PADMANABHA
                 </span>
-                <span className="text-[7.5px] sm:text-[9px] font-medium uppercase tracking-[0.26em] sm:tracking-[0.32em] text-[#B8913A] mt-0.5 sm:mt-1.5 opacity-90 truncate">
+                <span className="text-[7.5px] sm:text-[9px] font-medium uppercase tracking-[0.26em] sm:tracking-[0.32em] text-[#D15608] mt-0.5 sm:mt-1.5 opacity-90 truncate">
                   FABRICS · CHENNAI
                 </span>
               </div>
@@ -118,32 +118,32 @@ export function Header() {
               <Link
                 to="/"
                 activeOptions={{ exact: true }}
-                activeProps={{ className: "text-[#B8913A] font-semibold" }}
-                className="hover:text-[#B8913A] transition-colors py-2"
+                activeProps={{ className: "text-[#D15608] font-semibold" }}
+                className="hover:text-[#D15608] transition-colors py-2"
               >
                 Home
               </Link>
 
               <Link
                 to="/shop"
-                activeProps={{ className: "text-[#B8913A] font-semibold" }}
-                className="hover:text-[#B8913A] transition-colors py-2"
+                activeProps={{ className: "text-[#D15608] font-semibold" }}
+                className="hover:text-[#D15608] transition-colors py-2"
               >
                 Shop
               </Link>
 
               <Link
                 to="/about"
-                activeProps={{ className: "text-[#B8913A] font-semibold" }}
-                className="hover:text-[#B8913A] transition-colors py-2"
+                activeProps={{ className: "text-[#D15608] font-semibold" }}
+                className="hover:text-[#D15608] transition-colors py-2"
               >
                 About
               </Link>
 
               <Link
                 to="/contact"
-                activeProps={{ className: "text-[#B8913A] font-semibold" }}
-                className="hover:text-[#B8913A] transition-colors py-2"
+                activeProps={{ className: "text-[#D15608] font-semibold" }}
+                className="hover:text-[#D15608] transition-colors py-2"
               >
                 Contact
               </Link>
@@ -155,7 +155,7 @@ export function Header() {
               <button
                 type="button"
                 onClick={() => setIsSearchOpen(!isSearchOpen)}
-                className="p-1.5 sm:p-2 text-[#0E0E0E] hover:text-[#B8913A] transition-colors cursor-pointer shrink-0"
+                className="p-1.5 sm:p-2 text-[#0E0E0E] hover:text-[#D15608] transition-colors cursor-pointer shrink-0"
                 aria-label="Search"
                 title="Search catalog"
               >
@@ -165,13 +165,13 @@ export function Header() {
               {/* WISHLIST ICON WITH COUNT */}
               <Link
                 to="/wishlist"
-                className="relative p-1.5 sm:p-2 text-[#0E0E0E] hover:text-[#B8913A] transition-colors shrink-0"
+                className="relative p-1.5 sm:p-2 text-[#0E0E0E] hover:text-[#D15608] transition-colors shrink-0"
                 aria-label={`Wishlist, ${wishlistCount} items`}
                 title="Saved Wishlist"
               >
                 <Heart className="size-4" strokeWidth={1.5} />
                 {wishlistCount > 0 && (
-                  <span className="absolute 0 top-0.5 right-0.5 sm:-top-1 sm:-right-1 size-3.5 sm:size-4 rounded-full bg-[#B8913A] text-white text-[8px] sm:text-[9px] font-bold flex items-center justify-center">
+                  <span className="absolute 0 top-0.5 right-0.5 sm:-top-1 sm:-right-1 size-3.5 sm:size-4 rounded-full bg-[#D15608] text-white text-[8px] sm:text-[9px] font-bold flex items-center justify-center">
                     {wishlistCount}
                   </span>
                 )}
@@ -194,15 +194,15 @@ export function Header() {
                   <button
                     type="button"
                     onClick={() => setIsCustomerPortalOpen(true)}
-                    className="flex items-center gap-1.5 p-1.5 sm:px-3 sm:py-1.5 rounded-full bg-[#FAF6EE] dark:bg-white/10 border border-[#B8913A]/40 text-[#0E0E0E] dark:text-[#FAF6EE] hover:border-[#B8913A] transition-all cursor-pointer text-xs font-semibold shadow-2xs"
+                    className="flex items-center gap-1.5 p-1.5 sm:px-3 sm:py-1.5 rounded-full bg-[#FAF6EE] dark:bg-white/10 border border-[#D15608]/40 text-[#0E0E0E] dark:text-[#FAF6EE] hover:border-[#D15608] transition-all cursor-pointer text-xs font-semibold shadow-2xs"
                     title={`Logged in as ${customer.name}`}
                   >
-                    <User className="size-3.5 text-[#B8913A]" />
+                    <User className="size-3.5 text-[#D15608]" />
                     <span className="hidden sm:inline max-w-[110px] truncate">{customer.name}</span>
                   </button>
 
                   {/* Dropdown Menu on hover */}
-                  <div className="absolute right-0 top-full mt-1.5 w-44 p-1.5 rounded-lg bg-white dark:bg-[#1E191A] border border-[#E5DAC4] dark:border-[#B8913A]/30 shadow-lg opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition-all z-50 text-xs">
+                  <div className="absolute right-0 top-full mt-1.5 w-44 p-1.5 rounded-lg bg-white dark:bg-[#1E191A] border border-[#E5DAC4] dark:border-[#D15608]/30 shadow-lg opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition-all z-50 text-xs">
                     <div className="px-3 py-2 border-b border-[#E5DAC4]/60 dark:border-white/10">
                       <p className="font-semibold text-[#0E0E0E] dark:text-[#FAF6EE] truncate">{customer.name}</p>
                       <p className="text-[10px] text-[#5C5549] dark:text-[#B5AC9E] truncate">{customer.email}</p>
@@ -223,7 +223,7 @@ export function Header() {
                     <button
                       type="button"
                       onClick={() => logoutCustomer()}
-                      className="w-full text-left px-3 py-2 rounded hover:bg-rose-50 dark:hover:bg-rose-950/20 text-rose-600 transition-colors cursor-pointer"
+                      className="w-full text-left px-3 py-2 rounded hover:bg-rose-50 dark:hover:bg-rose-950/20 text-[#9F160A] transition-colors cursor-pointer"
                     >
                       Sign Out
                     </button>
@@ -233,7 +233,7 @@ export function Header() {
                 <button
                   type="button"
                   onClick={() => setIsCustomerPortalOpen(true)}
-                  className="hidden md:flex items-center gap-1.5 p-1.5 sm:px-2.5 sm:py-1.5 rounded-full hover:bg-black/5 dark:hover:bg-white/5 text-[#0E0E0E] hover:text-[#B8913A] transition-colors cursor-pointer text-xs font-medium shrink-0"
+                  className="hidden md:flex items-center gap-1.5 p-1.5 sm:px-2.5 sm:py-1.5 rounded-full hover:bg-black/5 dark:hover:bg-white/5 text-[#0E0E0E] hover:text-[#D15608] transition-colors cursor-pointer text-xs font-medium shrink-0"
                   title="Sign In / Register"
                 >
                   <User className="size-4" strokeWidth={1.5} />
@@ -244,10 +244,10 @@ export function Header() {
               {/* MY ORDERS BUTTON (DESKTOP & TABLET ONLY) */}
               <Link
                 to="/orders"
-                className="hidden md:flex items-center gap-1.5 p-1.5 sm:px-3 sm:py-1.5 rounded-full bg-[#6B1E2E]/10 hover:bg-[#6B1E2E]/20 text-[#6B1E2E] dark:text-[#E7C880] border border-[#6B1E2E]/30 hover:border-[#6B1E2E] transition-all cursor-pointer text-xs font-semibold shadow-2xs shrink-0"
+                className="hidden md:flex items-center gap-1.5 p-1.5 sm:px-3 sm:py-1.5 rounded-full bg-[#9F160A]/10 hover:bg-[#9F160A]/20 text-[#9F160A] dark:text-[#EDBC3D] border border-[#9F160A]/30 hover:border-[#9F160A] transition-all cursor-pointer text-xs font-semibold shadow-2xs shrink-0"
                 title="My Orders & Live Shipment Tracking"
               >
-                <Truck className="size-3.5 text-[#6B1E2E] dark:text-[#B8913A]" strokeWidth={1.8} />
+                <Truck className="size-3.5 text-[#9F160A] dark:text-[#EDBC3D]" strokeWidth={1.8} />
                 <span className="hidden sm:inline">My Orders</span>
               </Link>
 
@@ -255,7 +255,7 @@ export function Header() {
               <button
                 type="button"
                 onClick={() => setIsMobileMenuOpen(true)}
-                className="lg:hidden p-1.5 sm:p-2 text-[#0E0E0E] hover:text-[#B8913A] transition-colors cursor-pointer rounded-lg hover:bg-black/5 active:bg-black/10 focus:outline-none focus:ring-1 focus:ring-[#B8913A] shrink-0 flex items-center justify-center ml-0.5"
+                className="lg:hidden p-1.5 sm:p-2 text-[#0E0E0E] hover:text-[#D15608] transition-colors cursor-pointer rounded-lg hover:bg-black/5 active:bg-black/10 focus:outline-none focus:ring-1 focus:ring-[#D15608] shrink-0 flex items-center justify-center ml-0.5"
                 aria-label="Open navigation menu"
                 title="Open Navigation Menu"
               >
@@ -273,12 +273,12 @@ export function Header() {
                   placeholder="SEARCH SAREES, SILKS, COORDSETS, TOPS..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full bg-white border border-[rgba(14,14,14,0.2)] rounded-full px-4 py-2.5 text-xs tracking-[0.14em] uppercase text-[#0E0E0E] placeholder:text-[#0E0E0E]/40 focus:outline-none focus:border-[#B8913A] shadow-xs"
+                  className="w-full bg-white border border-[rgba(14,14,14,0.2)] rounded-full px-4 py-2.5 text-xs tracking-[0.14em] uppercase text-[#0E0E0E] placeholder:text-[#0E0E0E]/40 focus:outline-none focus:border-[#D15608] shadow-xs"
                   autoFocus
                 />
                 <button
                   type="submit"
-                  className="absolute right-4 top-1/2 -translate-y-1/2 text-xs uppercase tracking-wider text-[#B8913A] font-semibold hover:underline cursor-pointer"
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-xs uppercase tracking-wider text-[#D15608] font-semibold hover:underline cursor-pointer"
                 >
                   Search →
                 </button>
@@ -303,7 +303,7 @@ export function Header() {
                 <img
                   src={typeof logo === "string" ? logo : (logo as any)?.url || "/padmanabha-logo.jpg"}
                   alt="Padmanabha Fabrics"
-                  className="w-9 h-9 rounded-full object-cover ring-1 ring-[#B8913A]/50 shrink-0"
+                  className="w-9 h-9 rounded-full object-cover ring-1 ring-[#D15608]/50 shrink-0"
                   width={36}
                   height={36}
                 />
@@ -311,7 +311,7 @@ export function Header() {
                   <span className="font-['Manrope'] text-base font-semibold tracking-[0.2em] block leading-none">
                     PADMANABHA
                   </span>
-                  <span className="text-[8.5px] font-medium uppercase tracking-[0.28em] text-[#B8913A] mt-1 block">
+                  <span className="text-[8.5px] font-medium uppercase tracking-[0.28em] text-[#D15608] mt-1 block">
                     FABRICS · CHENNAI
                   </span>
                 </div>
@@ -330,7 +330,7 @@ export function Header() {
             {/* Customer Account Pill (Top of Drawer) */}
             <div className="py-3 border-b border-[rgba(14,14,14,0.08)]">
               {isLoggedIn && customer ? (
-                <div className="p-3 rounded-xl bg-white/70 border border-[#B8913A]/30 flex items-center justify-between">
+                <div className="p-3 rounded-xl bg-white/70 border border-[#D15608]/30 flex items-center justify-between">
                   <div className="min-w-0 pr-2">
                     <p className="text-[11px] text-muted-foreground uppercase tracking-wider">Signed in as</p>
                     <p className="font-bold text-xs text-[#0E0E0E] truncate">{customer.name}</p>
@@ -341,7 +341,7 @@ export function Header() {
                       logoutCustomer();
                       setIsMobileMenuOpen(false);
                     }}
-                    className="text-[11px] font-semibold text-rose-600 hover:underline shrink-0"
+                    className="text-[11px] font-semibold text-[#9F160A] hover:underline shrink-0"
                   >
                     Sign Out
                   </button>
@@ -353,7 +353,7 @@ export function Header() {
                     setIsMobileMenuOpen(false);
                     setIsCustomerPortalOpen(true);
                   }}
-                  className="w-full min-h-[44px] p-2.5 rounded-xl bg-[#6B1E2E] text-white hover:bg-[#852538] transition-colors text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-2 shadow-2xs cursor-pointer touch-manipulation"
+                  className="w-full min-h-[44px] p-2.5 rounded-xl bg-[#D15608] text-white hover:bg-[#9F160A] transition-colors text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-2 shadow-2xs cursor-pointer touch-manipulation"
                 >
                   <User className="size-3.5" />
                   <span>Sign In / Create Account</span>
@@ -367,14 +367,14 @@ export function Header() {
                 <Link
                   to="/"
                   onClick={() => setIsMobileMenuOpen(false)}
-                  className="flex items-center justify-between py-2 px-2.5 rounded-lg hover:bg-black/5 hover:text-[#B8913A] transition-colors"
+                  className="flex items-center justify-between py-2 px-2.5 rounded-lg hover:bg-black/5 hover:text-[#D15608] transition-colors"
                 >
                   <span>Home</span>
                 </Link>
                 <Link
                   to="/shop"
                   onClick={() => setIsMobileMenuOpen(false)}
-                  className="flex items-center justify-between py-2 px-2.5 rounded-lg hover:bg-black/5 hover:text-[#B8913A] transition-colors"
+                  className="flex items-center justify-between py-2 px-2.5 rounded-lg hover:bg-black/5 hover:text-[#D15608] transition-colors"
                 >
                   <span>Shop All Collections</span>
                 </Link>
@@ -387,7 +387,7 @@ export function Header() {
                       to="/shop"
                       search={{ category: cat } as any}
                       onClick={() => setIsMobileMenuOpen(false)}
-                      className="px-2.5 py-1 rounded-md text-[10px] font-sans font-medium tracking-normal capitalize bg-white/80 border border-border/80 hover:border-[#B8913A] hover:text-[#6B1E2E] transition-colors"
+                      className="px-2.5 py-1 rounded-md text-[10px] font-sans font-medium tracking-normal capitalize bg-white/80 border border-border/80 hover:border-[#D15608] hover:text-[#9F160A] transition-colors"
                     >
                       {cat}
                     </Link>
@@ -397,14 +397,14 @@ export function Header() {
                 <Link
                   to="/about"
                   onClick={() => setIsMobileMenuOpen(false)}
-                  className="flex items-center justify-between py-2 px-2.5 rounded-lg hover:bg-black/5 hover:text-[#B8913A] transition-colors"
+                  className="flex items-center justify-between py-2 px-2.5 rounded-lg hover:bg-black/5 hover:text-[#D15608] transition-colors"
                 >
                   <span>About Us</span>
                 </Link>
                 <Link
                   to="/contact"
                   onClick={() => setIsMobileMenuOpen(false)}
-                  className="flex items-center justify-between py-2 px-2.5 rounded-lg hover:bg-black/5 hover:text-[#B8913A] transition-colors"
+                  className="flex items-center justify-between py-2 px-2.5 rounded-lg hover:bg-black/5 hover:text-[#D15608] transition-colors"
                 >
                   <span>Contact</span>
                 </Link>
@@ -415,13 +415,13 @@ export function Header() {
                 <Link
                   to="/orders"
                   onClick={() => setIsMobileMenuOpen(false)}
-                  className="flex items-center justify-between py-2 px-2.5 rounded-lg bg-[#6B1E2E]/10 text-[#6B1E2E] dark:text-[#E7C880] font-semibold hover:bg-[#6B1E2E]/20 transition-colors"
+                  className="flex items-center justify-between py-2 px-2.5 rounded-lg bg-[#9F160A]/10 text-[#9F160A] dark:text-[#EDBC3D] font-semibold hover:bg-[#9F160A]/20 transition-colors"
                 >
                   <span className="flex items-center gap-2">
-                    <Truck className="size-4 text-[#6B1E2E]" />
+                    <Truck className="size-4 text-[#9F160A]" />
                     <span>My Orders & Tracking</span>
                   </span>
-                  <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded bg-[#6B1E2E] text-white">
+                  <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded bg-[#9F160A] text-white">
                     Live
                   </span>
                 </Link>
@@ -429,25 +429,25 @@ export function Header() {
                 <Link
                   to="/cart"
                   onClick={() => setIsMobileMenuOpen(false)}
-                  className="flex items-center justify-between py-2 px-2.5 rounded-lg hover:bg-black/5 hover:text-[#B8913A] transition-colors"
+                  className="flex items-center justify-between py-2 px-2.5 rounded-lg hover:bg-black/5 hover:text-[#D15608] transition-colors"
                 >
                   <span className="flex items-center gap-2">
                     <ShoppingBag className="size-4" />
                     <span>Shopping Bag</span>
                   </span>
-                  <span className="text-[#B8913A] font-semibold">({cartCount})</span>
+                  <span className="text-[#D15608] font-semibold">({cartCount})</span>
                 </Link>
 
                 <Link
                   to="/wishlist"
                   onClick={() => setIsMobileMenuOpen(false)}
-                  className="flex items-center justify-between py-2 px-2.5 rounded-lg hover:bg-black/5 hover:text-[#B8913A] transition-colors"
+                  className="flex items-center justify-between py-2 px-2.5 rounded-lg hover:bg-black/5 hover:text-[#D15608] transition-colors"
                 >
                   <span className="flex items-center gap-2">
                     <Heart className="size-4" />
                     <span>Wishlist</span>
                   </span>
-                  <span className="text-[#B8913A] font-semibold">({wishlistCount})</span>
+                  <span className="text-[#D15608] font-semibold">({wishlistCount})</span>
                 </Link>
               </div>
             </div>
@@ -460,7 +460,7 @@ export function Header() {
               <div className="flex items-center gap-3 pt-1">
                 <a
                   href="tel:+919940135700"
-                  className="text-xs font-semibold text-[#B8913A] hover:underline flex items-center gap-1"
+                  className="text-xs font-semibold text-[#D15608] hover:underline flex items-center gap-1"
                 >
                   📞 +91 99401 35700
                 </a>

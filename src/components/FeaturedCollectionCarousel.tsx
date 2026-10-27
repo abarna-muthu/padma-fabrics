@@ -322,9 +322,9 @@ export function FeaturedCollectionCarousel() {
             1. CENTERED SECTION HEADING WITH GENEROUS WHITESPACE
            =================================================================== */}
         <div className="text-center max-w-2xl mx-auto mb-12 sm:mb-16">
-          <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-white/80 border border-[#B8913A]/20 shadow-2xs mb-3">
-            <Sparkles className="size-3 text-[#B8913A]" />
-            <span className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#B8913A]">
+          <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-white/80 border border-[#EDBC3D]/30 shadow-2xs mb-3">
+            <Sparkles className="size-3 text-[#EDBC3D]" />
+            <span className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#D15608]">
               WOMEN'S ETHNIC & READY-TO-WEAR
             </span>
           </div>
@@ -352,10 +352,10 @@ export function FeaturedCollectionCarousel() {
           </div>
         ) : error ? (
           <div className="text-center py-16 bg-white rounded-2xl border border-[rgba(14,14,14,0.08)] max-w-md mx-auto p-8 shadow-xs">
-            <p className="text-sm text-[#6B1E2E] font-medium">{error}</p>
+            <p className="text-sm text-[#9F160A] font-medium">{error}</p>
             <button
               onClick={() => window.location.reload()}
-              className="mt-4 px-6 py-2.5 rounded-full bg-[#0E0E0E] text-[#F4F0E8] text-xs uppercase tracking-wider hover:bg-[#B8913A] transition-colors"
+              className="mt-4 px-6 py-2.5 rounded-full bg-[#D15608] text-white text-xs uppercase tracking-wider hover:bg-[#9F160A] transition-colors"
             >
               Refresh Collection
             </button>
@@ -367,7 +367,7 @@ export function FeaturedCollectionCarousel() {
             </p>
             <Link
               to="/shop"
-              className="mt-4 inline-block px-6 py-2.5 rounded-full bg-[#0E0E0E] text-[#F4F0E8] text-xs uppercase tracking-wider hover:bg-[#B8913A] transition-colors"
+              className="mt-4 inline-block px-6 py-2.5 rounded-full bg-[#D15608] text-white text-xs uppercase tracking-wider hover:bg-[#9F160A] transition-colors"
             >
               Explore Full Shop
             </Link>
@@ -440,8 +440,8 @@ export function FeaturedCollectionCarousel() {
                     }}
                     className={`group relative shrink-0 snap-center cursor-pointer rounded-2xl overflow-hidden ${
                       isActive
-                        ? "w-[80vw] sm:w-[340px] md:w-[380px] lg:w-[410px] z-30 scale-[1.03] sm:scale-[1.06] -translate-y-3 sm:-translate-y-4 opacity-100 shadow-[0_24px_50px_-12px_rgba(14,14,14,0.28),0_0_25px_rgba(184,145,58,0.22)] border-2 border-[#B8913A] ring-2 ring-[#B8913A]/30 bg-white"
-                        : "w-[74vw] sm:w-[290px] md:w-[320px] lg:w-[340px] z-10 scale-100 translate-y-0 opacity-100 shadow-md border border-[rgba(14,14,14,0.12)] bg-white hover:border-[#B8913A]/50 hover:shadow-lg"
+                        ? "w-[80vw] sm:w-[340px] md:w-[380px] lg:w-[410px] z-30 scale-[1.03] sm:scale-[1.06] -translate-y-3 sm:-translate-y-4 opacity-100 shadow-[0_24px_50px_-12px_rgba(14,14,14,0.28),0_0_25px_rgba(209,86,8,0.22)] border-2 border-[#D15608] ring-2 ring-[#EDBC3D]/30 bg-white"
+                        : "w-[74vw] sm:w-[290px] md:w-[320px] lg:w-[340px] z-10 scale-100 translate-y-0 opacity-100 shadow-md border border-[rgba(14,14,14,0.12)] bg-white hover:border-[#D15608]/50 hover:shadow-lg"
                     }`}
                   >
                     {/* PRODUCT IMAGE CONTAINER */}
@@ -472,12 +472,12 @@ export function FeaturedCollectionCarousel() {
                         </span>
 
                         {isActive ? (
-                          <span className="px-3 py-1 rounded-full text-[9px] font-bold uppercase tracking-[0.18em] bg-[#0E0E0E] text-[#B8913A] border border-[#B8913A]/50 shadow-md flex items-center gap-1 animate-in fade-in zoom-in duration-300">
-                            <Sparkles className="size-2.5 text-[#B8913A]" />
+                          <span className="px-3 py-1 rounded-full text-[9px] font-bold uppercase tracking-[0.18em] bg-[#0E0E0E] text-[#EDBC3D] border border-[#EDBC3D]/50 shadow-md flex items-center gap-1 animate-in fade-in zoom-in duration-300">
+                            <Sparkles className="size-2.5 text-[#EDBC3D]" />
                             <span>POP LOOK</span>
                           </span>
                         ) : product.badge && typeof product.badge === "string" ? (
-                          <span className="px-2.5 py-0.5 rounded-full text-[9px] font-semibold uppercase tracking-[0.15em] bg-[#B8913A] text-white shadow-2xs">
+                          <span className="px-2.5 py-0.5 rounded-full text-[9px] font-semibold uppercase tracking-[0.15em] bg-[#EDBC3D] text-[#0E0E0E] shadow-2xs">
                             {product.badge}
                           </span>
                         ) : null}
@@ -496,8 +496,8 @@ export function FeaturedCollectionCarousel() {
                         <Heart
                           className={`size-4 transition-colors ${
                             isFavorite
-                              ? "fill-[#6B1E2E] text-[#6B1E2E]"
-                              : "text-[#0E0E0E] hover:text-[#6B1E2E]"
+                              ? "fill-[#9F160A] text-[#9F160A]"
+                              : "text-[#0E0E0E] hover:text-[#9F160A]"
                           }`}
                           strokeWidth={1.5}
                         />
@@ -511,7 +511,7 @@ export function FeaturedCollectionCarousel() {
                             e.stopPropagation();
                             addToCart(product, sizes[0] || "Standard", 1);
                           }}
-                          className="inline-flex items-center gap-1.5 px-3 sm:px-4 py-1.5 sm:py-2 rounded-full bg-[#0E0E0E] text-[#F4F0E8] hover:bg-[#B8913A] transition-all text-[10px] sm:text-[11px] font-semibold uppercase tracking-wider shadow-md cursor-pointer active:scale-95 touch-manipulation whitespace-nowrap"
+                          className="inline-flex items-center gap-1.5 px-3 sm:px-4 py-1.5 sm:py-2 rounded-full bg-[#D15608] text-white hover:bg-[#9F160A] transition-all text-[10px] sm:text-[11px] font-semibold uppercase tracking-wider shadow-md cursor-pointer active:scale-95 touch-manipulation whitespace-nowrap"
                         >
                           <ShoppingBag className="size-3" strokeWidth={1.5} />
                           <span>Quick Add</span>
@@ -522,7 +522,7 @@ export function FeaturedCollectionCarousel() {
                     {/* PRODUCT DETAILS (Below Image) */}
                     <div className="p-4 sm:p-5 flex flex-col justify-between space-y-2.5">
                       <div className="space-y-1">
-                        <h3 className="font-['Manrope'] text-sm sm:text-base font-semibold text-[#0E0E0E] tracking-tight line-clamp-1 group-hover:text-[#B8913A] transition-colors">
+                        <h3 className="font-['Manrope'] text-sm sm:text-base font-semibold text-[#0E0E0E] tracking-tight line-clamp-1 group-hover:text-[#D15608] transition-colors">
                           {product.name}
                         </h3>
 
@@ -561,7 +561,7 @@ export function FeaturedCollectionCarousel() {
                           </span>
                         </div>
 
-                        <span className="inline-flex items-center gap-1 text-[11px] font-medium uppercase tracking-wider text-[#B8913A] group-hover:translate-x-1 transition-transform">
+                        <span className="inline-flex items-center gap-1 text-[11px] font-medium uppercase tracking-wider text-[#D15608] group-hover:translate-x-1 transition-transform">
                           <span>View Details</span>
                           <Eye className="size-3" strokeWidth={1.5} />
                         </span>
@@ -585,7 +585,7 @@ export function FeaturedCollectionCarousel() {
                   <span
                     className={`h-1.5 rounded-full transition-all block ${
                       idx === activeIndex
-                        ? "w-8 bg-[#0E0E0E]"
+                        ? "w-8 bg-[#D15608]"
                         : "w-2.5 bg-[#0E0E0E]/20 hover:bg-[#0E0E0E]/50"
                     }`}
                   />

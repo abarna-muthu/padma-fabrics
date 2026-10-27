@@ -37,9 +37,18 @@ export function ProductDetailPage({ id }: ProductDetailPageProps) {
   // Find product by id
   const product = allProducts.find((p) => String(p.id) === String(id)) || allProducts[0];
 
+  const rawSizes: string[] = product && Array.isArray(product.sizes)
+    ? product.sizes
+    : typeof product?.sizes === "string"
+      ? product.sizes.split(",")
+      : [];
+  const validSizes = rawSizes
+    .map((s: any) => String(s).trim())
+    .filter((s: string) => s !== "" && s !== "1" && s !== "0" && !/^\d+$/.test(s));
+
   const availableSizes: string[] =
-    product && Array.isArray(product.sizes) && product.sizes.length > 0
-      ? product.sizes
+    validSizes.length > 0
+      ? validSizes
       : product?.category === "Saree"
         ? ["Free Size"]
         : ["S", "M", "L", "XL"];
@@ -50,9 +59,9 @@ export function ProductDetailPage({ id }: ProductDetailPageProps) {
   if (!product) {
     return (
       <div className="max-w-4xl mx-auto px-4 py-16 text-center">
-        <h2 className="font-['Playfair_Display'] text-2xl font-bold text-[#6B1E2E]">Product Not Found</h2>
+        <h2 className="font-['Playfair_Display'] text-2xl font-bold text-[#9F160A]">Product Not Found</h2>
         <p className="text-xs text-[#5C5549] mt-2 mb-6">The requested weave could not be located in our catalog.</p>
-        <Link to="/shop" className="px-6 py-2.5 bg-[#6B1E2E] text-white text-xs font-semibold uppercase rounded">
+        <Link to="/shop" className="px-6 py-2.5 bg-[#D15608] hover:bg-[#9F160A] text-white text-xs font-semibold uppercase rounded transition-colors">
           Browse Shop
         </Link>
       </div>
@@ -83,9 +92,9 @@ export function ProductDetailPage({ id }: ProductDetailPageProps) {
         className="mb-6"
       />
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 p-6 sm:p-8 border border-[#E5DAC4] dark:border-[#B8913A]/25 rounded-2xl bg-white dark:bg-[#1E191A] shadow-xs">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 p-6 sm:p-8 border border-[#E5DAC4] dark:border-[#D15608]/25 rounded-2xl bg-white dark:bg-[#1E191A] shadow-xs">
         {/* Left: Product Image */}
-        <div className="relative aspect-3/4 rounded-xl overflow-hidden bg-[#FAF6EE] dark:bg-[#2A2425] border border-[#B8913A]/20">
+        <div className="relative aspect-3/4 rounded-xl overflow-hidden bg-[#FAF6EE] dark:bg-[#2A2425] border border-[#D15608]/20">
           <img
             src={product.image || product.imageUrl || product.image_url || "/placeholder.svg"}
             alt={product.name}
@@ -105,7 +114,7 @@ export function ProductDetailPage({ id }: ProductDetailPageProps) {
             onClick={() => toggleWishlist(String(product.id), product.name)}
             className={`absolute top-4 right-4 size-10 rounded-full flex items-center justify-center transition-all shadow-md cursor-pointer ${
               isFav
-                ? "bg-[#6B1E2E] text-white"
+                ? "bg-[#9F160A] text-white"
                 : "bg-white/90 dark:bg-black/70 hover:bg-white text-[#5C5549] dark:text-white"
             }`}
             title={isFav ? "Saved in Wishlist" : "Save to Wishlist"}
@@ -127,7 +136,7 @@ export function ProductDetailPage({ id }: ProductDetailPageProps) {
         <div className="flex flex-col justify-between space-y-6">
           <div>
             <div className="flex items-center gap-2">
-              <span className="text-[11px] font-bold uppercase tracking-[0.25em] text-[#B8913A]">
+              <span className="text-[11px] font-bold uppercase tracking-[0.25em] text-[#D15608]">
                 {product.category || "Authentic Handloom"}
               </span>
               {product.fabric && (
@@ -137,14 +146,14 @@ export function ProductDetailPage({ id }: ProductDetailPageProps) {
               )}
             </div>
 
-            <h1 className="font-['Playfair_Display'] text-2xl sm:text-3xl font-bold text-[#6B1E2E] dark:text-[#FAF6EE] mt-2 leading-tight">
+            <h1 className="font-['Playfair_Display'] text-2xl sm:text-3xl font-bold text-[#0E0E0E] dark:text-[#FAF6EE] mt-2 leading-tight">
               {product.name}
             </h1>
 
             {/* Ratings */}
             <div className="flex items-center gap-2 mt-2.5">
-              <div className="flex items-center text-[#B8913A]">
-                <Star className="size-4 fill-[#B8913A]" />
+              <div className="flex items-center text-[#EDBC3D]">
+                <Star className="size-4 fill-[#EDBC3D]" />
                 <span className="text-xs font-semibold ml-1">{product.rating || "4.9"}</span>
               </div>
               <span className="text-xs text-[#5C5549] dark:text-[#B5AC9E]">
@@ -154,7 +163,7 @@ export function ProductDetailPage({ id }: ProductDetailPageProps) {
 
             {/* Price block */}
             <div className="flex items-baseline gap-3 mt-4">
-              <span className="text-2xl sm:text-3xl font-bold text-[#6B1E2E] dark:text-[#FAF6EE]">
+              <span className="text-2xl sm:text-3xl font-bold text-[#D15608] dark:text-[#FAF6EE]">
                 {formatPrice(product.price)}
               </span>
               {hasDiscount && (
@@ -163,7 +172,7 @@ export function ProductDetailPage({ id }: ProductDetailPageProps) {
                 </span>
               )}
               {hasDiscount && (
-                <span className="px-2 py-0.5 text-xs font-bold text-white bg-[#B8913A] rounded">
+                <span className="px-2 py-0.5 text-xs font-bold text-white bg-[#9F160A] rounded">
                   {Math.round(((originalPrice! - product.price) / originalPrice!) * 100)}% OFF
                 </span>
               )}
@@ -181,7 +190,7 @@ export function ProductDetailPage({ id }: ProductDetailPageProps) {
                 <span className="text-xs font-semibold uppercase tracking-wider text-[#0E0E0E] dark:text-[#FAF6EE]">
                   Select Size
                 </span>
-                <span className="text-[11px] text-[#B8913A]">Size Chart & Sizing Guide</span>
+                <span className="text-[11px] text-[#D15608]">Size Chart & Sizing Guide</span>
               </div>
               <div className="flex flex-wrap gap-2">
                 {availableSizes.map((sz) => (
@@ -191,8 +200,8 @@ export function ProductDetailPage({ id }: ProductDetailPageProps) {
                     onClick={() => setSelectedSize(sz)}
                     className={`min-h-[36px] px-3.5 sm:px-4 py-2 rounded-lg text-xs font-semibold uppercase tracking-wider transition-all cursor-pointer touch-manipulation flex items-center justify-center ${
                       selectedSize === sz
-                        ? "bg-[#6B1E2E] text-white shadow-xs"
-                        : "border border-[#E5DAC4] dark:border-white/10 hover:border-[#B8913A] text-[#0E0E0E] dark:text-[#FAF6EE]"
+                        ? "bg-[#D15608] text-white shadow-xs"
+                        : "border border-[#E5DAC4] dark:border-white/10 hover:border-[#D15608] text-[#0E0E0E] dark:text-[#FAF6EE]"
                     }`}
                   >
                     {sz}
@@ -227,21 +236,21 @@ export function ProductDetailPage({ id }: ProductDetailPageProps) {
           </div>
 
           {/* Action Buttons */}
-          <div className="pt-6 border-t border-[#E5DAC4] dark:border-[#B8913A]/20 space-y-3 pb-20 sm:pb-0">
+          <div className="pt-6 border-t border-[#E5DAC4] dark:border-[#D15608]/20 space-y-3 pb-20 sm:pb-0">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <button
                 type="button"
                 onClick={handleAddToCart}
-                className="w-full min-h-[46px] py-3.5 px-4 rounded-xl bg-[#FAF6EE] hover:bg-[#F2ECE1] dark:bg-white/10 text-[#6B1E2E] dark:text-[#FAF6EE] border border-[#B8913A]/40 text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-2 transition-all cursor-pointer shadow-xs active:scale-98 touch-manipulation"
+                className="w-full min-h-[46px] py-3.5 px-4 rounded-xl bg-[#FAF6EE] hover:bg-[#F2ECE1] dark:bg-white/10 text-[#D15608] dark:text-[#FAF6EE] border border-[#D15608]/40 text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-2 transition-all cursor-pointer shadow-xs active:scale-98 touch-manipulation"
               >
-                <ShoppingBag className="size-4 text-[#B8913A]" />
+                <ShoppingBag className="size-4 text-[#D15608]" />
                 <span>Add to Cart</span>
               </button>
 
               <button
                 type="button"
                 onClick={handleBuyNow}
-                className="w-full min-h-[46px] py-3.5 px-4 rounded-xl bg-[#6B1E2E] hover:bg-[#521623] text-white text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-2 transition-all cursor-pointer shadow-md active:scale-98 touch-manipulation"
+                className="w-full min-h-[46px] py-3.5 px-4 rounded-xl bg-[#D15608] hover:bg-[#9F160A] text-white text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-2 transition-all cursor-pointer shadow-md active:scale-98 touch-manipulation"
               >
                 <Zap className="size-4 text-amber-300 fill-amber-300" />
                 <span>Buy Now Directly</span>
@@ -251,11 +260,11 @@ export function ProductDetailPage({ id }: ProductDetailPageProps) {
             {/* Assurances */}
             <div className="grid grid-cols-2 gap-2 pt-3 text-[11px] text-[#5C5549] dark:text-[#B5AC9E]">
               <div className="flex items-center gap-1.5">
-                <Truck className="size-3.5 text-[#B8913A]" />
+                <Truck className="size-3.5 text-[#D15608]" />
                 <span>Dispatched from Chennai</span>
               </div>
               <div className="flex items-center gap-1.5">
-                <ShieldCheck className="size-3.5 text-[#B8913A]" />
+                <ShieldCheck className="size-3.5 text-[#D15608]" />
                 <span>100% Genuine Handlooms</span>
               </div>
             </div>
@@ -268,15 +277,15 @@ export function ProductDetailPage({ id }: ProductDetailPageProps) {
         <button
           type="button"
           onClick={handleAddToCart}
-          className="flex-1 min-h-[44px] py-2.5 px-3 rounded-lg bg-[#FAF6EE] dark:bg-white/10 text-[#6B1E2E] dark:text-[#FAF6EE] border border-[#B8913A]/40 text-xs font-bold uppercase tracking-wide flex items-center justify-center gap-1.5 active:scale-98 touch-manipulation"
+          className="flex-1 min-h-[44px] py-2.5 px-3 rounded-lg bg-[#FAF6EE] dark:bg-white/10 text-[#D15608] dark:text-[#FAF6EE] border border-[#D15608]/40 text-xs font-bold uppercase tracking-wide flex items-center justify-center gap-1.5 active:scale-98 touch-manipulation"
         >
-          <ShoppingBag className="size-3.5 text-[#B8913A]" />
+          <ShoppingBag className="size-3.5 text-[#D15608]" />
           <span>Add to Bag</span>
         </button>
         <button
           type="button"
           onClick={handleBuyNow}
-          className="flex-1 min-h-[44px] py-2.5 px-3 rounded-lg bg-[#6B1E2E] text-white text-xs font-bold uppercase tracking-wide flex items-center justify-center gap-1.5 shadow-md active:scale-98 touch-manipulation"
+          className="flex-1 min-h-[44px] py-2.5 px-3 rounded-lg bg-[#D15608] hover:bg-[#9F160A] text-white text-xs font-bold uppercase tracking-wide flex items-center justify-center gap-1.5 shadow-md active:scale-98 touch-manipulation"
         >
           <Zap className="size-3.5 text-amber-300 fill-amber-300" />
           <span>Buy Now</span>

@@ -11,7 +11,7 @@ export function Skeleton({ className, ...props }: React.HTMLAttributes<HTMLDivEl
 
 export function ProductCardSkeleton() {
   return (
-    <div className="flex flex-col bg-white dark:bg-[#262022] border border-[#E5DAC4] dark:border-[#B8913A]/20 rounded-lg overflow-hidden p-0 animate-pulse">
+    <div className="flex flex-col bg-white dark:bg-[#262022] border border-[#E5DAC4] dark:border-[#D15608]/20 rounded-2xl shadow-xs overflow-hidden p-0 animate-pulse">
       {/* Image Skeleton */}
       <div className="aspect-3/4 w-full bg-[#FAF6EE] dark:bg-[#362D30]" />
 

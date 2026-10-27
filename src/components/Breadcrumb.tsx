@@ -18,10 +18,10 @@ export function Breadcrumb({ items, className = "" }: BreadcrumbProps) {
         <li>
           <Link
             to="/"
-            className="flex items-center gap-1 hover:text-[#6B1E2E] dark:hover:text-[#B8913A] transition-colors"
+            className="flex items-center gap-1 hover:text-[#D15608] dark:hover:text-[#EDBC3D] transition-colors"
             title="Home"
           >
-            <Home className="size-3.5 text-[#B8913A]" />
+            <Home className="size-3.5 text-[#D15608]" />
             <span className="sr-only">Home</span>
           </Link>
         </li>
@@ -30,15 +30,15 @@ export function Breadcrumb({ items, className = "" }: BreadcrumbProps) {
           const isLast = idx === items.length - 1;
           return (
             <li key={idx} className="flex items-center gap-1.5">
-              <ChevronRight className="size-3 text-[#B8913A]/60 shrink-0" />
+              <ChevronRight className="size-3 text-[#D15608]/60 shrink-0" />
               {isLast || !item.href ? (
-                <span className="font-semibold text-[#6B1E2E] dark:text-[#FAF6EE] max-w-[180px] sm:max-w-xs truncate">
+                <span className="font-semibold text-[#D15608] dark:text-[#FAF6EE] max-w-[180px] sm:max-w-xs truncate">
                   {item.label}
                 </span>
               ) : (
                 <Link
                   to={item.href as any}
-                  className="hover:text-[#6B1E2E] dark:hover:text-[#B8913A] transition-colors max-w-[140px] truncate"
+                  className="hover:text-[#D15608] dark:hover:text-[#EDBC3D] transition-colors max-w-[140px] truncate"
                 >
                   {item.label}
                 </Link>

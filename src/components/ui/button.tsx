@@ -8,33 +8,33 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
-        // Primary solid dark/ink pill
+        // Primary solid orange pill with deep red hover
         primary:
-          "bg-[#0E0E0E] text-[#F4F0E8] hover:bg-[#2A2A2A] rounded-full px-4 sm:px-6 py-2.5 sm:py-3 border border-transparent shadow-none hover:translate-y-[-1px]",
+          "bg-[#D15608] text-white hover:bg-[#9F160A] rounded-full px-4 sm:px-6 py-2.5 sm:py-3 border border-transparent shadow-none hover:translate-y-[-1px]",
         // Primary solid ivory pill (for dark hero/sections)
         ivory:
           "bg-[#F4F0E8] text-[#0E0E0E] hover:bg-[#FFFFFF] rounded-full px-4 sm:px-6 py-2.5 sm:py-3 border border-transparent shadow-none hover:translate-y-[-1px]",
         // Secondary outlined pill with arrow
         secondary:
           "bg-transparent text-inherit border border-current rounded-full px-4 sm:px-6 py-2.5 sm:py-3 hover:bg-black/5 dark:hover:bg-white/10 hover:translate-y-[-1px]",
-        // Outlined pill with gold/wine accent
+        // Outlined pill with orange accent
         outline:
-          "bg-transparent border border-[rgba(14,14,14,0.2)] dark:border-[rgba(244,240,232,0.25)] rounded-full px-4 sm:px-5 py-2 sm:py-2.5 hover:border-[#B8913A] hover:text-[#B8913A]",
+          "bg-transparent border border-[rgba(14,14,14,0.2)] dark:border-[rgba(244,240,232,0.25)] rounded-full px-4 sm:px-5 py-2 sm:py-2.5 hover:border-[#D15608] hover:text-[#D15608]",
         // Pill filter chip
         filter:
-          "rounded-full px-3.5 sm:px-4 py-1.5 text-[11px] tracking-wider whitespace-nowrap shrink-0 border border-[rgba(14,14,14,0.15)] dark:border-[rgba(244,240,232,0.2)] data-[active=true]:bg-[#0E0E0E] data-[active=true]:text-[#F4F0E8] dark:data-[active=true]:bg-[#F4F0E8] dark:data-[active=true]:text-[#0E0E0E] data-[active=true]:border-transparent transition-colors",
+          "rounded-full px-3.5 sm:px-4 py-1.5 text-[11px] tracking-wider whitespace-nowrap shrink-0 border border-[rgba(14,14,14,0.15)] dark:border-[rgba(244,240,232,0.2)] data-[active=true]:bg-[#D15608] data-[active=true]:text-white dark:data-[active=true]:bg-[#D15608] dark:data-[active=true]:text-white data-[active=true]:border-transparent transition-colors",
         ghost:
           "bg-transparent hover:bg-black/5 dark:hover:bg-white/10 rounded-full px-3 py-2",
         link:
-          "underline-offset-4 hover:underline p-0 h-auto tracking-[0.1em]",
+          "underline-offset-4 hover:underline p-0 h-auto tracking-[0.1em] text-[#D15608]",
         default:
-          "bg-[#0E0E0E] text-[#F4F0E8] hover:bg-[#2A2A2A] rounded-full px-4 sm:px-6 py-2.5 sm:py-3 border border-transparent",
+          "bg-[#D15608] text-white hover:bg-[#9F160A] rounded-full px-4 sm:px-6 py-2.5 sm:py-3 border border-transparent",
         destructive:
-          "bg-rose-900 text-white rounded-full px-4 sm:px-5 py-2 sm:py-2.5",
+          "bg-[#9F160A] text-white hover:bg-[#7D1107] rounded-full px-4 sm:px-5 py-2 sm:py-2.5",
         editorial:
-          "bg-[#0E0E0E] text-[#F4F0E8] dark:bg-[#F4F0E8] dark:text-[#0E0E0E] rounded-full px-4 sm:px-6 py-2.5 sm:py-3 hover:opacity-90",
+          "bg-[#D15608] text-white hover:bg-[#9F160A] rounded-full px-4 sm:px-6 py-2.5 sm:py-3",
         gold:
-          "bg-[#B8913A] text-[#0E0E0E] rounded-full px-4 sm:px-6 py-2.5 sm:py-3 font-semibold hover:bg-[#A07B28]",
+          "bg-[#EDBC3D] text-[#0E0E0E] rounded-full px-4 sm:px-6 py-2.5 sm:py-3 font-semibold hover:bg-[#D15608] hover:text-white",
         whatsapp:
           "bg-emerald-800 text-white rounded-full px-4 sm:px-5 py-2.5",
       },

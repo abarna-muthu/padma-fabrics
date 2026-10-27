@@ -520,7 +520,7 @@ export function CheckoutModal({ isOpen, onClose, onOrderSuccess }: CheckoutModal
                 <Button
                   type="submit"
                   size="default"
-                  className="w-full !rounded-xl !h-auto min-h-[50px] py-3.5 px-3 sm:px-6 text-xs sm:text-sm font-bold uppercase tracking-wide shadow-md bg-gradient-to-r from-[#9B2242] via-[#8B1D36] to-[#731429] text-white hover:brightness-110 flex items-center justify-center gap-2 cursor-pointer transition-all active:scale-[0.99] overflow-hidden"
+                  className="w-full !rounded-xl !h-auto min-h-[50px] py-3.5 px-3 sm:px-6 text-xs sm:text-sm font-bold uppercase tracking-wide shadow-md bg-[#D15608] hover:bg-[#9F160A] text-white flex items-center justify-center gap-2 cursor-pointer transition-all active:scale-[0.99] overflow-hidden"
                   disabled={isSubmittingOrder}
                 >
                   {isSubmittingOrder ? (

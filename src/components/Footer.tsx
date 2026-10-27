@@ -32,7 +32,7 @@ export function Footer() {
               <img
                 src={typeof logo === "string" ? logo : (logo as any)?.url || "/padmanabha-logo.jpg"}
                 alt="Padmanabha Fabrics"
-                className="w-12 h-12 rounded-full object-cover ring-2 ring-[#B8913A]/50 shadow-sm shrink-0"
+                className="w-12 h-12 rounded-full object-cover ring-2 ring-[#D15608]/50 shadow-sm shrink-0"
                 width={48}
                 height={48}
               />
@@ -40,7 +40,7 @@ export function Footer() {
                 <span className="font-['Manrope'] text-2xl sm:text-3xl font-semibold tracking-[0.25em] text-[#F4F0E8] block leading-none">
                   PADMANABHA
                 </span>
-                <span className="text-[10px] font-light uppercase tracking-[0.35em] text-[#B8913A] block mt-1.5">
+                <span className="text-[10px] font-light uppercase tracking-[0.35em] text-[#EDBC3D] block mt-1.5">
                   FABRICS · CHENNAI
                 </span>
               </div>
@@ -56,7 +56,7 @@ export function Footer() {
                   href="https://maps.app.goo.gl/D3SYeK37eivDbbiA8"
                   target="_blank"
                   rel="noreferrer"
-                  className="inline-flex items-center gap-1.5 text-xs text-[#B8913A] hover:underline uppercase tracking-wider"
+                  className="inline-flex items-center gap-1.5 text-xs text-[#D15608] hover:underline uppercase tracking-wider"
                 >
                   <MapPin className="size-3" strokeWidth={1.5} />
                   <span>View on Google Maps</span>
@@ -67,7 +67,7 @@ export function Footer() {
 
           {/* Links Column 1: Useful Links */}
           <div className="lg:col-span-2 space-y-3">
-            <span className="text-[11px] font-medium uppercase tracking-[0.2em] text-[#B8913A] block mb-4">
+            <span className="text-[11px] font-medium uppercase tracking-[0.2em] text-[#EDBC3D] block mb-4">
               Explore
             </span>
             <ul className="space-y-2.5 text-xs uppercase tracking-[0.12em] font-light list-none p-0 m-0">
@@ -101,7 +101,7 @@ export function Footer() {
 
           {/* Links Column 2: Legal & Support */}
           <div className="lg:col-span-2 space-y-3">
-            <span className="text-[11px] font-medium uppercase tracking-[0.2em] text-[#B8913A] block mb-4">
+            <span className="text-[11px] font-medium uppercase tracking-[0.2em] text-[#EDBC3D] block mb-4">
               Service
             </span>
             <ul className="space-y-2.5 text-xs uppercase tracking-[0.12em] font-light list-none p-0 m-0">
@@ -121,12 +121,12 @@ export function Footer() {
                 </Link>
               </li>
               <li>
-                <a href="tel:+919940135700" className="text-[#F4F0E8]/70 hover:text-[#B8913A] transition-colors block">
+                <a href="tel:+919940135700" className="text-[#F4F0E8]/70 hover:text-[#D15608] transition-colors block">
                   +91 99401 35700
                 </a>
               </li>
               <li>
-                <a href="tel:+919940145700" className="text-[#F4F0E8]/70 hover:text-[#B8913A] transition-colors block">
+                <a href="tel:+919940145700" className="text-[#F4F0E8]/70 hover:text-[#D15608] transition-colors block">
                   +91 99401 45700
                 </a>
               </li>
@@ -135,7 +135,7 @@ export function Footer() {
 
           {/* Newsletter with Underline Only (No Box) */}
           <div className="lg:col-span-3 space-y-4">
-            <span className="text-[11px] font-medium uppercase tracking-[0.2em] text-[#B8913A] block">
+            <span className="text-[11px] font-medium uppercase tracking-[0.2em] text-[#EDBC3D] block">
               The Editorial Desk
             </span>
             <p className="text-xs font-light text-[#F4F0E8]/70 leading-relaxed">
@@ -149,11 +149,11 @@ export function Footer() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="YOUR EMAIL ADDRESS"
-                className="w-full bg-transparent border-b border-[rgba(244,240,232,0.3)] pb-2 text-xs uppercase tracking-[0.15em] text-[#F4F0E8] placeholder:text-[#F4F0E8]/40 focus:outline-none focus:border-[#B8913A] transition-colors pr-8"
+                className="w-full bg-transparent border-b border-[rgba(244,240,232,0.3)] pb-2 text-xs uppercase tracking-[0.15em] text-[#F4F0E8] placeholder:text-[#F4F0E8]/40 focus:outline-none focus:border-[#D15608] transition-colors pr-8"
               />
               <button
                 type="submit"
-                className="absolute right-0 bottom-2 text-[#B8913A] hover:text-white transition-colors cursor-pointer"
+                className="absolute right-0 bottom-2 text-[#D15608] hover:text-white transition-colors cursor-pointer"
                 aria-label="Subscribe"
               >
                 <ArrowRight className="size-4" strokeWidth={1.5} />
@@ -184,7 +184,7 @@ export function Footer() {
             <button
               type="button"
               onClick={scrollToTop}
-              className="size-9 rounded-full border border-[rgba(244,240,232,0.25)] hover:border-[#B8913A] text-[#F4F0E8] hover:text-[#B8913A] flex items-center justify-center transition-all cursor-pointer"
+              className="size-9 rounded-full border border-[rgba(244,240,232,0.25)] hover:border-[#D15608] text-[#F4F0E8] hover:text-[#D15608] flex items-center justify-center transition-all cursor-pointer"
               title="Scroll to top"
               aria-label="Scroll to top"
             >

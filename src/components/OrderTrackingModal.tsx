@@ -72,10 +72,10 @@ export function OrderTrackingModal({
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="max-w-2xl max-h-[92vh] p-0 overflow-hidden border border-border shadow-2xl bg-card rounded-lg flex flex-col">
         {/* Top Header Banner */}
-        <div className="bg-gradient-to-r from-[#2B1B17] via-[#3D251E] to-[#1E1410] text-[#F8F5EE] p-5 sm:p-6 border-b border-[#B8913A]/30">
+        <div className="bg-gradient-to-r from-[#2B1B17] via-[#3D251E] to-[#1E1410] text-[#F8F5EE] p-5 sm:p-6 border-b border-[#D15608]/30">
           <div className="flex items-start justify-between gap-4">
             <div className="space-y-1">
-              <div className="inline-flex items-center gap-2 px-2.5 py-0.5 rounded-full bg-[#B8913A]/25 border border-[#B8913A]/40 text-[#E7C880] text-[11px] font-semibold uppercase tracking-wider">
+              <div className="inline-flex items-center gap-2 px-2.5 py-0.5 rounded-full bg-[#D15608]/25 border border-[#D15608]/40 text-[#EDBC3D] text-[11px] font-semibold uppercase tracking-wider">
                 <Truck className="size-3.5" />
                 <span>Live Shipment Tracking</span>
               </div>
@@ -83,7 +83,7 @@ export function OrderTrackingModal({
                 Order #{order.id}
               </h2>
               <p className="text-xs text-white/70">
-                Placed on <strong className="text-white font-medium">{order.date || order.createdAt?.split("T")[0]}</strong> · Estimated Delivery in <strong className="text-[#E7C880] font-semibold">{tracking.totalDays} Days</strong>
+                Placed on <strong className="text-white font-medium">{order.date || order.createdAt?.split("T")[0]}</strong> · Estimated Delivery in <strong className="text-[#EDBC3D] font-semibold">{tracking.totalDays} Days</strong>
               </p>
             </div>
 
@@ -103,7 +103,7 @@ export function OrderTrackingModal({
                   <span className="block text-[10px] text-white/60 uppercase tracking-wider font-sans">
                     Estimated Delivery
                   </span>
-                  <span className="font-sans font-bold text-[#E7C880] text-sm block">
+                  <span className="font-sans font-bold text-[#EDBC3D] text-sm block">
                     {tracking.estimatedDeliveryDate}
                   </span>
                 </div>
@@ -212,7 +212,7 @@ export function OrderTrackingModal({
                         <span
                           className={`text-sm font-semibold ${
                             isCurrent
-                              ? "text-primary dark:text-[#E7C880] font-bold"
+                              ? "text-primary dark:text-[#EDBC3D] font-bold"
                               : isPassed
                                 ? "text-foreground"
                                 : "text-muted-foreground"

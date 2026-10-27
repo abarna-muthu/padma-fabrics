@@ -42,16 +42,16 @@ export function Drawer({
 
       {/* Drawer Panel */}
       <aside
-        className={`fixed bg-[#FAF6EE] dark:bg-[#1C1819] border-[#B8913A]/30 text-[#2A2A2A] dark:text-[#FAF6EE] shadow-2xl flex flex-col z-50 ${positionClasses[position]} ${className}`}
+        className={`fixed bg-[#FAF6EE] dark:bg-[#1C1819] border-[#D15608]/30 text-[#2A2A2A] dark:text-[#FAF6EE] shadow-2xl flex flex-col z-50 ${positionClasses[position]} ${className}`}
         role="dialog"
         aria-modal="true"
       >
         {/* Header */}
         {(Boolean(title) || Boolean(onClose)) && (
-          <div className="flex items-center justify-between p-4 sm:p-5 border-b border-[#B8913A]/25">
+          <div className="flex items-center justify-between p-4 sm:p-5 border-b border-[#D15608]/25">
             <div>
               {title && (
-                <h3 className="font-['Playfair_Display'] text-lg sm:text-xl font-bold text-[#6B1E2E] dark:text-[#FAF6EE]">
+                <h3 className="font-['Playfair_Display'] text-lg sm:text-xl font-bold text-[#9F160A] dark:text-[#FAF6EE]">
                   {title}
                 </h3>
               )}
@@ -64,7 +64,7 @@ export function Drawer({
             <Button
               variant="ghost"
               size="icon"
-              className="rounded-full size-8 hover:bg-[#B8913A]/10 text-muted-foreground hover:text-foreground"
+              className="rounded-full size-8 hover:bg-[#D15608]/10 text-muted-foreground hover:text-foreground"
               onClick={onClose}
               aria-label="Close drawer"
             >
@@ -78,7 +78,7 @@ export function Drawer({
 
         {/* Footer */}
         {footer && (
-          <div className="p-4 sm:p-5 border-t border-[#B8913A]/25 bg-[#FAF6EE]/90 dark:bg-[#1C1819]/90">
+          <div className="p-4 sm:p-5 border-t border-[#D15608]/25 bg-[#FAF6EE]/90 dark:bg-[#1C1819]/90">
             {footer}
           </div>
         )}

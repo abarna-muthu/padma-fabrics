@@ -177,7 +177,7 @@ export function HomePage() {
   }, [categoriesList]);
 
   return (
-    <div className="bg-[#FAF7F2] text-[#0E0E0E] min-h-screen selection:bg-[#B8913A]/20 selection:text-[#0E0E0E]">
+    <div className="bg-[#FAF7F2] text-[#0E0E0E] min-h-screen selection:bg-[#D15608]/20 selection:text-[#0E0E0E]">
       {/* ===================================================================
           1. HERO SECTION — MAIN VISUAL FOCUS (Split Layout)
           Left: ~50% width content on warm ivory.
@@ -188,7 +188,7 @@ export function HomePage() {
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
             {/* LEFT CONTENT: ~50% width */}
             <div className="lg:col-span-6 flex flex-col justify-center space-y-6 lg:pr-6">
-              <MicroLabel className="text-[#B8913A]">
+              <MicroLabel className="text-[#D15608]">
                 THE NEW SEASON
               </MicroLabel>
 
@@ -204,7 +204,7 @@ export function HomePage() {
               <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 sm:gap-3 pt-2">
                 <Link
                   to="/shop"
-                  className="inline-flex items-center justify-center px-5 sm:px-8 py-3 sm:py-3.5 rounded-full bg-[#0E0E0E] text-[#F4F0E8] hover:bg-[#B8913A] transition-colors text-xs font-semibold uppercase tracking-[0.08em] sm:tracking-[0.14em] cursor-pointer shadow-xs active:scale-98 text-center w-full sm:w-auto touch-manipulation"
+                  className="inline-flex items-center justify-center px-5 sm:px-8 py-3 sm:py-3.5 rounded-full bg-[#D15608] text-white hover:bg-[#9F160A] transition-colors text-xs font-semibold uppercase tracking-[0.08em] sm:tracking-[0.14em] cursor-pointer shadow-xs active:scale-98 text-center w-full sm:w-auto touch-manipulation"
                 >
                   Shop Collection
                 </Link>
@@ -212,7 +212,7 @@ export function HomePage() {
                 <Link
                   to="/shop"
                   search={{ filter: "new" } as any}
-                  className="inline-flex items-center justify-center px-5 sm:px-8 py-3 sm:py-3.5 rounded-full border border-[rgba(14,14,14,0.25)] text-[#0E0E0E] hover:border-[#0E0E0E] hover:bg-black/5 transition-all text-xs font-semibold uppercase tracking-[0.08em] sm:tracking-[0.14em] cursor-pointer active:scale-98 text-center w-full sm:w-auto touch-manipulation"
+                  className="inline-flex items-center justify-center px-5 sm:px-8 py-3 sm:py-3.5 rounded-full border border-[rgba(14,14,14,0.25)] text-[#0E0E0E] hover:border-[#D15608] hover:text-[#D15608] hover:bg-black/5 transition-all text-xs font-semibold uppercase tracking-[0.08em] sm:tracking-[0.14em] cursor-pointer active:scale-98 text-center w-full sm:w-auto touch-manipulation"
                 >
                   Explore New Arrivals
                 </Link>
@@ -241,7 +241,7 @@ export function HomePage() {
 
                 <div className="absolute bottom-4 left-4 right-4 z-10 flex items-center justify-between text-white text-xs tracking-wider uppercase font-medium bg-black/45 backdrop-blur-xs px-4 py-2.5 rounded-lg border border-white/10">
                   <span>Contemporary Ready-to-Wear</span>
-                  <span className="text-[#B8913A]">Edition 2026</span>
+                  <span className="text-[#EDBC3D]">Edition 2026</span>
                 </div>
               </div>
             </div>
@@ -280,7 +280,7 @@ export function HomePage() {
                 key={col.slug}
                 type="button"
                 onClick={() => handleCategoryNav(col.slug)}
-                className="group relative aspect-4/5 w-full rounded-[2px] overflow-hidden bg-[#EBE6DC] border border-[rgba(14,14,14,0.08)] block text-left cursor-pointer transition-all hover:border-[#B8913A] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[#B8913A]"
+                className="group relative aspect-4/5 w-full rounded-[2px] overflow-hidden bg-[#EBE6DC] border border-[rgba(14,14,14,0.08)] block text-left cursor-pointer transition-all hover:border-[#D15608] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[#D15608]"
               >
                 <img
                   src={col.image}
@@ -304,7 +304,7 @@ export function HomePage() {
                   <h3 className="font-['Manrope'] text-lg sm:text-xl font-medium tracking-tight leading-snug">
                     {col.title}
                   </h3>
-                  <div className="mt-2.5 inline-flex items-center gap-1.5 text-xs uppercase tracking-[0.14em] font-medium text-[#B8913A] group-hover:text-white transition-colors">
+                  <div className="mt-2.5 inline-flex items-center gap-1.5 text-xs uppercase tracking-[0.14em] font-medium text-[#EDBC3D] group-hover:text-white transition-colors">
                     <span>Explore Collection</span>
                     <ArrowRight className="size-3.5 transition-transform duration-300 group-hover:translate-x-1" strokeWidth={1.5} />
                   </div>
@@ -331,7 +331,7 @@ export function HomePage() {
             <Link
               to="/shop"
               aria-label="Special Collection - Everyday Elegance - Shop Collection"
-              className="group relative block rounded-2xl overflow-hidden bg-[#FAF7F2] border border-[rgba(14,14,14,0.08)] shadow-[0_16px_40px_-10px_rgba(30,22,12,0.18),0_6px_20px_rgba(30,22,12,0.08)] hover:shadow-[0_28px_56px_-12px_rgba(30,22,12,0.28),0_12px_28px_rgba(30,22,12,0.14)] transition-all duration-500 hover:-translate-y-1.5 focus:outline-none focus:ring-2 focus:ring-[#B8913A]/50"
+              className="group relative block rounded-2xl overflow-hidden bg-[#FAF7F2] border border-[rgba(14,14,14,0.08)] shadow-[0_16px_40px_-10px_rgba(30,22,12,0.18),0_6px_20px_rgba(30,22,12,0.08)] hover:shadow-[0_28px_56px_-12px_rgba(30,22,12,0.28),0_12px_28px_rgba(30,22,12,0.14)] transition-all duration-500 hover:-translate-y-1.5 focus:outline-none focus:ring-2 focus:ring-[#D15608]/50"
             >
               <div className="relative w-full aspect-[1024/705] overflow-hidden">
                 <img
@@ -350,7 +350,7 @@ export function HomePage() {
               to="/shop"
               search={{ filter: "new" } as any}
               aria-label="Just Arrived - New Styles, Fresh Looks - Explore New Arrivals"
-              className="group relative block rounded-2xl overflow-hidden bg-[#FAF7F2] border border-[rgba(14,14,14,0.08)] shadow-[0_16px_40px_-10px_rgba(30,22,12,0.18),0_6px_20px_rgba(30,22,12,0.08)] hover:shadow-[0_28px_56px_-12px_rgba(30,22,12,0.28),0_12px_28px_rgba(30,22,12,0.14)] transition-all duration-500 hover:-translate-y-1.5 focus:outline-none focus:ring-2 focus:ring-[#B8913A]/50"
+              className="group relative block rounded-2xl overflow-hidden bg-[#FAF7F2] border border-[rgba(14,14,14,0.08)] shadow-[0_16px_40px_-10px_rgba(30,22,12,0.18),0_6px_20px_rgba(30,22,12,0.08)] hover:shadow-[0_28px_56px_-12px_rgba(30,22,12,0.28),0_12px_28px_rgba(30,22,12,0.14)] transition-all duration-500 hover:-translate-y-1.5 focus:outline-none focus:ring-2 focus:ring-[#D15608]/50"
             >
               <div className="relative w-full aspect-[1024/705] overflow-hidden">
                 <img
@@ -390,7 +390,7 @@ export function HomePage() {
 
             <Link
               to="/shop"
-              className="inline-flex items-center gap-1.5 text-xs uppercase tracking-[0.16em] font-medium text-[#B8913A] hover:underline shrink-0"
+              className="inline-flex items-center gap-1.5 text-xs uppercase tracking-[0.16em] font-medium text-[#D15608] hover:underline shrink-0"
             >
               <span>View All Products</span>
               <ArrowRight className="size-4" strokeWidth={1.5} />
@@ -406,7 +406,7 @@ export function HomePage() {
                 onClick={() => setSelectedCategory(cat)}
                 className={`px-3.5 sm:px-4 py-1.5 sm:py-2 rounded-full text-xs font-semibold uppercase tracking-wider transition-all cursor-pointer shrink-0 whitespace-nowrap min-h-[34px] touch-manipulation flex items-center justify-center ${
                   selectedCategory === cat
-                    ? "bg-[#0E0E0E] text-[#F4F0E8] shadow-xs"
+                    ? "bg-[#D15608] text-white shadow-xs"
                     : "bg-black/5 text-[#0E0E0E]/80 hover:bg-black/10 border border-[rgba(14,14,14,0.08)]"
                 }`}
               >
@@ -419,23 +419,23 @@ export function HomePage() {
           {loading && (!catalogToDisplay || catalogToDisplay.length === 0) ? (
             <ProductGridSkeleton count={8} />
           ) : error && (!catalogToDisplay || catalogToDisplay.length === 0) ? (
-            <div className="text-center py-16 px-4 bg-[#EBE6DC]/50 rounded-[2px] border border-[rgba(14,14,14,0.08)]">
-              <p className="text-sm text-[#6B1E2E] font-medium">{error}</p>
+            <div className="text-center py-16 px-4 bg-[#EBE6DC]/50 rounded-2xl border border-[rgba(14,14,14,0.08)] shadow-xs">
+              <p className="text-sm text-[#9F160A] font-medium">{error}</p>
               <button
                 onClick={fetchProducts}
-                className="mt-4 px-6 py-2 rounded-full bg-[#0E0E0E] text-[#F4F0E8] text-xs uppercase tracking-wider hover:bg-[#B8913A] cursor-pointer"
+                className="mt-4 px-6 py-2 rounded-full bg-[#D15608] text-white text-xs uppercase tracking-wider hover:bg-[#9F160A] cursor-pointer"
               >
                 Try Again
               </button>
             </div>
           ) : filteredProducts.length === 0 ? (
-            <div className="text-center py-16 px-4 bg-[#EBE6DC]/50 rounded-[2px] border border-[rgba(14,14,14,0.08)]">
+            <div className="text-center py-16 px-4 bg-[#EBE6DC]/50 rounded-2xl border border-[rgba(14,14,14,0.08)] shadow-xs">
               <p className="text-sm text-[#0E0E0E]/70 font-light">
                 No products found in this category right now.
               </p>
               <Link
                 to="/shop"
-                className="mt-4 inline-block px-6 py-2 rounded-full bg-[#0E0E0E] text-[#F4F0E8] text-xs uppercase tracking-wider hover:bg-[#B8913A]"
+                className="mt-4 inline-block px-6 py-2 rounded-full bg-[#D15608] text-white text-xs uppercase tracking-wider hover:bg-[#9F160A]"
               >
                 Explore Full Shop
               </Link>
@@ -465,7 +465,7 @@ export function HomePage() {
               return (
                 <div key={b.title} className="flex items-start gap-4 p-2">
                   <div className="size-11 rounded-full bg-[#EBE6DC] border border-[rgba(14,14,14,0.08)] flex items-center justify-center shrink-0 text-[#0E0E0E]">
-                    <Icon className="size-5 text-[#B8913A]" strokeWidth={1.5} />
+                    <Icon className="size-5 text-[#D15608]" strokeWidth={1.5} />
                   </div>
                   <div className="space-y-1">
                     <h4 className="font-['Manrope'] text-sm font-semibold uppercase tracking-wider text-[#0E0E0E]">
@@ -477,7 +477,7 @@ export function HomePage() {
                     {b.link && (
                       <Link
                         to={b.link}
-                        className="text-[11px] font-medium text-[#B8913A] hover:underline uppercase tracking-wider block pt-1"
+                        className="text-[11px] font-medium text-[#D15608] hover:underline uppercase tracking-wider block pt-1"
                       >
                         Contact Team →
                       </Link>
@@ -511,7 +511,7 @@ export function HomePage() {
 
             {/* RIGHT: Content & Subscription Form */}
             <div className="lg:col-span-7 p-8 sm:p-12 lg:p-16 flex flex-col justify-center space-y-4">
-              <MicroLabel className="text-[#B8913A]">STAY IN STYLE</MicroLabel>
+              <MicroLabel className="text-[#D15608]">STAY IN STYLE</MicroLabel>
 
               <h2 className="font-['Cormorant_Garamond'] text-3xl sm:text-4xl md:text-5xl font-medium tracking-tight text-[#0E0E0E] leading-tight">
                 A Little More Style in Your Inbox
@@ -537,11 +537,11 @@ export function HomePage() {
                     value={newsletterEmail}
                     onChange={(e) => setNewsletterEmail(e.target.value)}
                     required
-                    className="flex-1 bg-white border border-[rgba(14,14,14,0.15)] rounded-full px-5 py-3 text-xs text-[#0E0E0E] placeholder:text-[#0E0E0E]/40 focus:outline-none focus:border-[#B8913A] shadow-2xs"
+                    className="flex-1 bg-white border border-[rgba(14,14,14,0.15)] rounded-full px-5 py-3 text-xs text-[#0E0E0E] placeholder:text-[#0E0E0E]/40 focus:outline-none focus:border-[#D15608] shadow-2xs"
                   />
                   <button
                     type="submit"
-                    className="px-8 py-3 rounded-full bg-[#0E0E0E] text-[#F4F0E8] hover:bg-[#B8913A] transition-colors text-xs uppercase tracking-[0.16em] font-medium cursor-pointer shadow-xs whitespace-nowrap active:scale-98"
+                    className="px-8 py-3 rounded-full bg-[#D15608] text-white hover:bg-[#9F160A] transition-colors text-xs uppercase tracking-[0.16em] font-medium cursor-pointer shadow-xs whitespace-nowrap active:scale-98"
                   >
                     Subscribe
                   </button>

@@ -46,8 +46,8 @@ export function LoginPage() {
     <div className="max-w-md mx-auto px-4 py-12">
       <Breadcrumb items={[{ label: "Account Access" }]} className="mb-6 justify-center" />
 
-      <div className="p-8 border border-[#B8913A]/30 rounded-lg bg-white dark:bg-[#262022] shadow-md text-center">
-        <h2 className="font-['Playfair_Display'] text-2xl font-bold text-[#6B1E2E] dark:text-[#FAF6EE]">
+      <div className="p-8 border border-[#D15608]/30 rounded-lg bg-white dark:bg-[#262022] shadow-md text-center">
+        <h2 className="font-['Playfair_Display'] text-2xl font-bold text-[#9F160A] dark:text-[#FAF6EE]">
           {isRegisterMode ? "Create Your Account" : "Sign In to Padmanabha"}
         </h2>
         <p className="text-xs text-[#5C5549] dark:text-[#B5AC9E] mt-1.5 mb-6">
@@ -55,13 +55,13 @@ export function LoginPage() {
         </p>
 
         {isLoggedIn && customer ? (
-          <div className="p-4 bg-[#FAF6EE] dark:bg-black/20 rounded border border-[#B8913A]/30 space-y-3">
+          <div className="p-4 bg-[#FAF6EE] dark:bg-black/20 rounded border border-[#D15608]/30 space-y-3">
             <p className="text-xs text-[#8A9A7B] font-semibold">Currently signed in as:</p>
-            <p className="text-sm font-bold text-[#6B1E2E] dark:text-[#FAF6EE]">{customer.name} ({customer.email})</p>
+            <p className="text-sm font-bold text-[#9F160A] dark:text-[#FAF6EE]">{customer.name} ({customer.email})</p>
             <div className="pt-2 flex justify-center gap-2">
               <Link
                 to="/orders"
-                className="px-4 py-2 rounded bg-[#6B1E2E] text-white text-xs font-semibold uppercase tracking-wider"
+                className="px-4 py-2 rounded bg-[#D15608] hover:bg-[#9F160A] text-white text-xs font-semibold uppercase tracking-wider transition-colors"
               >
                 View My Orders
               </Link>
@@ -73,14 +73,14 @@ export function LoginPage() {
               <div>
                 <label className="text-[11px] font-semibold text-[#5C5549]">Full Name</label>
                 <div className="relative mt-1">
-                  <User className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-[#B8913A]" />
+                  <User className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-[#D15608]" />
                   <input
                     type="text"
                     required
                     value={name}
                     onChange={(e) => setName(e.target.value)}
                     placeholder="Radha Sundaram"
-                    className="w-full pl-9 pr-3 py-2 text-xs rounded border border-[#E5DAC4] bg-[#FAF6EE] dark:bg-black/20 focus:outline-none focus:border-[#B8913A]"
+                    className="w-full pl-9 pr-3 py-2 text-xs rounded border border-[#E5DAC4] bg-[#FAF6EE] dark:bg-black/20 focus:outline-none focus:border-[#D15608]"
                   />
                 </div>
               </div>
@@ -89,14 +89,14 @@ export function LoginPage() {
             <div>
               <label className="text-[11px] font-semibold text-[#5C5549]">Email Address</label>
               <div className="relative mt-1">
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-[#B8913A]" />
+                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-[#D15608]" />
                 <input
                   type="email"
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="customer@example.com"
-                  className="w-full pl-9 pr-3 py-2 text-xs rounded border border-[#E5DAC4] bg-[#FAF6EE] dark:bg-black/20 focus:outline-none focus:border-[#B8913A]"
+                  className="w-full pl-9 pr-3 py-2 text-xs rounded border border-[#E5DAC4] bg-[#FAF6EE] dark:bg-black/20 focus:outline-none focus:border-[#D15608]"
                 />
               </div>
             </div>
@@ -105,14 +105,14 @@ export function LoginPage() {
               <div>
                 <label className="text-[11px] font-semibold text-[#5C5549]">Phone Number</label>
                 <div className="relative mt-1">
-                  <Phone className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-[#B8913A]" />
+                  <Phone className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-[#D15608]" />
                   <input
                     type="tel"
                     required
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
                     placeholder="+91 99401 35700"
-                    className="w-full pl-9 pr-3 py-2 text-xs rounded border border-[#E5DAC4] bg-[#FAF6EE] dark:bg-black/20 focus:outline-none focus:border-[#B8913A]"
+                    className="w-full pl-9 pr-3 py-2 text-xs rounded border border-[#E5DAC4] bg-[#FAF6EE] dark:bg-black/20 focus:outline-none focus:border-[#D15608]"
                   />
                 </div>
               </div>
@@ -121,13 +121,13 @@ export function LoginPage() {
             <div>
               <label className="text-[11px] font-semibold text-[#5C5549]">Password</label>
               <div className="relative mt-1">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-[#B8913A]" />
+                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-[#D15608]" />
                 <input
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
-                  className="w-full pl-9 pr-3 py-2 text-xs rounded border border-[#E5DAC4] bg-[#FAF6EE] dark:bg-black/20 focus:outline-none focus:border-[#B8913A]"
+                  className="w-full pl-9 pr-3 py-2 text-xs rounded border border-[#E5DAC4] bg-[#FAF6EE] dark:bg-black/20 focus:outline-none focus:border-[#D15608]"
                 />
               </div>
             </div>
@@ -135,7 +135,7 @@ export function LoginPage() {
             <Button
               type="submit"
               disabled={loading}
-              className="w-full mt-4 bg-[#6B1E2E] hover:bg-[#521623] text-white text-xs font-semibold uppercase tracking-wider py-2.5 rounded-md shadow-xs"
+              className="w-full mt-4 bg-[#D15608] hover:bg-[#9F160A] text-white text-xs font-semibold uppercase tracking-wider py-2.5 rounded-md shadow-xs transition-colors"
             >
               {loading ? "Processing..." : isRegisterMode ? "Create Account" : "Sign In"}
             </Button>
@@ -144,7 +144,7 @@ export function LoginPage() {
               <button
                 type="button"
                 onClick={() => setIsRegisterMode(!isRegisterMode)}
-                className="text-xs text-[#B8913A] hover:underline font-semibold cursor-pointer"
+                className="text-xs text-[#D15608] hover:underline font-semibold cursor-pointer"
               >
                 {isRegisterMode
                   ? "Already have an account? Sign in here"

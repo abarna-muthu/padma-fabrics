@@ -15,7 +15,7 @@ export function CategoryCard({ number, name, count, image, slug, onClick }: Cate
     <Link
       to="/shop"
       onClick={onClick}
-      className="group relative aspect-3/4 w-full rounded-[2px] overflow-hidden bg-[#EBE6DC] border border-[rgba(14,14,14,0.08)] block select-none"
+      className="group relative aspect-3/4 w-full rounded-2xl overflow-hidden bg-[#EBE6DC] border border-[rgba(14,14,14,0.08)] shadow-[0_4px_20px_rgba(0,0,0,0.06)] hover:shadow-[0_12px_32px_rgba(0,0,0,0.12)] hover:-translate-y-1 transition-all duration-300 block select-none"
     >
       {/* Photo with subtle slow hover zoom (700ms, scale-104) */}
       <img
@@ -45,7 +45,7 @@ export function CategoryCard({ number, name, count, image, slug, onClick }: Cate
             {count}
           </span>
         )}
-        <div className="mt-3 inline-flex items-center gap-1.5 text-xs uppercase tracking-[0.15em] font-medium text-[#B8913A] group-hover:text-white transition-colors">
+        <div className="mt-3 inline-flex items-center gap-1.5 text-xs uppercase tracking-[0.15em] font-medium text-[#EDBC3D] group-hover:text-white transition-colors">
           <span>Shop Now</span>
           <ArrowRight className="size-3.5 transition-transform duration-300 group-hover:translate-x-1" strokeWidth={1.5} />
         </div>

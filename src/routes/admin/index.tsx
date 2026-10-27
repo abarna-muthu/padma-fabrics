@@ -1019,14 +1019,14 @@ function AdminDashboardPage() {
   <style>
     body { font-family: 'Poppins', Arial, sans-serif; margin: 0; padding: 20px; background: #fff; color: #111; }
     .invoice-box { max-width: 800px; margin: auto; padding: 30px; border: 1px solid #eee; border-radius: 8px; }
-    .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #B8913A; padding-bottom: 15px; margin-bottom: 25px; }
-    .title { font-size: 24px; font-weight: bold; color: #6B1E2E; letter-spacing: 2px; }
-    .subtitle { font-size: 11px; color: #B8913A; letter-spacing: 1px; }
+    .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #D15608; padding-bottom: 15px; margin-bottom: 25px; }
+    .title { font-size: 24px; font-weight: bold; color: #9F160A; letter-spacing: 2px; }
+    .subtitle { font-size: 11px; color: #EDBC3D; letter-spacing: 1px; }
     .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 25px; font-size: 13px; line-height: 1.6; }
     .table { width: 100%; border-collapse: collapse; margin-bottom: 25px; font-size: 13px; }
     .table th { background: #FAF7F2; padding: 10px; text-align: left; border-bottom: 2px solid #ddd; }
     .total-box { text-align: right; margin-top: 15px; font-size: 15px; }
-    .total-amount { font-size: 20px; color: #6B1E2E; font-weight: bold; }
+    .total-amount { font-size: 20px; color: #9F160A; font-weight: bold; }
     .footer { text-align: center; margin-top: 30px; font-size: 11px; color: #777; border-top: 1px solid #eee; padding-top: 15px; }
     @media print { body { padding: 0; } .invoice-box { border: none; padding: 0; } }
   </style>
@@ -1055,7 +1055,7 @@ function AdminDashboardPage() {
       </div>
       <div style="text-align: right;">
         <strong>Order Summary:</strong><br />
-        Fulfillment Status: <span style="font-weight: bold; color: #6B1E2E;">${tracking.effectiveStatus}</span><br />
+        Fulfillment Status: <span style="font-weight: bold; color: #9F160A;">${tracking.effectiveStatus}</span><br />
         Estimated Delivery: ${order.deliveryDays || 5} Days<br />
         Payment Status: ${order.paymentStatus || "Paid"}<br />
         Payment Method: ${order.paymentMethod || "Online / COD"}
@@ -1195,7 +1195,7 @@ function AdminDashboardPage() {
           <img
             src={typeof logo === "string" ? logo : (logo as any)?.url || "/padmanabha-logo.jpg"}
             alt="Logo"
-            className="w-8 h-8 rounded-full object-cover ring-1 ring-[#B8913A]/50"
+            className="w-8 h-8 rounded-full object-cover ring-1 ring-[#D15608]/50"
           />
           <span className="font-['Cormorant_Garamond'] font-medium text-lg text-[#F4F0E8] tracking-tight">
             Padmanabha Admin
@@ -1216,14 +1216,14 @@ function AdminDashboardPage() {
         <div className="p-6 border-b border-white/10 hidden md:flex items-center gap-3 shrink-0">
           <img
             src={typeof logo === "string" ? logo : (logo as any)?.url || "/padmanabha-logo.jpg"}
-            className="w-11 h-11 rounded-full object-cover ring-2 ring-[#B8913A]/50 shadow-sm"
+            className="w-11 h-11 rounded-full object-cover ring-2 ring-[#D15608]/50 shadow-sm"
             alt="Padmanabha"
           />
           <div>
             <div className="font-['Cormorant_Garamond'] font-semibold text-[#F4F0E8] text-xl leading-tight tracking-tight">
               Padmanabha
             </div>
-            <div className="text-[9px] uppercase tracking-[0.2em] text-[#B8913A] font-medium">
+            <div className="text-[9px] uppercase tracking-[0.2em] text-[#EDBC3D] font-medium">
               Admin Portal
             </div>
           </div>
@@ -1239,11 +1239,11 @@ function AdminDashboardPage() {
             }}
             className={`w-full flex items-center gap-3 px-3.5 py-2.5 text-sm font-medium rounded-sm transition-colors text-left cursor-pointer ${
               activeTab === "dashboard"
-                ? "bg-[#6B1E2E] text-white font-semibold shadow-xs"
+                ? "bg-[#D15608] text-white font-semibold shadow-xs"
                 : "text-white/70 hover:bg-white/10 hover:text-white"
             }`}
           >
-            <LayoutDashboard className="size-4 shrink-0 text-[#B8913A]" />
+            <LayoutDashboard className="size-4 shrink-0 text-[#EDBC3D]" />
             <span>Dashboard</span>
           </button>
 
@@ -1255,11 +1255,11 @@ function AdminDashboardPage() {
             }}
             className={`w-full flex items-center gap-3 px-3.5 py-2.5 text-sm font-medium rounded-sm transition-colors text-left cursor-pointer ${
               activeTab === "products"
-                ? "bg-[#6B1E2E] text-white font-semibold shadow-xs"
+                ? "bg-[#D15608] text-white font-semibold shadow-xs"
                 : "text-white/70 hover:bg-white/10 hover:text-white"
             }`}
           >
-            <Package className="size-4 shrink-0 text-[#B8913A]" />
+            <Package className="size-4 shrink-0 text-[#EDBC3D]" />
             <span>Products</span>
           </button>
 
@@ -1271,11 +1271,11 @@ function AdminDashboardPage() {
             }}
             className={`w-full flex items-center gap-3 px-3.5 py-2.5 text-sm font-medium rounded-sm transition-colors text-left cursor-pointer ${
               activeTab === "inventory"
-                ? "bg-[#6B1E2E] text-white font-semibold shadow-xs"
+                ? "bg-[#D15608] text-white font-semibold shadow-xs"
                 : "text-white/70 hover:bg-white/10 hover:text-white"
             }`}
           >
-            <Boxes className="size-4 shrink-0 text-[#B8913A]" />
+            <Boxes className="size-4 shrink-0 text-[#EDBC3D]" />
             <span>Inventory & Stock</span>
           </button>
 
@@ -1287,11 +1287,11 @@ function AdminDashboardPage() {
             }}
             className={`w-full flex items-center gap-3 px-3.5 py-2.5 text-sm font-medium rounded-sm transition-colors text-left cursor-pointer ${
               activeTab === "orders"
-                ? "bg-[#6B1E2E] text-white font-semibold shadow-xs"
+                ? "bg-[#D15608] text-white font-semibold shadow-xs"
                 : "text-white/70 hover:bg-white/10 hover:text-white"
             }`}
           >
-            <ShoppingBag className="size-4 shrink-0 text-[#B8913A]" />
+            <ShoppingBag className="size-4 shrink-0 text-[#EDBC3D]" />
             <span>Orders</span>
           </button>
 
@@ -1303,11 +1303,11 @@ function AdminDashboardPage() {
             }}
             className={`w-full flex items-center gap-3 px-3.5 py-2.5 text-sm font-medium rounded-sm transition-colors text-left cursor-pointer ${
               activeTab === "customers"
-                ? "bg-[#6B1E2E] text-white font-semibold shadow-xs"
+                ? "bg-[#D15608] text-white font-semibold shadow-xs"
                 : "text-white/70 hover:bg-white/10 hover:text-white"
             }`}
           >
-            <Users className="size-4 shrink-0 text-[#B8913A]" />
+            <Users className="size-4 shrink-0 text-[#EDBC3D]" />
             <span>Customers</span>
           </button>
 
@@ -1319,11 +1319,11 @@ function AdminDashboardPage() {
             }}
             className={`w-full flex items-center gap-3 px-3.5 py-2.5 text-sm font-medium rounded-sm transition-colors text-left cursor-pointer ${
               activeTab === "sales"
-                ? "bg-[#6B1E2E] text-white font-semibold shadow-xs"
+                ? "bg-[#D15608] text-white font-semibold shadow-xs"
                 : "text-white/70 hover:bg-white/10 hover:text-white"
             }`}
           >
-            <TrendingUp className="size-4 shrink-0 text-[#B8913A]" />
+            <TrendingUp className="size-4 shrink-0 text-[#EDBC3D]" />
             <span>Sales & Reports</span>
           </button>
 
@@ -1335,17 +1335,17 @@ function AdminDashboardPage() {
             }}
             className={`w-full flex items-center gap-3 px-3.5 py-2.5 text-sm font-medium rounded-sm transition-colors text-left cursor-pointer ${
               activeTab === "settings"
-                ? "bg-[#6B1E2E] text-white font-semibold shadow-xs"
+                ? "bg-[#D15608] text-white font-semibold shadow-xs"
                 : "text-white/70 hover:bg-white/10 hover:text-white"
             }`}
           >
-            <Settings className="size-4 shrink-0 text-[#B8913A]" />
+            <Settings className="size-4 shrink-0 text-[#EDBC3D]" />
             <span>Admin Settings</span>
           </button>
 
           {/* Section: Page Content Management */}
-          <div className="pt-4 pb-1.5 px-3 text-xs font-semibold uppercase tracking-wider text-[#B8913A] flex items-center gap-1.5">
-            <Sparkles className="size-3.5 text-[#B8913A]" />
+          <div className="pt-4 pb-1.5 px-3 text-xs font-semibold uppercase tracking-wider text-[#EDBC3D] flex items-center gap-1.5">
+            <Sparkles className="size-3.5 text-[#EDBC3D]" />
             <span>Page Content</span>
           </div>
 
@@ -1357,11 +1357,11 @@ function AdminDashboardPage() {
             }}
             className={`w-full flex items-center gap-3 px-3.5 py-2.5 text-sm font-medium rounded-sm transition-colors text-left cursor-pointer ${
               activeTab === "home-content"
-                ? "bg-[#6B1E2E] text-white font-semibold shadow-xs"
+                ? "bg-[#D15608] text-white font-semibold shadow-xs"
                 : "text-white/70 hover:bg-white/10 hover:text-white"
             }`}
           >
-            <Globe className="size-4 shrink-0 text-[#B8913A]" />
+            <Globe className="size-4 shrink-0 text-[#EDBC3D]" />
             <span>Home Page</span>
           </button>
 
@@ -1373,11 +1373,11 @@ function AdminDashboardPage() {
             }}
             className={`w-full flex items-center gap-3 px-3.5 py-2.5 text-sm font-medium rounded-sm transition-colors text-left cursor-pointer ${
               activeTab === "about-content"
-                ? "bg-[#6B1E2E] text-white font-semibold shadow-xs"
+                ? "bg-[#D15608] text-white font-semibold shadow-xs"
                 : "text-white/70 hover:bg-white/10 hover:text-white"
             }`}
           >
-            <FileText className="size-4 shrink-0 text-[#B8913A]" />
+            <FileText className="size-4 shrink-0 text-[#EDBC3D]" />
             <span>About Page</span>
           </button>
 
@@ -1389,11 +1389,11 @@ function AdminDashboardPage() {
             }}
             className={`w-full flex items-center gap-3 px-3.5 py-2.5 text-sm font-medium rounded-sm transition-colors text-left cursor-pointer ${
               activeTab === "contact-content"
-                ? "bg-[#6B1E2E] text-white font-semibold shadow-xs"
+                ? "bg-[#D15608] text-white font-semibold shadow-xs"
                 : "text-white/70 hover:bg-white/10 hover:text-white"
             }`}
           >
-            <Phone className="size-4 shrink-0 text-[#B8913A]" />
+            <Phone className="size-4 shrink-0 text-[#EDBC3D]" />
             <span>Contact Page</span>
           </button>
         </nav>
@@ -1401,12 +1401,12 @@ function AdminDashboardPage() {
         {/* Sidebar Footer */}
         <div className="p-4 border-t border-white/10 space-y-3 bg-white/5 shrink-0">
           <div className="flex items-center gap-2.5 text-xs">
-            <div className="w-8 h-8 rounded-full bg-[#B8913A]/20 text-[#B8913A] border border-[#B8913A]/30 flex items-center justify-center font-semibold shrink-0">
+            <div className="w-8 h-8 rounded-full bg-[#D15608]/20 text-[#D15608] border border-[#D15608]/30 flex items-center justify-center font-semibold shrink-0">
               <User className="size-4" />
             </div>
             <div className="overflow-hidden">
               <div className="font-semibold text-white tracking-wide truncate">{user?.name || "Padmanabha Administrator"}</div>
-              <div className="text-[11px] text-[#B8913A] font-medium truncate">{user?.email || "admin@padmanabhafabrics.com"}</div>
+              <div className="text-[11px] text-[#EDBC3D] font-medium truncate">{user?.email || "admin@padmanabhafabrics.com"}</div>
             </div>
           </div>
 
@@ -1434,8 +1434,8 @@ function AdminDashboardPage() {
         {/* Top bar info */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-[rgba(14,14,14,0.08)] mb-6">
           <div>
-            <div className="text-[10px] uppercase tracking-[0.2em] text-[#B8913A] font-semibold mb-1 flex items-center gap-1.5">
-              <Sparkles className="size-3 text-[#B8913A]" />
+            <div className="text-[10px] uppercase tracking-[0.2em] text-[#EDBC3D] font-semibold mb-1 flex items-center gap-1.5">
+              <Sparkles className="size-3 text-[#EDBC3D]" />
               <span>Administration Portal · Padmanabha Fabrics</span>
             </div>
             <h1 className="font-['Cormorant_Garamond'] text-2xl sm:text-3xl md:text-4xl font-normal text-[#0E0E0E] tracking-tight">
@@ -1460,10 +1460,10 @@ function AdminDashboardPage() {
           </div>
 
           <div className="flex items-center gap-3">
-            <span className="text-[10px] uppercase tracking-wider px-3 py-1 bg-white border border-[#B8913A]/30 text-[#0E0E0E] rounded-full shadow-2xs font-medium">
+            <span className="text-[10px] uppercase tracking-wider px-3 py-1 bg-white border border-[#D15608]/30 text-[#0E0E0E] rounded-full shadow-2xs font-medium">
               Live Website Sync
             </span>
-            <Button variant="outline" size="sm" asChild className="text-xs rounded-full border-[rgba(14,14,14,0.18)] bg-white text-[#0E0E0E] hover:border-[#B8913A] hover:bg-[#FAF7F2] shadow-2xs">
+            <Button variant="outline" size="sm" asChild className="text-xs rounded-full border-[rgba(14,14,14,0.18)] bg-white text-[#0E0E0E] hover:border-[#D15608] hover:bg-[#FAF7F2] shadow-2xs">
               <Link
                 to={
                   activeTab === "home-content"
@@ -1494,10 +1494,10 @@ function AdminDashboardPage() {
           <div className="space-y-8">
             {/* Metric cards */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-              <div className="relative bg-white border border-[rgba(14,14,14,0.08)] rounded-2xl p-6 shadow-xs overflow-hidden before:absolute before:top-0 before:left-0 before:right-0 before:h-0.5 before:bg-[#B8913A]">
+              <div className="relative bg-white border border-[rgba(14,14,14,0.08)] rounded-2xl p-6 shadow-xs overflow-hidden before:absolute before:top-0 before:left-0 before:right-0 before:h-0.5 before:bg-[#D15608]">
                 <div className="flex justify-between items-start">
                   <span className="text-xs font-semibold uppercase tracking-[0.14em] text-[#0E0E0E]/60">Total Revenue</span>
-                  <div className="p-2.5 bg-[#FAF7F2] text-[#B8913A] border border-[#B8913A]/20 rounded-xl">
+                  <div className="p-2.5 bg-[#FAF7F2] text-[#D15608] border border-[#D15608]/20 rounded-xl">
                     <TrendingUp className="size-4" />
                   </div>
                 </div>
@@ -1524,10 +1524,10 @@ function AdminDashboardPage() {
                 </span>
               </div>
 
-              <div className="relative bg-white border border-[rgba(14,14,14,0.08)] rounded-2xl p-6 shadow-xs overflow-hidden before:absolute before:top-0 before:left-0 before:right-0 before:h-0.5 before:bg-[#6B1E2E]">
+              <div className="relative bg-white border border-[rgba(14,14,14,0.08)] rounded-2xl p-6 shadow-xs overflow-hidden before:absolute before:top-0 before:left-0 before:right-0 before:h-0.5 before:bg-[#9F160A]">
                 <div className="flex justify-between items-start">
                   <span className="text-xs font-semibold uppercase tracking-[0.14em] text-[#0E0E0E]/60">Active Catalog</span>
-                  <div className="p-2.5 bg-[#FAF7F2] text-[#6B1E2E] border border-[#6B1E2E]/20 rounded-xl">
+                  <div className="p-2.5 bg-[#FAF7F2] text-[#9F160A] border border-[#9F160A]/20 rounded-xl">
                     <Package className="size-4" />
                   </div>
                 </div>
@@ -1661,14 +1661,14 @@ function AdminDashboardPage() {
                     placeholder="Search products, colours, SKU…"
                     value={productSearch}
                     onChange={(e) => setProductSearch(e.target.value)}
-                    className="pl-9.5 text-xs h-10 rounded-full border-[rgba(14,14,14,0.15)] bg-white focus-visible:ring-1 focus-visible:ring-[#B8913A] focus-visible:border-[#B8913A] w-full"
+                    className="pl-9.5 text-xs h-10 rounded-full border-[rgba(14,14,14,0.15)] bg-white focus-visible:ring-1 focus-visible:ring-[#D15608] focus-visible:border-[#D15608] w-full"
                   />
                 </div>
                 {/* Category filter */}
                 <select
                   value={productCategoryFilter}
                   onChange={(e) => setProductCategoryFilter(e.target.value)}
-                  className="h-10 px-4 text-xs rounded-full bg-white border border-[rgba(14,14,14,0.15)] text-[#0E0E0E] focus:outline-none focus:ring-1 focus:ring-[#B8913A] focus:border-[#B8913A] shrink-0"
+                  className="h-10 px-4 text-xs rounded-full bg-white border border-[rgba(14,14,14,0.15)] text-[#0E0E0E] focus:outline-none focus:ring-1 focus:ring-[#D15608] focus:border-[#D15608] shrink-0"
                 >
                   {activeCategoriesList.map((c) => (
                     <option key={c} value={c}>
@@ -1683,19 +1683,19 @@ function AdminDashboardPage() {
                   type="button"
                   variant="outline"
                   size="sm"
-                  className="h-10 text-xs font-medium rounded-full border-[rgba(14,14,14,0.18)] bg-white text-[#0E0E0E] hover:border-[#B8913A] hover:bg-[#FAF7F2] shadow-2xs px-4 whitespace-nowrap"
+                  className="h-10 text-xs font-medium rounded-full border-[rgba(14,14,14,0.18)] bg-white text-[#0E0E0E] hover:border-[#D15608] hover:bg-[#FAF7F2] shadow-2xs px-4 whitespace-nowrap"
                   onClick={() => {
                     setNewCatName("");
                     setNewCatDesc("");
                     setIsCategoryModalOpen(true);
                   }}
                 >
-                  <FolderPlus className="size-3.5 mr-1.5 text-[#B8913A]" /> New Category
+                  <FolderPlus className="size-3.5 mr-1.5 text-[#D15608]" /> New Category
                 </Button>
                 <button
                   type="button"
                   onClick={handleOpenAddProduct}
-                  className="h-10 px-5 text-xs font-medium uppercase tracking-[0.14em] rounded-full bg-[#0E0E0E] hover:bg-[#6B1E2E] text-[#F4F0E8] flex items-center gap-1.5 transition-all shadow-sm cursor-pointer active:scale-95 whitespace-nowrap"
+                  className="h-10 px-5 text-xs font-medium uppercase tracking-[0.14em] rounded-full bg-[#D15608] hover:bg-[#9F160A] text-[#F4F0E8] flex items-center gap-1.5 transition-all shadow-sm cursor-pointer active:scale-95 whitespace-nowrap"
                 >
                   <Plus className="size-3.5" />
                   <span>Add Product</span>
@@ -3912,7 +3912,7 @@ function AdminDashboardPage() {
                         onClick={() => toggleSize(sz)}
                         className={`h-9 px-2 rounded-xs text-xs font-semibold tracking-wider transition-all cursor-pointer flex items-center justify-center gap-1 border ${
                           isSelected
-                            ? "bg-[#9B2242] text-white border-[#9B2242] shadow-xs ring-2 ring-[#9B2242]/30 font-bold scale-[1.02]"
+                            ? "bg-[#D15608] text-white border-[#D15608] shadow-xs ring-2 ring-[#D15608]/30 font-bold scale-[1.02]"
                             : "bg-background text-foreground/80 border-border hover:border-foreground/40 hover:bg-muted/40"
                         }`}
                         title={isSelected ? `Size ${sz} (Selected - click to remove)` : `Size ${sz} (Click to select)`}

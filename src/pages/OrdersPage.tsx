@@ -157,14 +157,14 @@ export function OrdersPage() {
   <style>
     body { font-family: 'Poppins', Arial, sans-serif; margin: 0; padding: 20px; background: #fff; color: #111; }
     .invoice-box { max-width: 800px; margin: auto; padding: 30px; border: 1px solid #eee; border-radius: 8px; }
-    .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #B8913A; padding-bottom: 15px; margin-bottom: 25px; }
-    .title { font-size: 24px; font-weight: bold; color: #6B1E2E; letter-spacing: 2px; }
-    .subtitle { font-size: 11px; color: #B8913A; letter-spacing: 1px; }
+    .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #D15608; padding-bottom: 15px; margin-bottom: 25px; }
+    .title { font-size: 24px; font-weight: bold; color: #9F160A; letter-spacing: 2px; }
+    .subtitle { font-size: 11px; color: #EDBC3D; letter-spacing: 1px; }
     .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 25px; font-size: 13px; line-height: 1.6; }
     .table { width: 100%; border-collapse: collapse; margin-bottom: 25px; font-size: 13px; }
     .table th { background: #FAF7F2; padding: 10px; text-align: left; border-bottom: 2px solid #ddd; }
     .total-box { text-align: right; margin-top: 15px; font-size: 15px; }
-    .total-amount { font-size: 20px; color: #6B1E2E; font-weight: bold; }
+    .total-amount { font-size: 20px; color: #9F160A; font-weight: bold; }
     .footer { text-align: center; margin-top: 30px; font-size: 11px; color: #777; border-top: 1px solid #eee; padding-top: 15px; }
     @media print { body { padding: 0; } .invoice-box { border: none; padding: 0; } }
   </style>
@@ -193,7 +193,7 @@ export function OrdersPage() {
       </div>
       <div style="text-align: right;">
         <strong>Order Summary:</strong><br />
-        Fulfillment Status: <span style="font-weight: bold; color: #6B1E2E;">${tracking.effectiveStatus}</span><br />
+        Fulfillment Status: <span style="font-weight: bold; color: #9F160A;">${tracking.effectiveStatus}</span><br />
         Estimated Delivery: ${order.deliveryDays || 5} Days<br />
         Payment Status: ${order.paymentStatus || "Paid"}<br />
         Payment Method: ${order.paymentMethod || "Online / COD"}
@@ -374,7 +374,7 @@ export function OrdersPage() {
             onClick={() => setOrderTab("all")}
             className={`px-4 py-1.5 rounded-lg text-xs sm:text-sm font-semibold transition-all ${
               orderTab === "all"
-                ? "bg-[#6B1E2E]/10 text-[#6B1E2E] dark:bg-white/10 dark:text-white"
+                ? "bg-[#D15608]/10 text-[#D15608] dark:bg-white/10 dark:text-white"
                 : "text-muted-foreground hover:text-foreground hover:bg-muted/40 font-medium"
             }`}
           >
@@ -385,7 +385,7 @@ export function OrdersPage() {
             onClick={() => setOrderTab("not-shipped")}
             className={`px-4 py-1.5 rounded-lg text-xs sm:text-sm font-semibold transition-all ${
               orderTab === "not-shipped"
-                ? "bg-[#6B1E2E]/10 text-[#6B1E2E] dark:bg-white/10 dark:text-white"
+                ? "bg-[#D15608]/10 text-[#D15608] dark:bg-white/10 dark:text-white"
                 : "text-muted-foreground hover:text-foreground hover:bg-muted/40 font-medium"
             }`}
           >
@@ -396,7 +396,7 @@ export function OrdersPage() {
             onClick={() => setOrderTab("cancelled")}
             className={`px-4 py-1.5 rounded-lg text-xs sm:text-sm font-semibold transition-all ${
               orderTab === "cancelled"
-                ? "bg-[#6B1E2E]/10 text-[#6B1E2E] dark:bg-white/10 dark:text-white"
+                ? "bg-[#D15608]/10 text-[#D15608] dark:bg-white/10 dark:text-white"
                 : "text-muted-foreground hover:text-foreground hover:bg-muted/40 font-medium"
             }`}
           >
@@ -531,7 +531,7 @@ export function OrdersPage() {
                           setTrackedOrder(order);
                           setTrackedProduct(null);
                         }}
-                        className="h-8 px-4 text-xs font-semibold rounded-lg bg-[#6B1E2E] hover:bg-[#852538] text-white shadow-2xs transition-colors"
+                        className="h-8 px-4 text-xs font-semibold rounded-lg bg-[#D15608] hover:bg-[#9F160A] text-white shadow-2xs transition-colors"
                       >
                         View Order
                       </Button>
@@ -659,7 +659,7 @@ export function OrdersPage() {
                                     image: prodImg,
                                   });
                                 }}
-                                className="inline-flex items-center gap-1.5 font-semibold text-[#6B1E2E] dark:text-[#E7C880] hover:underline transition-colors cursor-pointer"
+                                className="inline-flex items-center gap-1.5 font-semibold text-[#D15608] dark:text-[#EDBC3D] hover:underline transition-colors cursor-pointer"
                               >
                                 <Truck className="size-3.5" />
                                 <span>Track Shipment</span>

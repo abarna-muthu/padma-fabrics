@@ -193,7 +193,7 @@ function ShopPage() {
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-12 pb-16">
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-8">
           <div>
-            <span className="text-[11px] uppercase tracking-[0.2em] text-[#B8913A] font-medium block mb-2">
+            <span className="text-[11px] uppercase tracking-[0.2em] text-[#D15608] font-medium block mb-2">
               The Curated Edit
             </span>
             <h1 className="font-['Manrope'] text-3xl sm:text-4xl md:text-5xl font-medium tracking-tight text-[#0E0E0E]">
@@ -237,7 +237,7 @@ function ShopPage() {
         </div>
 
         {/* Pattern Filter Group */}
-        <div className="py-3 px-4 rounded-[2px] bg-white border border-[rgba(14,14,14,0.08)] mb-8 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div className="py-3 px-4 rounded-2xl bg-white border border-[rgba(14,14,14,0.08)] shadow-xs mb-8 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div className="flex items-center gap-2 overflow-x-auto no-scrollbar">
             <span className="text-[11px] uppercase tracking-wider font-semibold text-[#0E0E0E] shrink-0 mr-1">
               Pattern:
@@ -281,7 +281,7 @@ function ShopPage() {
           {selectedPattern && patternItem && (
             <div className="flex items-center gap-2 shrink-0">
               <span className="text-xs text-[#0E0E0E]/70">
-                Active: <strong className="text-[#B8913A]">{patternItem.name}</strong>
+                Active: <strong className="text-[#D15608]">{patternItem.name}</strong>
               </span>
               <button
                 type="button"
@@ -305,7 +305,7 @@ function ShopPage() {
           {(filter !== ALL || selectedPattern || queryFilter || querySearch) && (
             <button
               type="button"
-              className="text-xs font-semibold text-[#6B1E2E] hover:underline cursor-pointer self-start sm:self-auto"
+              className="text-xs font-semibold text-[#D15608] hover:underline cursor-pointer self-start sm:self-auto"
               onClick={resetAllFilters}
             >
               Reset All Filters
@@ -315,7 +315,7 @@ function ShopPage() {
 
         {/* Products Grid */}
         {visible.length === 0 ? (
-          <div className="p-16 rounded-[2px] bg-white border border-dashed border-[rgba(14,14,14,0.15)] text-center my-6">
+          <div className="p-16 rounded-2xl bg-white border border-dashed border-[rgba(14,14,14,0.15)] shadow-xs text-center my-6">
             <h3 className="font-['Manrope'] text-lg font-medium text-[#0E0E0E]">
               No fabrics matching your selection
             </h3>
@@ -325,7 +325,7 @@ function ShopPage() {
             <button
               type="button"
               onClick={resetAllFilters}
-              className="px-5 py-2 rounded-full bg-[#0E0E0E] text-[#F4F0E8] text-xs uppercase tracking-wider font-medium cursor-pointer hover:bg-[#B8913A] transition-colors"
+              className="px-5 py-2 rounded-full bg-[#D15608] text-white text-xs uppercase tracking-wider font-medium cursor-pointer hover:bg-[#9F160A] transition-colors"
             >
               Reset Filters
             </button>
@@ -343,7 +343,7 @@ function ShopPage() {
       <section className="bg-white border-t border-[rgba(14,14,14,0.08)] py-16" id="wholesale">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div>
-            <span className="text-[11px] uppercase tracking-[0.2em] text-[#B8913A] font-medium block mb-1">
+            <span className="text-[11px] uppercase tracking-[0.2em] text-[#D15608] font-medium block mb-1">
               Custom & Wholesale Orders
             </span>
             <h2 className="font-['Manrope'] text-2xl sm:text-3xl font-medium tracking-tight text-[#0E0E0E]">

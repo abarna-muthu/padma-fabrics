@@ -12,11 +12,11 @@ export function TermsPage() {
         description="Guidelines governing purchases, orders, and wholesale agreements with Padmanabha Fabrics."
       />
 
-      <div className="prose dark:prose-invert max-w-none text-xs sm:text-sm text-[#5C5549] dark:text-[#B5AC9E] space-y-4 p-6 border border-[#E5DAC4] dark:border-[#B8913A]/25 rounded-lg bg-white dark:bg-[#262022]">
+      <div className="prose dark:prose-invert max-w-none text-xs sm:text-sm text-[#5C5549] dark:text-[#B5AC9E] space-y-4 p-6 border border-[#E5DAC4] dark:border-[#D15608]/25 rounded-lg bg-white dark:bg-[#262022]">
         <p>
           Welcome to Padmanabha Fabrics. By browsing our catalog, placing orders, or engaging with our wholesale desk, you agree to comply with our commercial terms and quality assurances.
         </p>
-        <h4 className="font-bold text-[#6B1E2E] dark:text-[#FAF6EE] text-base mt-4">1. Fabric Specifications & Variations</h4>
+        <h4 className="font-bold text-[#9F160A] dark:text-[#FAF6EE] text-base mt-4">1. Fabric Specifications & Variations</h4>
         <p>
           Handcrafted and handloom textiles carry inherent artisanal nuances in weave, slub texture, and shade variation. These characteristic markers authenticate human craftsmanship.
         </p>

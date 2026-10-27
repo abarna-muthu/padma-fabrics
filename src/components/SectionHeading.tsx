@@ -84,8 +84,8 @@ export function SectionHeading({
               to={href as any}
               className={`inline-flex items-center gap-2 text-xs uppercase tracking-[0.15em] font-medium transition-all group pb-1 border-b ${
                 light
-                  ? "text-[#F4F0E8] border-[rgba(244,240,232,0.3)] hover:border-[#B8913A] hover:text-[#B8913A]"
-                  : "text-[#0E0E0E] border-[rgba(14,14,14,0.25)] hover:border-[#B8913A] hover:text-[#B8913A]"
+                  ? "text-[#F4F0E8] border-[rgba(244,240,232,0.3)] hover:border-[#D15608] hover:text-[#D15608]"
+                  : "text-[#0E0E0E] border-[rgba(14,14,14,0.25)] hover:border-[#D15608] hover:text-[#D15608]"
               }`}
             >
               <span>{text}</span>

@@ -64,12 +64,12 @@ export function CartPage() {
         className="mb-6"
       />
 
-      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 pb-6 border-b border-[#E5DAC4] dark:border-[#B8913A]/20">
+      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 pb-6 border-b border-[#E5DAC4] dark:border-[#D15608]/20">
         <div>
-          <span className="text-[11px] font-bold uppercase tracking-[0.25em] text-[#B8913A]">
+          <span className="text-[11px] font-bold uppercase tracking-[0.25em] text-[#D15608]">
             Selected Weaves
           </span>
-          <h1 className="font-['Playfair_Display'] text-2xl sm:text-3xl lg:text-4xl font-bold text-[#6B1E2E] dark:text-[#FAF6EE] mt-1">
+          <h1 className="font-['Playfair_Display'] text-2xl sm:text-3xl lg:text-4xl font-bold text-[#9F160A] dark:text-[#FAF6EE] mt-1">
             Your Shopping Bag
           </h1>
           <p className="text-xs sm:text-sm text-[#5C5549] dark:text-[#B5AC9E] mt-1.5">
@@ -95,11 +95,11 @@ export function CartPage() {
       </div>
 
       {cart.length === 0 ? (
-        <div className="p-12 sm:p-16 border border-dashed border-[#B8913A]/40 rounded-xl bg-white dark:bg-[#1E191A] text-center my-10 max-w-lg mx-auto shadow-xs">
-          <div className="size-16 rounded-full bg-[#FAF6EE] dark:bg-[#2A2425] flex items-center justify-center mx-auto mb-4 border border-[#B8913A]/25">
-            <ShoppingBag className="size-8 text-[#B8913A]" strokeWidth={1.5} />
+        <div className="p-12 sm:p-16 border border-dashed border-[#D15608]/40 rounded-xl bg-white dark:bg-[#1E191A] text-center my-10 max-w-lg mx-auto shadow-xs">
+          <div className="size-16 rounded-full bg-[#FAF6EE] dark:bg-[#2A2425] flex items-center justify-center mx-auto mb-4 border border-[#D15608]/25">
+            <ShoppingBag className="size-8 text-[#D15608]" strokeWidth={1.5} />
           </div>
-          <h3 className="font-['Playfair_Display'] text-2xl font-bold text-[#6B1E2E] dark:text-[#FAF6EE]">
+          <h3 className="font-['Playfair_Display'] text-2xl font-bold text-[#9F160A] dark:text-[#FAF6EE]">
             Your Bag is Empty
           </h3>
           <p className="text-xs sm:text-sm text-[#5C5549] dark:text-[#B5AC9E] mt-2 mb-6 leading-relaxed">
@@ -108,14 +108,14 @@ export function CartPage() {
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
             <Link
               to="/shop"
-              className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-md bg-[#6B1E2E] hover:bg-[#521623] text-white text-xs font-semibold uppercase tracking-widest shadow-md transition-all"
+              className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-md bg-[#D15608] hover:bg-[#9F160A] text-white text-xs font-semibold uppercase tracking-widest shadow-md transition-all"
             >
               <span>Explore Collections</span>
               <ArrowRight className="size-3.5" />
             </Link>
             <Link
               to="/wishlist"
-              className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-md border border-[#B8913A] text-[#6B1E2E] dark:text-[#FAF6EE] text-xs font-semibold uppercase tracking-widest hover:bg-[#FAF6EE] dark:hover:bg-white/5 transition-all"
+              className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-md border border-[#D15608] text-[#D15608] dark:text-[#FAF6EE] text-xs font-semibold uppercase tracking-widest hover:bg-[#FAF6EE] dark:hover:bg-white/5 transition-all"
             >
               <span>View Saved Wishlist</span>
             </Link>
@@ -128,12 +128,12 @@ export function CartPage() {
             {cart.map((item) => (
               <div
                 key={item.cartItemId}
-                className="flex flex-col sm:flex-row sm:items-center gap-4 p-4 rounded-xl border border-[#E5DAC4] dark:border-[#B8913A]/25 bg-white dark:bg-[#1E191A] shadow-xs hover:border-[#B8913A]/40 transition-colors"
+                className="flex flex-col sm:flex-row sm:items-center gap-4 p-4 rounded-xl border border-[#E5DAC4] dark:border-[#D15608]/25 bg-white dark:bg-[#1E191A] shadow-xs hover:border-[#D15608]/40 transition-colors"
               >
                 <img
                   src={item.image}
                   alt={item.name}
-                  className="size-24 object-cover rounded-lg border border-[#B8913A]/20 bg-[#FAF6EE] shrink-0"
+                  className="size-24 object-cover rounded-lg border border-[#D15608]/20 bg-[#FAF6EE] shrink-0"
                   onError={(e) => {
                     (e.currentTarget as HTMLImageElement).src =
                       "https://images.unsplash.com/photo-1610030469983-98e550d6193c?auto=format&fit=crop&w=800&q=80";
@@ -141,7 +141,7 @@ export function CartPage() {
                 />
 
                 <div className="flex-1 min-w-0">
-                  <span className="text-[10px] font-semibold uppercase tracking-wider text-[#B8913A] block">
+                  <span className="text-[10px] font-semibold uppercase tracking-wider text-[#D15608] block">
                     {item.category || "Exclusive Weave"}
                   </span>
                   <h4 className="font-semibold text-sm sm:text-base text-[#0E0E0E] dark:text-[#FAF6EE] truncate mt-0.5">
@@ -158,7 +158,7 @@ export function CartPage() {
                     )}
                   </div>
                   <div className="flex items-baseline gap-2 mt-2">
-                    <p className="text-base font-bold text-[#6B1E2E] dark:text-[#FAF6EE]">
+                    <p className="text-base font-bold text-[#D15608] dark:text-[#FAF6EE]">
                       {formatPrice(item.price)}
                     </p>
                     {item.originalPrice && item.originalPrice > item.price && (
@@ -206,7 +206,7 @@ export function CartPage() {
             <div className="pt-2">
               <Link
                 to="/shop"
-                className="inline-flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-[#6B1E2E] dark:text-[#B8913A] hover:underline"
+                className="inline-flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-[#D15608] dark:text-[#EDBC3D] hover:underline"
               >
                 <ArrowLeft className="size-3.5" />
                 <span>Continue Shopping</span>
@@ -216,8 +216,8 @@ export function CartPage() {
 
           {/* Right: Order Summary Box */}
           <div className="space-y-4">
-            <div className="p-6 border border-[#B8913A]/30 rounded-xl bg-[#FAF6EE] dark:bg-[#1E191A] space-y-4 shadow-xs">
-              <h4 className="font-['Playfair_Display'] text-xl font-bold text-[#6B1E2E] dark:text-[#FAF6EE]">
+            <div className="p-6 border border-[#D15608]/30 rounded-xl bg-[#FAF6EE] dark:bg-[#1E191A] space-y-4 shadow-xs">
+              <h4 className="font-['Playfair_Display'] text-xl font-bold text-[#9F160A] dark:text-[#FAF6EE]">
                 Order Summary ({cartCount} {cartCount === 1 ? "Item" : "Items"})
               </h4>
 
@@ -245,14 +245,14 @@ export function CartPage() {
                   <span>FREE</span>
                 </div>
 
-                <div className="pt-3 border-t border-[#B8913A]/25 flex justify-between text-base font-bold text-[#6B1E2E] dark:text-[#FAF6EE]">
+                <div className="pt-3 border-t border-[#D15608]/25 flex justify-between text-base font-bold text-[#D15608] dark:text-[#FAF6EE]">
                   <span>Total Payable</span>
                   <span className="text-xl">{formatPrice(finalTotal)}</span>
                 </div>
               </div>
 
               {/* Coupon input */}
-              <form onSubmit={handleApplyCoupon} className="pt-3 border-t border-[#B8913A]/20">
+              <form onSubmit={handleApplyCoupon} className="pt-3 border-t border-[#D15608]/20">
                 <div className="flex gap-2">
                   <div className="relative flex-1">
                     <Tag className="absolute left-2.5 top-2.5 size-3.5 text-[#5C5549]" />
@@ -266,7 +266,7 @@ export function CartPage() {
                   </div>
                   <button
                     type="submit"
-                    className="min-h-[38px] px-3.5 py-2 bg-[#FAF6EE] dark:bg-white/10 hover:bg-[#B8913A] hover:text-white border border-[#B8913A]/40 rounded text-[11px] font-bold uppercase tracking-wider transition-colors cursor-pointer touch-manipulation"
+                    className="min-h-[38px] px-3.5 py-2 bg-[#FAF6EE] dark:bg-white/10 hover:bg-[#D15608] hover:text-white border border-[#D15608]/40 rounded text-[11px] font-bold uppercase tracking-wider transition-colors cursor-pointer touch-manipulation"
                   >
                     Apply
                   </button>
@@ -277,7 +277,7 @@ export function CartPage() {
               {/* Direct Checkout Button */}
               <Link
                 to="/checkout"
-                className="w-full min-h-[48px] py-3.5 px-4 rounded-xl bg-[#6B1E2E] hover:bg-[#521623] text-white text-xs sm:text-sm font-bold uppercase tracking-wider flex items-center justify-center gap-2 shadow-md hover:shadow-lg transition-all cursor-pointer touch-manipulation"
+                className="w-full min-h-[48px] py-3.5 px-4 rounded-xl bg-[#D15608] hover:bg-[#9F160A] text-white text-xs sm:text-sm font-bold uppercase tracking-wider flex items-center justify-center gap-2 shadow-md hover:shadow-lg transition-all cursor-pointer touch-manipulation"
               >
                 <span>Proceed to Checkout</span>
                 <ArrowRight className="size-4" />
@@ -295,14 +295,14 @@ export function CartPage() {
               </a>
 
               {/* Security trust badge */}
-              <div className="pt-3 border-t border-[#B8913A]/20 flex items-center justify-center gap-1.5 text-[11px] text-[#5C5549] dark:text-[#B5AC9E]">
-                <ShieldCheck className="size-4 text-[#B8913A]" />
+              <div className="pt-3 border-t border-[#D15608]/20 flex items-center justify-center gap-1.5 text-[11px] text-[#5C5549] dark:text-[#B5AC9E]">
+                <ShieldCheck className="size-4 text-[#D15608]" />
                 <span>256-Bit Encrypted Secure Checkout</span>
               </div>
             </div>
 
             {/* Ambattur showroom dispatch note */}
-            <div className="p-4 rounded-lg border border-[#E5DAC4] dark:border-[#B8913A]/20 bg-white dark:bg-[#1E191A] text-xs space-y-1.5 text-[#5C5549] dark:text-[#B5AC9E]">
+            <div className="p-4 rounded-lg border border-[#E5DAC4] dark:border-[#D15608]/20 bg-white dark:bg-[#1E191A] text-xs space-y-1.5 text-[#5C5549] dark:text-[#B5AC9E]">
               <div className="flex items-center gap-1.5 font-semibold text-[#0E0E0E] dark:text-[#FAF6EE]">
                 <CheckCircle2 className="size-3.5 text-emerald-600" />
                 <span>Chennai Showroom Quality Checked</span>

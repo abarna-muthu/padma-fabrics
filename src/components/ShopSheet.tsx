@@ -159,7 +159,7 @@ export function ShopSheet() {
               <Button
                 variant="editorial"
                 size="lg"
-                className="w-full !rounded-xl !h-auto min-h-[48px] py-3 px-3 text-xs sm:text-sm uppercase tracking-wide font-bold shadow-md bg-gradient-to-r from-[#9B2242] via-[#8B1D36] to-[#731429] text-white hover:brightness-110 flex items-center justify-center gap-2 cursor-pointer transition-all active:scale-[0.99] touch-manipulation"
+                className="w-full !rounded-xl !h-auto min-h-[48px] py-3 px-3 text-xs sm:text-sm uppercase tracking-wide font-bold shadow-md bg-[#D15608] hover:bg-[#9F160A] text-white flex items-center justify-center gap-2 cursor-pointer transition-all active:scale-[0.99] touch-manipulation"
                 onClick={handleBuyNow}
               >
                 <Zap className="size-4.5 shrink-0 fill-amber-300 text-amber-300" />

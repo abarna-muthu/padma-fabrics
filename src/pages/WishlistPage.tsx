@@ -93,12 +93,12 @@ export function WishlistPage() {
       />
 
       {/* Header section with counts and quick actions */}
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 pb-6 border-b border-[#E5DAC4] dark:border-[#B8913A]/20">
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 pb-6 border-b border-[#E5DAC4] dark:border-[#D15608]/20">
         <div>
-          <span className="text-[11px] font-bold uppercase tracking-[0.25em] text-[#B8913A]">
+          <span className="text-[11px] font-bold uppercase tracking-[0.25em] text-[#D15608]">
             Curated Wardrobe
           </span>
-          <h1 className="font-['Playfair_Display'] text-2xl sm:text-3xl lg:text-4xl font-bold text-[#6B1E2E] dark:text-[#FAF6EE] mt-1">
+          <h1 className="font-['Playfair_Display'] text-2xl sm:text-3xl lg:text-4xl font-bold text-[#9F160A] dark:text-[#FAF6EE] mt-1">
             Saved Fabrics & Silhouettes
           </h1>
           <p className="text-xs sm:text-sm text-[#5C5549] dark:text-[#B5AC9E] mt-1.5 max-w-2xl">
@@ -111,7 +111,7 @@ export function WishlistPage() {
             <button
               type="button"
               onClick={handleMoveAllToBag}
-              className="px-4 py-2 rounded bg-[#6B1E2E] hover:bg-[#521623] text-white text-xs font-semibold uppercase tracking-wider transition-all flex items-center gap-2 shadow-xs cursor-pointer"
+              className="px-4 py-2 rounded bg-[#D15608] hover:bg-[#9F160A] text-white text-xs font-semibold uppercase tracking-wider transition-all flex items-center gap-2 shadow-xs cursor-pointer"
             >
               <ShoppingBag className="size-3.5" />
               <span>Move All to Bag ({wishlistedItems.length})</span>
@@ -136,11 +136,11 @@ export function WishlistPage() {
       {/* Wishlist Items Content */}
       {wishlistedItems.length === 0 ? (
         <div className="my-12">
-          <div className="p-10 sm:p-14 border border-dashed border-[#B8913A]/40 rounded-xl bg-white dark:bg-[#1E191A] text-center max-w-lg mx-auto shadow-xs">
-            <div className="size-16 rounded-full bg-[#FAF6EE] dark:bg-[#2A2425] flex items-center justify-center mx-auto mb-4 border border-[#B8913A]/25">
-              <Heart className="size-8 text-[#B8913A]" strokeWidth={1.5} />
+          <div className="p-10 sm:p-14 border border-dashed border-[#D15608]/40 rounded-xl bg-white dark:bg-[#1E191A] text-center max-w-lg mx-auto shadow-xs">
+            <div className="size-16 rounded-full bg-[#FAF6EE] dark:bg-[#2A2425] flex items-center justify-center mx-auto mb-4 border border-[#D15608]/25">
+              <Heart className="size-8 text-[#D15608]" strokeWidth={1.5} />
             </div>
-            <h3 className="font-['Playfair_Display'] text-2xl font-bold text-[#6B1E2E] dark:text-[#FAF6EE]">
+            <h3 className="font-['Playfair_Display'] text-2xl font-bold text-[#9F160A] dark:text-[#FAF6EE]">
               Your Wishlist is Empty
             </h3>
             <p className="text-xs sm:text-sm text-[#5C5549] dark:text-[#B5AC9E] mt-2 mb-6 leading-relaxed">
@@ -148,7 +148,7 @@ export function WishlistPage() {
             </p>
             <Link
               to="/shop"
-              className="inline-flex items-center gap-2 px-6 py-3 rounded-md bg-[#6B1E2E] hover:bg-[#521623] text-white text-xs font-semibold uppercase tracking-widest shadow-md transition-all"
+              className="inline-flex items-center gap-2 px-6 py-3 rounded-md bg-[#D15608] hover:bg-[#9F160A] text-white text-xs font-semibold uppercase tracking-widest shadow-md transition-all"
             >
               <span>Explore All Collections</span>
               <ArrowRight className="size-3.5" />
@@ -160,7 +160,7 @@ export function WishlistPage() {
             <div className="mt-16">
               <div className="flex items-center justify-between mb-6">
                 <div>
-                  <h4 className="font-['Playfair_Display'] text-xl font-bold text-[#6B1E2E] dark:text-[#FAF6EE]">
+                  <h4 className="font-['Playfair_Display'] text-xl font-bold text-[#9F160A] dark:text-[#FAF6EE]">
                     Trending Handlooms & Silhouettes
                   </h4>
                   <p className="text-xs text-[#5C5549] dark:text-[#B5AC9E]">
@@ -169,7 +169,7 @@ export function WishlistPage() {
                 </div>
                 <Link
                   to="/shop"
-                  className="text-xs font-semibold uppercase tracking-wider text-[#B8913A] hover:underline"
+                  className="text-xs font-semibold uppercase tracking-wider text-[#D15608] hover:underline"
                 >
                   View Shop →
                 </Link>
@@ -180,7 +180,7 @@ export function WishlistPage() {
                   <div
                     key={p.id}
                     onClick={() => openProduct(p)}
-                    className="p-3 border border-[#E5DAC4] dark:border-[#B8913A]/20 rounded-lg bg-white dark:bg-[#1E191A] cursor-pointer hover:border-[#B8913A] transition-all group"
+                    className="p-3 border border-[#E5DAC4] dark:border-[#D15608]/20 rounded-lg bg-white dark:bg-[#1E191A] cursor-pointer hover:border-[#D15608] transition-all group"
                   >
                     <div className="aspect-3/4 rounded overflow-hidden bg-[#FAF6EE] mb-2.5">
                       <img
@@ -193,10 +193,10 @@ export function WishlistPage() {
                         }}
                       />
                     </div>
-                    <h5 className="font-medium text-xs truncate group-hover:text-[#B8913A] transition-colors">
+                    <h5 className="font-medium text-xs truncate group-hover:text-[#D15608] transition-colors">
                       {p.name}
                     </h5>
-                    <p className="text-xs font-bold text-[#6B1E2E] dark:text-[#FAF6EE] mt-1">
+                    <p className="text-xs font-bold text-[#D15608] dark:text-[#FAF6EE] mt-1">
                       {formatPrice(p.price)}
                     </p>
                   </div>
@@ -209,9 +209,18 @@ export function WishlistPage() {
         <div className="mt-8">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {wishlistedItems.map((product) => {
+              const rawSizes: string[] = Array.isArray(product.sizes)
+                ? product.sizes
+                : typeof product.sizes === "string"
+                  ? product.sizes.split(",")
+                  : [];
+              const validSizes = rawSizes
+                .map((s: any) => String(s).trim())
+                .filter((s: string) => s !== "" && s !== "1" && s !== "0" && !/^\d+$/.test(s));
+
               const availableSizes: string[] =
-                Array.isArray(product.sizes) && product.sizes.length > 0
-                  ? product.sizes
+                validSizes.length > 0
+                  ? validSizes
                   : product.category === "Saree"
                     ? ["Free Size"]
                     : ["S", "M", "L", "XL"];
@@ -223,10 +232,10 @@ export function WishlistPage() {
               return (
                 <div
                   key={product.id}
-                  className="group relative flex flex-col rounded-lg border border-[#E5DAC4] dark:border-[#B8913A]/25 bg-white dark:bg-[#1E191A] shadow-xs hover:shadow-md transition-all duration-300 overflow-hidden"
+                  className="group relative flex flex-col rounded-2xl border border-[#E5DAC4] dark:border-[#D15608]/25 bg-white dark:bg-[#1E191A] shadow-[0_4px_20px_rgba(0,0,0,0.06)] hover:shadow-[0_14px_36px_rgba(0,0,0,0.12)] hover:-translate-y-1 transition-all duration-300 overflow-hidden"
                 >
                   {/* Top Image Container */}
-                  <div className="relative aspect-3/4 w-full bg-[#FAF6EE] dark:bg-[#2A2425] overflow-hidden">
+                  <div className="relative aspect-3/4 w-full bg-[#FAF6EE] dark:bg-[#2A2425] rounded-t-2xl overflow-hidden">
                     <img
                       src={product.image || "/placeholder.svg"}
                       alt={product.name}
@@ -269,7 +278,7 @@ export function WishlistPage() {
                     <div>
                       <h3
                         onClick={() => openProduct(product)}
-                        className="font-['Manrope'] text-sm font-semibold text-[#0E0E0E] dark:text-[#FAF6EE] line-clamp-2 hover:text-[#B8913A] transition-colors cursor-pointer"
+                        className="font-['Manrope'] text-sm font-semibold text-[#0E0E0E] dark:text-[#FAF6EE] line-clamp-2 hover:text-[#D15608] transition-colors cursor-pointer"
                         title={product.name}
                       >
                         {product.name}
@@ -277,7 +286,7 @@ export function WishlistPage() {
 
                       {/* Pricing */}
                       <div className="flex items-baseline gap-2 mt-2">
-                        <span className="font-['Manrope'] text-base font-bold text-[#6B1E2E] dark:text-[#FAF6EE]">
+                        <span className="font-['Manrope'] text-base font-bold text-[#D15608] dark:text-[#FAF6EE]">
                           {formatPrice(product.price)}
                         </span>
                         {hasDiscount && (
@@ -305,8 +314,8 @@ export function WishlistPage() {
                               onClick={() => handleSizeChange(product.id, sz)}
                               className={`px-2.5 py-1 text-[11px] rounded font-medium transition-all ${
                                 currentSize === sz
-                                  ? "bg-[#6B1E2E] text-white shadow-xs"
-                                  : "border border-[#E5DAC4] dark:border-white/10 hover:border-[#B8913A] text-[#0E0E0E] dark:text-[#FAF6EE]"
+                                  ? "bg-[#D15608] text-white shadow-xs"
+                                  : "border border-[#E5DAC4] dark:border-white/10 hover:border-[#D15608] text-[#0E0E0E] dark:text-[#FAF6EE]"
                               }`}
                             >
                               {sz}
@@ -317,22 +326,22 @@ export function WishlistPage() {
                     </div>
 
                     {/* Dual Action Buttons: Add to Cart & Buy Now */}
-                    <div className="pt-3 border-t border-[#E5DAC4] dark:border-[#B8913A]/20 flex flex-col gap-2">
+                    <div className="pt-3 border-t border-[#E5DAC4] dark:border-[#D15608]/20 flex flex-col gap-2">
                       <button
                         type="button"
                         onClick={(e) => handleAddToCart(product, e)}
-                        className="w-full py-2.5 rounded bg-[#FAF6EE] hover:bg-[#F2ECE1] dark:bg-white/10 dark:hover:bg-white/15 text-[#6B1E2E] dark:text-[#FAF6EE] border border-[#B8913A]/40 text-xs font-semibold uppercase tracking-wider flex items-center justify-center gap-2 transition-all cursor-pointer shadow-xs active:scale-98"
+                        className="w-full py-2.5 rounded bg-[#FAF6EE] hover:bg-[#F2ECE1] dark:bg-white/10 dark:hover:bg-white/15 text-[#D15608] dark:text-[#FAF6EE] border border-[#D15608]/40 text-xs font-semibold uppercase tracking-wider flex items-center justify-center gap-2 transition-all cursor-pointer shadow-xs active:scale-98"
                       >
-                        <ShoppingBag className="size-3.5 text-[#B8913A]" />
+                        <ShoppingBag className="size-3.5 text-[#D15608]" />
                         <span>Add to Cart</span>
                       </button>
 
                       <button
                         type="button"
                         onClick={(e) => handleBuyNow(product, e)}
-                        className="w-full py-2.5 rounded bg-[#6B1E2E] hover:bg-[#521623] text-white text-xs font-semibold uppercase tracking-wider flex items-center justify-center gap-2 transition-all cursor-pointer shadow-sm active:scale-98"
+                        className="w-full py-2.5 rounded bg-[#D15608] hover:bg-[#9F160A] text-white text-xs font-semibold uppercase tracking-wider flex items-center justify-center gap-2 transition-all cursor-pointer shadow-sm active:scale-98"
                       >
-                        <Zap className="size-3.5 text-[#B8913A] fill-[#B8913A]" />
+                        <Zap className="size-3.5 text-amber-300 fill-amber-300" />
                         <span>Buy Now</span>
                       </button>
                     </div>
@@ -343,23 +352,23 @@ export function WishlistPage() {
           </div>
 
           {/* Bottom assurance footer */}
-          <div className="mt-12 p-6 rounded-xl border border-[#E5DAC4] dark:border-[#B8913A]/25 bg-[#FAF6EE] dark:bg-[#1E191A] grid grid-cols-1 md:grid-cols-3 gap-4 text-center">
+          <div className="mt-12 p-6 rounded-xl border border-[#E5DAC4] dark:border-[#D15608]/25 bg-[#FAF6EE] dark:bg-[#1E191A] grid grid-cols-1 md:grid-cols-3 gap-4 text-center">
             <div className="flex items-center justify-center gap-3">
-              <PackageCheck className="size-5 text-[#B8913A]" />
+              <PackageCheck className="size-5 text-[#D15608]" />
               <div className="text-left">
                 <h5 className="font-semibold text-xs text-[#0E0E0E] dark:text-[#FAF6EE]">Express Showroom Dispatch</h5>
                 <p className="text-[11px] text-[#5C5549] dark:text-[#B5AC9E]">Packed directly in Ambattur, Chennai</p>
               </div>
             </div>
             <div className="flex items-center justify-center gap-3">
-              <ShieldCheck className="size-5 text-[#B8913A]" />
+              <ShieldCheck className="size-5 text-[#D15608]" />
               <div className="text-left">
                 <h5 className="font-semibold text-xs text-[#0E0E0E] dark:text-[#FAF6EE]">100% Authentic Handlooms</h5>
                 <p className="text-[11px] text-[#5C5549] dark:text-[#B5AC9E]">Pure silks, coordsets & cotton weaves</p>
               </div>
             </div>
             <div className="flex items-center justify-center gap-3">
-              <Sparkles className="size-5 text-[#B8913A]" />
+              <Sparkles className="size-5 text-[#D15608]" />
               <div className="text-left">
                 <h5 className="font-semibold text-xs text-[#0E0E0E] dark:text-[#FAF6EE]">Cash on Delivery Available</h5>
                 <p className="text-[11px] text-[#5C5549] dark:text-[#B5AC9E]">Pay comfortably when parcel arrives</p>

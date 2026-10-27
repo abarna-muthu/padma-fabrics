@@ -40,10 +40,10 @@ export function Modal({
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent
-        className={`bg-[#FAF6EE] dark:bg-[#1C1819] border border-[#B8913A]/30 text-[#2A2A2A] dark:text-[#FAF6EE] rounded-lg shadow-2xl p-6 ${maxWMap[maxWidth]} ${className}`}
+        className={`bg-[#FAF6EE] dark:bg-[#1C1819] border border-[#D15608]/30 text-[#2A2A2A] dark:text-[#FAF6EE] rounded-lg shadow-2xl p-6 ${maxWMap[maxWidth]} ${className}`}
       >
-        <DialogHeader className="border-b border-[#B8913A]/20 pb-3">
-          <DialogTitle className="font-['Playfair_Display'] text-xl font-bold text-[#6B1E2E] dark:text-[#FAF6EE]">
+        <DialogHeader className="border-b border-[#D15608]/20 pb-3">
+          <DialogTitle className="font-['Playfair_Display'] text-xl font-bold text-[#9F160A] dark:text-[#FAF6EE]">
             {title}
           </DialogTitle>
           {description && (
@@ -55,7 +55,7 @@ export function Modal({
 
         <div className="py-3 text-sm">{children}</div>
 
-        {footer && <DialogFooter className="border-t border-[#B8913A]/20 pt-3">{footer}</DialogFooter>}
+        {footer && <DialogFooter className="border-t border-[#D15608]/20 pt-3">{footer}</DialogFooter>}
       </DialogContent>
     </Dialog>
   );

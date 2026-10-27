@@ -16,7 +16,7 @@ export const Toast = {
   info: (message: string, description?: string) => {
     sonnerToast.info(message, {
       description,
-      className: "border border-[#B8913A]/40 bg-[#FAF6EE] text-[#2A2A2A] shadow-md",
+      className: "border border-[#D15608]/40 bg-[#FAF6EE] text-[#2A2A2A] shadow-md",
     });
   },
   warning: (message: string, description?: string) => {
