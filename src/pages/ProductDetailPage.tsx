@@ -16,6 +16,8 @@ import { formatPrice } from "@/utils/formatters";
 import {
   Heart,
   ShoppingBag,
+  ShoppingCart,
+  ChevronsRight,
   Zap,
   Truck,
   ShieldCheck,
@@ -26,6 +28,7 @@ import {
   X,
   AlertCircle,
   Check,
+  MessageCircle,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -265,129 +268,219 @@ export function ProductDetailPage({ id }: ProductDetailPageProps) {
     setActiveImageIndex((prev) => (prev - 1 + galleryImages.length) % galleryImages.length);
   };
 
+  const whatsappUrl = useMemo(() => {
+    const text = encodeURIComponent(
+      `Hello Padmanabha Fabrics, I would like to order:
+*Product:* ${product?.name}
+*Colour:* ${selectedColour || product?.colour}
+*Size:* ${selectedSize || "Standard"}
+*Price:* ₹${effectivePrice}
+*Link:* ${typeof window !== "undefined" ? window.location.href : ""}`,
+    );
+    return `https://wa.me/919444108878?text=${text}`;
+  }, [product, selectedColour, selectedSize, effectivePrice]);
+
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <Breadcrumb
         items={[
+          { label: "Home", href: "/" },
           { label: "Shop", href: "/shop" },
-          { label: product.category || "Weaves", href: "/shop" },
+          { label: product.category || "Ethnic Wear", href: "/shop" },
           { label: product.name },
         ]}
-        className="mb-6"
+        className="mb-6 text-xs"
       />
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 p-6 sm:p-8 border border-[#E5DAC4] dark:border-[#D15608]/25 rounded-2xl bg-white dark:bg-[#1E191A] shadow-xs">
-        {/* Left: Product Image Gallery */}
-        <div className="flex flex-col gap-4">
-          {/* Main Product Image Container */}
-          <div className="relative aspect-3/4 rounded-xl overflow-hidden bg-[#FAF6EE] dark:bg-[#2A2425] border border-[#D15608]/20 group">
-            <img
-              src={currentImage}
-              alt={`${product.name} - ${selectedColour || "View"} ${activeImageIndex + 1}`}
-              className="w-full h-full object-cover object-center transition-all duration-300"
-              onError={(e) => {
-                const target = e.currentTarget as HTMLImageElement;
-                if (target.src !== "/placeholder.svg") {
-                  target.src = "/placeholder.svg";
-                }
-              }}
-            />
-
-            {/* Gallery Navigation Arrows (only if multiple images) */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 p-5 sm:p-8 border border-[#E5DAC4] dark:border-[#9F160A]/25 rounded-2xl bg-white dark:bg-[#1E191A] shadow-xs">
+        {/* Left: Product Image Gallery + Action Buttons + Similar Products */}
+        <div className="flex flex-col">
+          {/* Main Gallery with Vertical Thumbnails on Left */}
+          <div className="flex flex-col sm:flex-row gap-3">
+            {/* Vertical thumbnail strip on the left */}
             {galleryImages.length > 1 && (
-              <>
-                <button
-                  type="button"
-                  onClick={prevImage}
-                  className="absolute left-3 top-1/2 -translate-y-1/2 size-9 rounded-full bg-white/90 dark:bg-black/80 hover:bg-white text-[#0E0E0E] dark:text-white flex items-center justify-center shadow-md transition-all opacity-80 hover:opacity-100 hover:scale-105 cursor-pointer touch-manipulation z-10"
-                  aria-label="Previous image"
-                >
-                  <ChevronLeft className="size-5" />
-                </button>
-                <button
-                  type="button"
-                  onClick={nextImage}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 size-9 rounded-full bg-white/90 dark:bg-black/80 hover:bg-white text-[#0E0E0E] dark:text-white flex items-center justify-center shadow-md transition-all opacity-80 hover:opacity-100 hover:scale-105 cursor-pointer touch-manipulation z-10"
-                  aria-label="Next image"
-                >
-                  <ChevronRight className="size-5" />
-                </button>
-              </>
-            )}
-
-            {/* Lightbox / Zoom Trigger Button */}
-            <button
-              type="button"
-              onClick={() => setIsZoomOpen(true)}
-              className="absolute bottom-3 right-3 size-9 rounded-full bg-white/90 dark:bg-black/80 hover:bg-white text-[#5C5549] dark:text-white flex items-center justify-center shadow-md transition-all opacity-80 hover:opacity-100 cursor-pointer z-10"
-              title="Click to expand view"
-              aria-label="Expand image view"
-            >
-              <Maximize2 className="size-4" />
-            </button>
-
-            {/* Wishlist Floating Button */}
-            <button
-              type="button"
-              onClick={() => toggleWishlist(String(product.id), product.name)}
-              className={`absolute top-4 right-4 size-10 rounded-full flex items-center justify-center transition-all shadow-md cursor-pointer z-10 ${
-                isFav
-                  ? "bg-[#9F160A] text-white"
-                  : "bg-white/90 dark:bg-black/70 hover:bg-white text-[#5C5549] dark:text-white"
-              }`}
-              title={isFav ? "Saved in Wishlist" : "Save to Wishlist"}
-              aria-label="Save to Wishlist"
-            >
-              <Heart className={`size-5 ${isFav ? "fill-white" : ""}`} />
-            </button>
-
-            {/* Badge */}
-            {product.badge && (
-              <div className="absolute top-4 left-4 z-10">
-                <span className="px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wider bg-[#0E0E0E]/80 text-[#FAF6EE] border border-white/20">
-                  {product.badge}
-                </span>
+              <div className="flex sm:flex-col gap-2 overflow-x-auto sm:overflow-y-auto sm:max-h-[480px] shrink-0 scrollbar-none order-2 sm:order-1 pb-1 sm:pb-0">
+                {galleryImages.map((imgUrl, idx) => (
+                  <button
+                    key={idx}
+                    type="button"
+                    onClick={() => setActiveImageIndex(idx)}
+                    className={`relative size-14 sm:w-16 sm:h-20 rounded-md overflow-hidden border-2 shrink-0 transition-all cursor-pointer ${
+                      activeImageIndex === idx
+                        ? "border-[#9F160A] ring-2 ring-[#9F160A]/30"
+                        : "border-[#E5DAC4] dark:border-white/10 hover:border-[#9F160A]/60 opacity-80 hover:opacity-100"
+                    }`}
+                    aria-label={`View photo ${idx + 1}`}
+                  >
+                    <img
+                      src={imgUrl}
+                      alt={`${product.name} angle ${idx + 1}`}
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        (e.currentTarget as HTMLImageElement).src = "/placeholder.svg";
+                      }}
+                    />
+                  </button>
+                ))}
               </div>
             )}
 
-            {/* Image counter indicator */}
-            {galleryImages.length > 1 && (
-              <div className="absolute bottom-3 left-3 z-10 bg-black/60 backdrop-blur-xs text-white text-[11px] font-semibold px-2.5 py-1 rounded-md">
-                {activeImageIndex + 1} / {galleryImages.length}
-              </div>
-            )}
+            {/* Main Product Image Container */}
+            <div className="relative flex-1 aspect-3/4 sm:aspect-4/5 rounded-xl overflow-hidden bg-[#FAF6EE] dark:bg-[#2A2425] border border-[#E5DAC4] dark:border-white/15 order-1 sm:order-2 group">
+              <img
+                src={currentImage}
+                alt={`${product.name} - ${selectedColour || "View"} ${activeImageIndex + 1}`}
+                className="w-full h-full object-cover object-center transition-all duration-300"
+                onError={(e) => {
+                  const target = e.currentTarget as HTMLImageElement;
+                  if (target.src !== "/placeholder.svg") {
+                    target.src = "/placeholder.svg";
+                  }
+                }}
+              />
+
+              {/* Gallery Navigation Arrows (only if multiple images) */}
+              {galleryImages.length > 1 && (
+                <>
+                  <button
+                    type="button"
+                    onClick={prevImage}
+                    className="absolute left-2.5 top-1/2 -translate-y-1/2 size-8 sm:size-9 rounded-full bg-white/90 dark:bg-black/80 hover:bg-white text-[#0E0E0E] dark:text-white flex items-center justify-center shadow-md transition-all opacity-80 hover:opacity-100 hover:scale-105 cursor-pointer touch-manipulation z-10"
+                    aria-label="Previous image"
+                  >
+                    <ChevronLeft className="size-4.5" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={nextImage}
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 size-8 sm:size-9 rounded-full bg-white/90 dark:bg-black/80 hover:bg-white text-[#0E0E0E] dark:text-white flex items-center justify-center shadow-md transition-all opacity-80 hover:opacity-100 hover:scale-105 cursor-pointer touch-manipulation z-10"
+                    aria-label="Next image"
+                  >
+                    <ChevronRight className="size-4.5" />
+                  </button>
+                </>
+              )}
+
+              {/* Lightbox / Zoom Trigger Button */}
+              <button
+                type="button"
+                onClick={() => setIsZoomOpen(true)}
+                className="absolute bottom-2.5 right-2.5 size-8 rounded-full bg-white/90 dark:bg-black/80 hover:bg-white text-[#5C5549] dark:text-white flex items-center justify-center shadow-md transition-all opacity-80 hover:opacity-100 cursor-pointer z-10"
+                title="Click to expand view"
+                aria-label="Expand image view"
+              >
+                <Maximize2 className="size-3.5" />
+              </button>
+
+              {/* Wishlist Floating Button */}
+              <button
+                type="button"
+                onClick={() => toggleWishlist(String(product.id), product.name)}
+                className={`absolute top-3 right-3 size-9 rounded-full flex items-center justify-center transition-all shadow-md cursor-pointer z-10 ${
+                  isFav
+                    ? "bg-[#9F160A] text-white"
+                    : "bg-white/90 dark:bg-black/70 hover:bg-white text-[#5C5549] dark:text-white"
+                }`}
+                title={isFav ? "Saved in Wishlist" : "Save to Wishlist"}
+                aria-label="Save to Wishlist"
+              >
+                <Heart className={`size-4.5 ${isFav ? "fill-white" : ""}`} />
+              </button>
+
+              {/* Badge */}
+              {product.badge && (
+                <div className="absolute top-3 left-3 z-10">
+                  <span className="px-2.5 py-0.5 rounded-full text-[11px] font-semibold uppercase tracking-wider bg-[#0E0E0E]/80 text-[#FAF6EE] border border-white/20">
+                    {product.badge}
+                  </span>
+                </div>
+              )}
+
+              {/* Image counter indicator */}
+              {galleryImages.length > 1 && (
+                <div className="absolute bottom-2.5 left-2.5 z-10 bg-black/60 backdrop-blur-xs text-white text-[10px] font-semibold px-2 py-0.5 rounded-md">
+                  {activeImageIndex + 1} / {galleryImages.length}
+                </div>
+              )}
+            </div>
           </div>
 
-          {/* Thumbnail Gallery Row */}
-          {galleryImages.length > 1 && (
-            <div className="flex items-center gap-2.5 overflow-x-auto pb-1 scrollbar-thin">
-              {galleryImages.map((imgUrl, idx) => (
-                <button
-                  key={idx}
-                  type="button"
-                  onClick={() => setActiveImageIndex(idx)}
-                  className={`relative size-16 sm:size-20 rounded-lg overflow-hidden border-2 shrink-0 transition-all cursor-pointer ${
-                    activeImageIndex === idx
-                      ? "border-[#D15608] ring-2 ring-[#D15608]/30 scale-102"
-                      : "border-[#E5DAC4] dark:border-white/10 hover:border-[#D15608]/60 opacity-80 hover:opacity-100"
-                  }`}
-                  aria-label={`View photo ${idx + 1}`}
-                >
-                  <img
-                    src={imgUrl}
-                    alt={`${product.name} angle ${idx + 1}`}
-                    className="w-full h-full object-cover"
-                    onError={(e) => {
-                      (e.currentTarget as HTMLImageElement).src = "/placeholder.svg";
-                    }}
-                  />
-                </button>
-              ))}
+          {/* Action Buttons right under image (as in screenshot) */}
+          <div className="grid grid-cols-2 gap-3 mt-4">
+            <button
+              type="button"
+              onClick={handleAddToCart}
+              disabled={isOutOfStock}
+              className="min-h-[46px] py-2.5 px-3 rounded-lg border-2 border-[#9F160A] text-[#9F160A] bg-white hover:bg-[#9F160A]/5 text-xs sm:text-sm font-bold uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all shadow-xs cursor-pointer touch-manipulation disabled:opacity-50"
+            >
+              <ShoppingCart className="size-4 shrink-0 text-[#9F160A]" />
+              <span>{isOutOfStock ? "Out of Stock" : "Add to Cart"}</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={handleBuyNow}
+              disabled={isOutOfStock}
+              className="min-h-[46px] py-2.5 px-3 rounded-lg bg-[#9F160A] hover:bg-[#7D1107] text-white text-xs sm:text-sm font-bold uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all shadow-md cursor-pointer touch-manipulation disabled:opacity-50"
+            >
+              <ChevronsRight className="size-4.5 shrink-0" />
+              <span>Buy Now</span>
+            </button>
+          </div>
+
+          {/* Similar Products (Colour Variants as in screenshot) */}
+          {variants.length > 0 && (
+            <div className="mt-6 pt-5 border-t border-[#E5DAC4]/60 dark:border-white/10">
+              <div className="flex items-center justify-between mb-2.5">
+                <h3 className="text-sm font-bold text-[#0E0E0E] dark:text-[#FAF6EE]">
+                  {variants.length} Similar Products
+                </h3>
+                <span className="text-xs font-semibold text-[#9F160A] dark:text-[#EDBC3D]">
+                  Colour: {selectedColour || variants[0]?.colour}
+                </span>
+              </div>
+
+              <div className="flex items-center gap-2.5 overflow-x-auto pb-2 scrollbar-thin">
+                {variants.map((v) => {
+                  const isSelected = selectedColour.toLowerCase() === v.colour.toLowerCase();
+                  const variantThumb = v.image || (v.images && v.images[0]) || currentImage;
+                  return (
+                    <button
+                      key={v.colour}
+                      type="button"
+                      onClick={() => {
+                        setSelectedColour(v.colour);
+                        setActiveImageIndex(0);
+                      }}
+                      className={`group relative size-16 sm:size-20 rounded-lg overflow-hidden border-2 shrink-0 transition-all cursor-pointer bg-[#FAF6EE] dark:bg-black/20 ${
+                        isSelected
+                          ? "border-[#9F160A] ring-2 ring-[#9F160A]/35 scale-102 shadow-xs"
+                          : "border-[#E5DAC4] dark:border-white/15 hover:border-[#D15608] opacity-85 hover:opacity-100"
+                      }`}
+                      title={v.colour}
+                    >
+                      <img
+                        src={variantThumb}
+                        alt={v.colour}
+                        className="w-full h-full object-cover"
+                        onError={(e) => {
+                          (e.currentTarget as HTMLImageElement).src = "/placeholder.svg";
+                        }}
+                      />
+                      {isSelected && (
+                        <span className="absolute bottom-1 right-1 size-3.5 rounded-full bg-[#9F160A] text-white flex items-center justify-center shadow-xs">
+                          <Check className="size-2 text-white" />
+                        </span>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
           )}
         </div>
 
-        {/* Right: Product Details & Variant Selectors */}
+        {/* Right: Product Details, Size Selector, Quantity, Description */}
         <div className="flex flex-col justify-between space-y-6">
           <div>
             <div className="flex items-center gap-2">
@@ -451,71 +544,7 @@ export function ProductDetailPage({ id }: ProductDetailPageProps) {
               )}
             </div>
 
-            {/* Description */}
-            <p className="text-xs sm:text-sm text-[#5C5549] dark:text-[#B5AC9E] mt-4 leading-relaxed">
-              {product.description ||
-                "Woven with meticulous artisan care in Menambedu, Ambattur. Features premium tensile strength, breathable natural fiber composition, and timeless cultural motifs suited for bridal, celebratory, and everyday styling."}
-            </p>
-
-            {/* 1. Colour Variant Selection */}
-            {variants.length > 0 && (
-              <div className="mt-6 pt-5 border-t border-[#E5DAC4]/60 dark:border-white/10">
-                <div className="flex justify-between items-center mb-2.5">
-                  <span className="text-xs font-semibold uppercase tracking-wider text-[#0E0E0E] dark:text-[#FAF6EE]">
-                    Available Colours:
-                  </span>
-                  <span className="text-xs font-bold text-[#9F160A] dark:text-[#EDBC3D]">
-                    {selectedColour || variants[0]?.colour}
-                  </span>
-                </div>
-                <div className="flex flex-wrap items-center gap-3">
-                  {variants.map((v) => {
-                    const isSelected = selectedColour.toLowerCase() === v.colour.toLowerCase();
-                    const swatchHex = v.colourHex || getColourHex(v.colour);
-                    return (
-                      <button
-                        key={v.colour}
-                        type="button"
-                        onClick={() => setSelectedColour(v.colour)}
-                        className={`group relative flex items-center gap-2 px-3 py-1.5 rounded-full border-2 transition-all cursor-pointer ${
-                          isSelected
-                            ? "border-[#9F160A] bg-[#9F160A]/5 text-[#9F160A] font-bold shadow-xs"
-                            : "border-[#E5DAC4] dark:border-white/10 hover:border-[#D15608] text-[#5C5549] dark:text-[#FAF6EE]"
-                        }`}
-                        title={v.colour}
-                      >
-                        {v.image || v.images?.[0] ? (
-                          <div className="relative size-5 rounded-full overflow-hidden border border-black/20 shrink-0">
-                            <img
-                              src={v.image || v.images?.[0]}
-                              alt={v.colour}
-                              className="w-full h-full object-cover"
-                            />
-                            {isSelected && (
-                              <span className="absolute inset-0 bg-black/40 flex items-center justify-center">
-                                <Check className="size-2.5 text-white" />
-                              </span>
-                            )}
-                          </div>
-                        ) : (
-                          <span
-                            className="size-4 rounded-full border border-black/20 shadow-2xs shrink-0 flex items-center justify-center"
-                            style={{ backgroundColor: swatchHex }}
-                          >
-                            {isSelected && (
-                              <Check className={`size-2.5 ${swatchHex === "#FFFFFF" || swatchHex === "#FAF6EE" ? "text-black" : "text-white"}`} />
-                            )}
-                          </span>
-                        )}
-                        <span className="text-xs capitalize">{v.colour}</span>
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
-
-            {/* 2. Size Selection */}
+            {/* Size Selection */}
             <div className="mt-6 pt-5 border-t border-[#E5DAC4]/60 dark:border-white/10">
               <div className="flex justify-between items-center mb-2">
                 <div className="flex items-center gap-1.5">
@@ -523,7 +552,7 @@ export function ProductDetailPage({ id }: ProductDetailPageProps) {
                     Select Size:
                   </span>
                   {selectedSize ? (
-                    <span className="text-xs font-bold text-[#D15608] dark:text-[#EDBC3D]">
+                    <span className="text-xs font-bold text-[#9F160A] dark:text-[#EDBC3D]">
                       {selectedSize}
                     </span>
                   ) : (
@@ -556,10 +585,10 @@ export function ProductDetailPage({ id }: ProductDetailPageProps) {
                         outOfStock
                           ? "border border-gray-200 bg-gray-100 text-gray-400 line-through cursor-not-allowed opacity-60"
                           : isSelected
-                            ? "bg-[#D15608] text-white shadow-md ring-2 ring-[#D15608]/40 scale-102"
+                            ? "bg-[#9F160A] text-white shadow-md ring-2 ring-[#9F160A]/40 scale-102"
                             : sizeError
                               ? "border-2 border-red-400 hover:border-red-600 text-[#0E0E0E] dark:text-[#FAF6EE]"
-                              : "border border-[#E5DAC4] dark:border-white/15 hover:border-[#D15608] text-[#0E0E0E] dark:text-[#FAF6EE] bg-white/60 dark:bg-white/5"
+                              : "border border-[#E5DAC4] dark:border-white/15 hover:border-[#9F160A] text-[#0E0E0E] dark:text-[#FAF6EE] bg-white/60 dark:bg-white/5"
                       }`}
                       title={outOfStock ? `${sz} is out of stock` : `Select size ${sz}`}
                     >
@@ -596,41 +625,40 @@ export function ProductDetailPage({ id }: ProductDetailPageProps) {
                 </button>
               </div>
             </div>
-          </div>
 
-          {/* Action Buttons */}
-          <div className="pt-6 border-t border-[#E5DAC4] dark:border-[#D15608]/20 space-y-3 pb-20 sm:pb-0">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <button
-                type="button"
-                onClick={handleAddToCart}
-                disabled={isOutOfStock}
-                className="w-full min-h-[46px] py-3.5 px-4 rounded-xl bg-[#FAF6EE] hover:bg-[#F2ECE1] dark:bg-white/10 text-[#D15608] dark:text-[#FAF6EE] border border-[#D15608]/40 text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-2 transition-all cursor-pointer shadow-xs active:scale-98 touch-manipulation disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                <ShoppingBag className="size-4 text-[#D15608]" />
-                <span>{isOutOfStock ? "Out of Stock" : "Add to Cart"}</span>
-              </button>
+            {/* Description & Fabric Specifications */}
+            <div className="mt-6 pt-5 border-t border-[#E5DAC4]/60 dark:border-white/10">
+              <h4 className="text-xs font-bold uppercase tracking-wider text-[#0E0E0E] dark:text-[#FAF6EE] mb-2">
+                Product Details & Specifications
+              </h4>
+              <p className="text-xs sm:text-sm text-[#5C5549] dark:text-[#B5AC9E] leading-relaxed">
+                {product.description ||
+                  "Woven with meticulous artisan care in Menambedu, Ambattur. Features premium tensile strength, breathable natural fiber composition, and timeless cultural motifs suited for bridal, celebratory, and everyday styling."}
+              </p>
+            </div>
 
-              <button
-                type="button"
-                onClick={handleBuyNow}
-                disabled={isOutOfStock}
-                className="w-full min-h-[46px] py-3.5 px-4 rounded-xl bg-[#D15608] hover:bg-[#9F160A] text-white text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-2 transition-all cursor-pointer shadow-md active:scale-98 touch-manipulation disabled:opacity-50 disabled:cursor-not-allowed"
+            {/* WhatsApp Order Button */}
+            <div className="pt-4">
+              <a
+                href={whatsappUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="w-full min-h-[44px] py-2.5 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-2 transition-all shadow-xs cursor-pointer"
               >
-                <Zap className="size-4 text-amber-300 fill-amber-300" />
-                <span>Buy Now Directly</span>
-              </button>
+                <MessageCircle className="size-4" />
+                <span>Order on WhatsApp (Fast Dispatch)</span>
+              </a>
             </div>
 
             {/* Assurances */}
-            <div className="grid grid-cols-2 gap-2 pt-3 text-[11px] text-[#5C5549] dark:text-[#B5AC9E]">
+            <div className="grid grid-cols-2 gap-2 pt-4 text-[11px] text-[#5C5549] dark:text-[#B5AC9E]">
               <div className="flex items-center gap-1.5">
-                <Truck className="size-3.5 text-[#D15608]" />
-                <span>Dispatched from Chennai</span>
+                <Truck className="size-3.5 text-[#9F160A]" />
+                <span>Dispatched directly from Chennai</span>
               </div>
               <div className="flex items-center gap-1.5">
-                <ShieldCheck className="size-3.5 text-[#D15608]" />
-                <span>100% Genuine Handlooms</span>
+                <ShieldCheck className="size-3.5 text-[#9F160A]" />
+                <span>100% Genuine Handloom Quality</span>
               </div>
             </div>
           </div>
