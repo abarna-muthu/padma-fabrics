@@ -95,7 +95,7 @@ export function AdminLoginView({ onLoginSuccess }: { onLoginSuccess?: () => void
         </div>
 
         {/* Login Card */}
-        <div className="bg-white border border-[rgba(14,14,14,0.08)] rounded-2xl p-7 sm:p-9 shadow-[0_20px_50px_rgba(14,14,14,0.05)]">
+        <div className="bg-white border border-[rgba(14,14,14,0.08)] rounded-2xl p-5 sm:p-9 shadow-[0_20px_50px_rgba(14,14,14,0.05)]">
           {error && (
             <div
               className="mb-6 p-3.5 bg-[#9F160A]/10 border border-[#9F160A]/25 text-[#9F160A] text-xs flex items-start gap-2.5 rounded-xl"
@@ -154,11 +154,11 @@ export function AdminLoginView({ onLoginSuccess }: { onLoginSuccess?: () => void
             <button
               type="submit"
               disabled={isSubmitting}
-              className="w-full h-11 rounded-full bg-[#D15608] hover:bg-[#9F160A] text-[#F4F0E8] text-xs uppercase tracking-[0.16em] font-medium flex items-center justify-center gap-2 transition-all shadow-md cursor-pointer active:scale-95 disabled:opacity-50"
+              className="w-full min-h-[46px] py-2.5 px-3 sm:px-4 rounded-full bg-[#D15608] hover:bg-[#9F160A] text-[#F4F0E8] text-[11px] sm:text-xs uppercase tracking-[0.08em] sm:tracking-[0.14em] font-semibold flex items-center justify-center gap-2 transition-all shadow-md cursor-pointer active:scale-95 disabled:opacity-50"
             >
-              <Lock className="size-3.5" />
-              <span>{isSubmitting ? "Authenticating..." : "Sign In to Admin Portal"}</span>
-              <ArrowRight className="size-3.5" />
+              <Lock className="size-3.5 shrink-0" />
+              <span className="whitespace-nowrap">{isSubmitting ? "Authenticating..." : "Sign In to Admin Portal"}</span>
+              <ArrowRight className="size-3.5 shrink-0" />
             </button>
           </form>
         </div>
