@@ -41,6 +41,11 @@ const HERO_BANNERS = [
     image: "/hero-banner-2.png",
     alt: "Padmanabha Fabrics - Timeless Ethnic Elegance, Explore Collection",
   },
+  {
+    id: 3,
+    image: "/hero-banner-3.jpg",
+    alt: "Padmanabha Fabrics - Timeless Elegance in Every Thread, Premium Sarees",
+  },
 ];
 
 
