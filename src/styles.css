@@ -204,15 +204,15 @@
   font-family: var(--font-body) !important;
 }
 
-/* Sidebar in Luxury Ink */
+/* Sidebar in Clean White & Crisp Black Text */
 .admin-portal aside {
-  background-color: #0E0E0E !important;
-  border-right: 1px solid rgba(255, 255, 255, 0.08) !important;
-  color: #F4F0E8 !important;
+  background-color: #FFFFFF !important;
+  border-right: 1px solid rgba(14, 14, 14, 0.08) !important;
+  color: #0E0E0E !important;
 }
 
 .admin-portal aside * {
-  border-color: rgba(255, 255, 255, 0.08) !important;
+  border-color: rgba(14, 14, 14, 0.08) !important;
 }
 
 .admin-portal aside .text-primary {
@@ -220,7 +220,7 @@
 }
 
 .admin-portal aside .text-muted-foreground {
-  color: rgba(244, 240, 232, 0.6) !important;
+  color: rgba(14, 14, 14, 0.7) !important;
 }
 
 .admin-portal aside button.bg-primary {
@@ -231,17 +231,17 @@
 }
 
 .admin-portal aside button:not(.bg-primary):hover {
-  background-color: rgba(255, 255, 255, 0.06) !important;
-  color: #FFFFFF !important;
+  background-color: #FAF7F2 !important;
+  color: #0E0E0E !important;
 }
 
 .admin-portal aside .bg-secondary {
-  background-color: rgba(209, 86, 8, 0.2) !important;
+  background-color: rgba(209, 86, 8, 0.12) !important;
   color: #D15608 !important;
 }
 
 .admin-portal aside .bg-secondary\/30 {
-  background-color: #141414 !important;
+  background-color: #FAF7F2 !important;
 }
 
 /* Main Cards & Panels */

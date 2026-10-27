@@ -1213,14 +1213,14 @@ function AdminDashboardPage() {
         } md:static md:flex w-full md:w-64 bg-white border-r border-[rgba(14,14,14,0.08)] h-[calc(100vh-65px)] md:h-screen flex-col shrink-0 overflow-hidden z-20 shadow-xs`}
       >
         {/* Brand header */}
-        <div className="p-6 border-b border-[rgba(14,14,14,0.08)] hidden md:flex items-center gap-3 shrink-0">
+        <div className="p-5 sm:p-6 border-b border-[rgba(14,14,14,0.08)] flex items-center gap-3 shrink-0 bg-white">
           <img
             src={typeof logo === "string" ? logo : (logo as any)?.url || "/padmanabha-logo.jpg"}
-            className="w-11 h-11 rounded-full object-cover ring-2 ring-[#D15608]/50 shadow-xs"
+            className="w-10 h-10 sm:w-11 sm:h-11 rounded-full object-cover ring-2 ring-[#D15608]/50 shadow-xs"
             alt="Padmanabha"
           />
           <div>
-            <div className="font-['Cormorant_Garamond'] font-semibold text-[#0E0E0E] text-xl leading-tight tracking-tight">
+            <div className="font-['Cormorant_Garamond'] font-bold text-[#0E0E0E] text-lg sm:text-xl leading-tight tracking-tight">
               Padmanabha
             </div>
             <div className="text-[9px] uppercase tracking-[0.2em] text-[#D15608] font-bold">
@@ -1230,7 +1230,7 @@ function AdminDashboardPage() {
         </div>
 
         {/* Navigation tabs */}
-        <nav className="p-4 space-y-1.5 flex-1 overflow-y-auto overscroll-contain">
+        <nav className="p-4 space-y-1.5 flex-1 overflow-y-auto overscroll-contain bg-white">
           <button
             type="button"
             onClick={() => {
@@ -1240,11 +1240,11 @@ function AdminDashboardPage() {
             className={`w-full flex items-center gap-3 px-3.5 py-2.5 text-sm font-medium rounded-xl transition-all text-left cursor-pointer ${
               activeTab === "dashboard"
                 ? "bg-[#D15608] text-white font-semibold shadow-xs"
-                : "text-[#0E0E0E]/75 hover:bg-[#FAF7F2] hover:text-[#0E0E0E]"
+                : "text-[#0E0E0E] hover:bg-[#FAF7F2] hover:text-black"
             }`}
           >
             <LayoutDashboard className={`size-4 shrink-0 ${activeTab === "dashboard" ? "text-white" : "text-[#D15608]"}`} />
-            <span>Dashboard</span>
+            <span className={activeTab === "dashboard" ? "text-white" : "text-[#0E0E0E]"}>Dashboard</span>
           </button>
 
           <button
@@ -1256,11 +1256,11 @@ function AdminDashboardPage() {
             className={`w-full flex items-center gap-3 px-3.5 py-2.5 text-sm font-medium rounded-xl transition-all text-left cursor-pointer ${
               activeTab === "products"
                 ? "bg-[#D15608] text-white font-semibold shadow-xs"
-                : "text-[#0E0E0E]/75 hover:bg-[#FAF7F2] hover:text-[#0E0E0E]"
+                : "text-[#0E0E0E] hover:bg-[#FAF7F2] hover:text-black"
             }`}
           >
             <Package className={`size-4 shrink-0 ${activeTab === "products" ? "text-white" : "text-[#D15608]"}`} />
-            <span>Products</span>
+            <span className={activeTab === "products" ? "text-white" : "text-[#0E0E0E]"}>Products</span>
           </button>
 
           <button
@@ -1272,11 +1272,11 @@ function AdminDashboardPage() {
             className={`w-full flex items-center gap-3 px-3.5 py-2.5 text-sm font-medium rounded-xl transition-all text-left cursor-pointer ${
               activeTab === "inventory"
                 ? "bg-[#D15608] text-white font-semibold shadow-xs"
-                : "text-[#0E0E0E]/75 hover:bg-[#FAF7F2] hover:text-[#0E0E0E]"
+                : "text-[#0E0E0E] hover:bg-[#FAF7F2] hover:text-black"
             }`}
           >
             <Boxes className={`size-4 shrink-0 ${activeTab === "inventory" ? "text-white" : "text-[#D15608]"}`} />
-            <span>Inventory & Stock</span>
+            <span className={activeTab === "inventory" ? "text-white" : "text-[#0E0E0E]"}>Inventory & Stock</span>
           </button>
 
           <button
@@ -1288,11 +1288,11 @@ function AdminDashboardPage() {
             className={`w-full flex items-center gap-3 px-3.5 py-2.5 text-sm font-medium rounded-xl transition-all text-left cursor-pointer ${
               activeTab === "orders"
                 ? "bg-[#D15608] text-white font-semibold shadow-xs"
-                : "text-[#0E0E0E]/75 hover:bg-[#FAF7F2] hover:text-[#0E0E0E]"
+                : "text-[#0E0E0E] hover:bg-[#FAF7F2] hover:text-black"
             }`}
           >
             <ShoppingBag className={`size-4 shrink-0 ${activeTab === "orders" ? "text-white" : "text-[#D15608]"}`} />
-            <span>Orders</span>
+            <span className={activeTab === "orders" ? "text-white" : "text-[#0E0E0E]"}>Orders</span>
           </button>
 
           <button
@@ -1304,11 +1304,11 @@ function AdminDashboardPage() {
             className={`w-full flex items-center gap-3 px-3.5 py-2.5 text-sm font-medium rounded-xl transition-all text-left cursor-pointer ${
               activeTab === "customers"
                 ? "bg-[#D15608] text-white font-semibold shadow-xs"
-                : "text-[#0E0E0E]/75 hover:bg-[#FAF7F2] hover:text-[#0E0E0E]"
+                : "text-[#0E0E0E] hover:bg-[#FAF7F2] hover:text-black"
             }`}
           >
             <Users className={`size-4 shrink-0 ${activeTab === "customers" ? "text-white" : "text-[#D15608]"}`} />
-            <span>Customers</span>
+            <span className={activeTab === "customers" ? "text-white" : "text-[#0E0E0E]"}>Customers</span>
           </button>
 
           <button
@@ -1320,11 +1320,11 @@ function AdminDashboardPage() {
             className={`w-full flex items-center gap-3 px-3.5 py-2.5 text-sm font-medium rounded-xl transition-all text-left cursor-pointer ${
               activeTab === "sales"
                 ? "bg-[#D15608] text-white font-semibold shadow-xs"
-                : "text-[#0E0E0E]/75 hover:bg-[#FAF7F2] hover:text-[#0E0E0E]"
+                : "text-[#0E0E0E] hover:bg-[#FAF7F2] hover:text-black"
             }`}
           >
             <TrendingUp className={`size-4 shrink-0 ${activeTab === "sales" ? "text-white" : "text-[#D15608]"}`} />
-            <span>Sales & Reports</span>
+            <span className={activeTab === "sales" ? "text-white" : "text-[#0E0E0E]"}>Sales & Reports</span>
           </button>
 
           <button
@@ -1336,11 +1336,11 @@ function AdminDashboardPage() {
             className={`w-full flex items-center gap-3 px-3.5 py-2.5 text-sm font-medium rounded-xl transition-all text-left cursor-pointer ${
               activeTab === "settings"
                 ? "bg-[#D15608] text-white font-semibold shadow-xs"
-                : "text-[#0E0E0E]/75 hover:bg-[#FAF7F2] hover:text-[#0E0E0E]"
+                : "text-[#0E0E0E] hover:bg-[#FAF7F2] hover:text-black"
             }`}
           >
             <Settings className={`size-4 shrink-0 ${activeTab === "settings" ? "text-white" : "text-[#D15608]"}`} />
-            <span>Admin Settings</span>
+            <span className={activeTab === "settings" ? "text-white" : "text-[#0E0E0E]"}>Admin Settings</span>
           </button>
 
           {/* Section: Page Content Management */}
@@ -1358,11 +1358,11 @@ function AdminDashboardPage() {
             className={`w-full flex items-center gap-3 px-3.5 py-2.5 text-sm font-medium rounded-xl transition-all text-left cursor-pointer ${
               activeTab === "home-content"
                 ? "bg-[#D15608] text-white font-semibold shadow-xs"
-                : "text-[#0E0E0E]/75 hover:bg-[#FAF7F2] hover:text-[#0E0E0E]"
+                : "text-[#0E0E0E] hover:bg-[#FAF7F2] hover:text-black"
             }`}
           >
             <Globe className={`size-4 shrink-0 ${activeTab === "home-content" ? "text-white" : "text-[#D15608]"}`} />
-            <span>Home Page</span>
+            <span className={activeTab === "home-content" ? "text-white" : "text-[#0E0E0E]"}>Home Page</span>
           </button>
 
           <button
@@ -1374,11 +1374,11 @@ function AdminDashboardPage() {
             className={`w-full flex items-center gap-3 px-3.5 py-2.5 text-sm font-medium rounded-xl transition-all text-left cursor-pointer ${
               activeTab === "about-content"
                 ? "bg-[#D15608] text-white font-semibold shadow-xs"
-                : "text-[#0E0E0E]/75 hover:bg-[#FAF7F2] hover:text-[#0E0E0E]"
+                : "text-[#0E0E0E] hover:bg-[#FAF7F2] hover:text-black"
             }`}
           >
             <FileText className={`size-4 shrink-0 ${activeTab === "about-content" ? "text-white" : "text-[#D15608]"}`} />
-            <span>About Page</span>
+            <span className={activeTab === "about-content" ? "text-white" : "text-[#0E0E0E]"}>About Page</span>
           </button>
 
           <button
@@ -1390,11 +1390,11 @@ function AdminDashboardPage() {
             className={`w-full flex items-center gap-3 px-3.5 py-2.5 text-sm font-medium rounded-xl transition-all text-left cursor-pointer ${
               activeTab === "contact-content"
                 ? "bg-[#D15608] text-white font-semibold shadow-xs"
-                : "text-[#0E0E0E]/75 hover:bg-[#FAF7F2] hover:text-[#0E0E0E]"
+                : "text-[#0E0E0E] hover:bg-[#FAF7F2] hover:text-black"
             }`}
           >
             <Phone className={`size-4 shrink-0 ${activeTab === "contact-content" ? "text-white" : "text-[#D15608]"}`} />
-            <span>Contact Page</span>
+            <span className={activeTab === "contact-content" ? "text-white" : "text-[#0E0E0E]"}>Contact Page</span>
           </button>
         </nav>
 
