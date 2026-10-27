@@ -4,7 +4,14 @@ import { Breadcrumb } from "@/components/Breadcrumb";
 import { useWishlist } from "@/context/WishlistContext";
 import { useCart } from "@/context/CartContext";
 import { useStore } from "@/context/StoreContext";
-import { products as staticCatalog, type Product, type ProductVariant } from "@/lib/catalog";
+import {
+  products as staticCatalog,
+  type Product,
+  type ProductVariant,
+  COMMON_COLOUR_MAP,
+  getColourHex,
+  cleanSizes,
+} from "@/lib/catalog";
 import { formatPrice } from "@/utils/formatters";
 import {
   Heart,
@@ -26,48 +33,6 @@ interface ProductDetailPageProps {
   id?: string;
 }
 
-const COMMON_COLOUR_MAP: Record<string, string> = {
-  "rani pink": "#D81B60",
-  "teal blue": "#008080",
-  "dusty pink": "#DCAE96",
-  "mustard yellow": "#E1AD01",
-  "bottle green": "#004225",
-  "rust brown": "#8B3103",
-  "lavender purple": "#967BB6",
-  "wine red": "#722F37",
-  "wine": "#722F37",
-  "navy blue": "#000080",
-  "royal blue": "#4169E1",
-  "maroon": "#800000",
-  "olive green": "#556B2F",
-  "coral": "#FF7F50",
-  "peach": "#FFE5B4",
-  "emerald green": "#50C878",
-  "golden yellow": "#EDBC3D",
-  "deep red": "#9F160A",
-  "black": "#1A1A1A",
-  "white": "#FFFFFF",
-  "cream": "#FAF6EE",
-  "beige": "#F5F5DC",
-  "grey": "#808080",
-};
-
-function getColourHex(colourName: string, customHex?: string): string {
-  if (customHex && /^#([0-9A-F]{3}){1,2}$/i.test(customHex)) {
-    return customHex;
-  }
-  const clean = colourName.toLowerCase().trim();
-  if (COMMON_COLOUR_MAP[clean]) {
-    return COMMON_COLOUR_MAP[clean]!;
-  }
-  for (const [key, val] of Object.entries(COMMON_COLOUR_MAP)) {
-    if (clean.includes(key) || key.includes(clean)) {
-      return val;
-    }
-  }
-  return "#D15608";
-}
-
 export function ProductDetailPage({ id }: ProductDetailPageProps) {
   const navigate = useNavigate();
   const { wishlist, toggleWishlist } = useWishlist();
@@ -82,26 +47,66 @@ export function ProductDetailPage({ id }: ProductDetailPageProps) {
   // Find product by id
   const product = allProducts.find((p) => String(p.id) === String(id)) || allProducts[0];
 
-  // Variants list
+  // Variants list: combines product.colour, product.variants, and catalog sister items with matching title
   const variants: ProductVariant[] = useMemo(() => {
     if (!product) return [];
-    if (Array.isArray(product.variants) && product.variants.length > 0) {
-      return product.variants;
-    }
+    const list: ProductVariant[] = [];
+
+    // 1. Primary colour of current product
     if (product.colour && product.colour !== "Custom") {
-      return [
-        {
-          id: `var-${product.id}-default`,
-          colour: product.colour,
-          colourHex: getColourHex(product.colour),
-          price: product.price,
-          stock: product.stock,
-          images: product.images && product.images.length > 0 ? product.images : [product.image],
-        },
-      ];
+      list.push({
+        id: `var-${product.id}-default`,
+        colour: product.colour,
+        colourHex: getColourHex(product.colour),
+        price: product.price,
+        stock: product.stock,
+        image: product.image,
+        images: product.images && product.images.length > 0 ? product.images : [product.image],
+      });
     }
-    return [];
-  }, [product]);
+
+    // 2. Variants configured inside this product
+    if (Array.isArray(product.variants)) {
+      for (const v of product.variants) {
+        if (!v.colour) continue;
+        if (!list.some((existing) => existing.colour.toLowerCase() === v.colour.toLowerCase())) {
+          list.push({
+            ...v,
+            colourHex: v.colourHex || getColourHex(v.colour),
+            image: v.image || (v.images && v.images[0]) || product.image,
+            images: v.images && v.images.length > 0 ? v.images : (v.image ? [v.image] : [product.image]),
+          });
+        }
+      }
+    }
+
+    // 3. Sister colour products in the same catalog
+    const clean = (str: string) => str.toLowerCase().replace(/[^a-z0-9]/g, "");
+    const targetName = clean(product.name);
+    for (const sp of allProducts) {
+      if (String(sp.id) === String(product.id) || !sp.colour) continue;
+      const spName = clean(sp.name);
+      const isSister =
+        (spName === targetName ||
+          (spName.length > 5 && targetName.includes(spName)) ||
+          (targetName.length > 5 && spName.includes(targetName))) &&
+        sp.category === product.category;
+
+      if (isSister && !list.some((existing) => existing.colour.toLowerCase() === sp.colour.toLowerCase())) {
+        list.push({
+          id: `sister-${sp.id}`,
+          colour: sp.colour,
+          colourHex: getColourHex(sp.colour),
+          price: sp.price,
+          stock: sp.stock,
+          image: sp.image,
+          images: sp.images && sp.images.length > 0 ? sp.images : [sp.image],
+        });
+      }
+    }
+
+    return list;
+  }, [product, allProducts]);
 
   // Selected colour state
   const [selectedColour, setSelectedColour] = useState<string>(() => {
@@ -147,35 +152,13 @@ export function ProductDetailPage({ id }: ProductDetailPageProps) {
   }, [galleryImages]);
 
   // Size list determination
-  const rawSizes: string[] = useMemo(() => {
-    if (!product) return [];
-    if (activeVariant && Array.isArray(activeVariant.sizes) && activeVariant.sizes.length > 0) {
-      return activeVariant.sizes;
-    }
-    if (Array.isArray(product.sizes) && product.sizes.length > 0) {
-      return [...product.sizes];
-    }
-    if (typeof product.sizes === "string") {
-      try {
-        const parsed = JSON.parse(product.sizes);
-        if (Array.isArray(parsed)) return parsed;
-      } catch {}
-      return (product.sizes as string).split(",").map((s) => s.trim()).filter(Boolean);
-    }
-    return [];
-  }, [product, activeVariant]);
-
-  const validSizes = useMemo(() => {
-    return rawSizes
-      .map((s: any) => String(s).trim())
-      .filter((s: string) => s !== "" && s !== "1" && s !== "0" && !/^\d+$/.test(s));
-  }, [rawSizes]);
-
   const availableSizes: string[] = useMemo(() => {
-    if (validSizes.length > 0) return validSizes;
-    if (product?.category === "Saree") return ["Free Size"];
-    return ["S", "M", "L", "XL", "2XL"];
-  }, [validSizes, product?.category]);
+    if (!product) return [];
+    const raw = (activeVariant && activeVariant.sizes && activeVariant.sizes.length > 0)
+      ? activeVariant.sizes
+      : product.sizes;
+    return cleanSizes(raw, product.category, product.description);
+  }, [product, activeVariant]);
 
   const [selectedSize, setSelectedSize] = useState<string>("");
   const [sizeError, setSizeError] = useState<boolean>(false);

@@ -7,6 +7,7 @@ import {
   initialStockLogs,
   money,
   bagTotal,
+  cleanSizes,
   type Product,
   type BagItem,
   type Order,
@@ -204,6 +205,8 @@ export function normalizeProduct(p: any): Product {
     ? p.variants
     : (typeof p.variants === "string" ? (() => { try { return JSON.parse(p.variants); } catch { return []; } })() : []);
 
+  const sanitizedSizes = cleanSizes(p.sizes, cat, desc);
+
   return {
     ...p,
     id: String(p.id),
@@ -212,6 +215,7 @@ export function normalizeProduct(p: any): Product {
     imageUrl: img || "/placeholder.svg",
     images,
     variants,
+    sizes: sanitizedSizes,
     description: desc || "",
     isActive,
     status: isActive ? "active" : "inactive",
@@ -647,11 +651,12 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     setPanel(null);
     setSelected(p);
     setQuantity(1);
+    const validSizes = cleanSizes(p.sizes, p.category, p.description);
     setSize(
-      p.sizes && p.sizes.length > 0
-        ? p.sizes.includes("M")
+      validSizes.length > 0
+        ? validSizes.includes("M")
           ? "M"
-          : (p.sizes[0] ?? "")
+          : (validSizes[0] ?? "")
         : "",
     );
   };

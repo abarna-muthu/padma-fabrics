@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
 import {
   ArrowRight,
@@ -11,12 +11,26 @@ import {
   ShoppingBag,
   Trash2,
   Zap,
+  Check,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTitle, SheetDescription } from "@/components/ui/sheet";
-import { ALL, categories, products, money, bagTotal } from "@/lib/catalog";
+import { ALL, categories, products, money, bagTotal, cleanSizes, getColourHex, type Product, type ProductVariant } from "@/lib/catalog";
 import { useStore } from "@/context/StoreContext";
+import { useCart } from "@/context/CartContext";
 import { ProductCard } from "@/components/ProductCard";
+import { toast } from "sonner";
+
+interface ColourOption {
+  id: string;
+  colour: string;
+  colourHex?: string;
+  price?: number;
+  image?: string;
+  stock?: number;
+  isProductSwitch?: boolean;
+  productRef?: Product;
+}
 
 export function ShopSheet() {
   const {
@@ -45,13 +59,146 @@ export function ShopSheet() {
     activeProducts,
     productsList,
   } = useStore();
+  const { addToCart } = useCart();
+  const navigate = useNavigate();
 
-  const handleBuyNow = () => {
-    if (!selected) return;
-    buyNow(selected, quantity);
+  // Always use the up-to-date product from productsList if available
+  const currentProduct = useMemo(() => {
+    if (!selected) return null;
+    return (productsList && productsList.find((p) => String(p.id) === String(selected.id))) || selected;
+  }, [selected, productsList]);
+
+  // Find sister products in store with matching title or design (different colours)
+  const sisterProducts = useMemo(() => {
+    if (!currentProduct || !productsList) return [];
+    const clean = (str: string) => str.toLowerCase().replace(/[^a-z0-9]/g, "");
+    const targetName = clean(currentProduct.name);
+    return productsList.filter((p) => {
+      if (String(p.id) === String(currentProduct.id)) return false;
+      const pName = clean(p.name);
+      return (
+        (pName === targetName ||
+          (pName.length > 5 && targetName.includes(pName)) ||
+          (targetName.length > 5 && pName.includes(targetName))) &&
+        p.category === currentProduct.category
+      );
+    });
+  }, [currentProduct, productsList]);
+
+  // Unified colour options (from product variants + catalog sister items)
+  const colourOptions: ColourOption[] = useMemo(() => {
+    if (!currentProduct) return [];
+    const options: ColourOption[] = [];
+
+    // 1. Current product primary colour
+    options.push({
+      id: `prod-${currentProduct.id}`,
+      colour: currentProduct.colour || "Primary",
+      colourHex: getColourHex(currentProduct.colour),
+      price: currentProduct.price,
+      image: currentProduct.image || currentProduct.imageUrl,
+      stock: currentProduct.stock,
+      isProductSwitch: false,
+    });
+
+    // 2. Variants configured inside this product
+    if (Array.isArray(currentProduct.variants)) {
+      for (const v of currentProduct.variants) {
+        if (!v.colour) continue;
+        if (!options.some((o) => o.colour.toLowerCase() === v.colour.toLowerCase())) {
+          options.push({
+            id: v.id || `var-${v.colour}`,
+            colour: v.colour,
+            colourHex: v.colourHex || getColourHex(v.colour),
+            price: v.price || currentProduct.price,
+            image: v.image || (v.images && v.images[0]) || currentProduct.image,
+            stock: v.stock !== undefined ? v.stock : currentProduct.stock,
+            isProductSwitch: false,
+          });
+        }
+      }
+    }
+
+    // 3. Sister colour products in the same catalog
+    for (const sp of sisterProducts) {
+      if (!sp.colour) continue;
+      if (!options.some((o) => o.colour.toLowerCase() === sp.colour.toLowerCase())) {
+        options.push({
+          id: `sister-${sp.id}`,
+          colour: sp.colour,
+          colourHex: getColourHex(sp.colour),
+          price: sp.price,
+          image: sp.image || sp.imageUrl,
+          stock: sp.stock,
+          isProductSwitch: true,
+          productRef: sp,
+        });
+      }
+    }
+
+    return options;
+  }, [currentProduct, sisterProducts]);
+
+  // Active colour selection
+  const [activeColour, setActiveColour] = useState<string>("");
+
+  useEffect(() => {
+    if (currentProduct) {
+      setActiveColour(currentProduct.colour || (colourOptions[0]?.colour ?? ""));
+    }
+  }, [currentProduct?.id]);
+
+  const selectedColourOption = useMemo(() => {
+    return (
+      colourOptions.find((o) => o.colour.toLowerCase() === activeColour.toLowerCase()) ||
+      colourOptions[0]
+    );
+  }, [colourOptions, activeColour]);
+
+  const activeDisplayImage =
+    selectedColourOption?.image || currentProduct?.image || currentProduct?.imageUrl || "/placeholder.svg";
+
+  const effectivePrice = selectedColourOption?.price || currentProduct?.price || 0;
+
+  const handleSelectColour = (opt: ColourOption) => {
+    if (opt.isProductSwitch && opt.productRef) {
+      setSelected(opt.productRef);
+      setActiveColour(opt.productRef.colour || opt.colour);
+    } else {
+      setActiveColour(opt.colour);
+    }
   };
 
-  const navigate = useNavigate();
+  // Clean clothing sizes (S, M, L, XL, 2XL, etc.)
+  const availableSizes: string[] = useMemo(() => {
+    if (!currentProduct) return [];
+    return cleanSizes(currentProduct.sizes, currentProduct.category, currentProduct.description);
+  }, [currentProduct]);
+
+  useEffect(() => {
+    if (availableSizes.length > 0) {
+      if (!size || !availableSizes.includes(size)) {
+        setSize(availableSizes.includes("M") ? "M" : availableSizes[0]!);
+      }
+    }
+  }, [availableSizes]);
+
+  const handleBuyNow = () => {
+    if (!currentProduct) return;
+    const chosenSize = size || (availableSizes[0] ?? "Standard");
+    const chosenColour = activeColour || currentProduct.colour || "";
+    addToCart(currentProduct, chosenSize, quantity, chosenColour, activeDisplayImage, effectivePrice);
+    buyNow(currentProduct, quantity);
+  };
+
+  const handleAddToCart = () => {
+    if (!currentProduct) return;
+    const chosenSize = size || (availableSizes[0] ?? "Standard");
+    const chosenColour = activeColour || currentProduct.colour || "";
+    addToCart(currentProduct, chosenSize, quantity, chosenColour, activeDisplayImage, effectivePrice);
+    addToBag();
+    toast.success(`Added ${currentProduct.name} (${chosenColour}, ${chosenSize}) to cart!`);
+  };
 
   const handleBrowse = (category: string) => {
     setFilter(category);
@@ -71,7 +218,7 @@ export function ShopSheet() {
     >
       <SheetContent className="shop-sheet">
         <SheetTitle className="font-display text-3xl">
-          {selected?.name ??
+          {currentProduct?.name ??
             (panel === "bag"
               ? `Your bag (${count})`
               : panel === "search"
@@ -81,8 +228,8 @@ export function ShopSheet() {
                   : "Padmanabha Fabrics")}
         </SheetTitle>
         <SheetDescription className="mt-2">
-          {selected
-            ? selected.colour
+          {currentProduct
+            ? selectedColourOption?.colour || currentProduct.colour
             : panel === "bag"
               ? "Your selected fabrics"
               : panel === "search"
@@ -92,52 +239,132 @@ export function ShopSheet() {
                   : "A world of beautiful fabrics"}
         </SheetDescription>
 
-        {selected && (
+        {currentProduct && (
           <>
-            <img
-              className="detail-image"
-              src={selected.image || selected.imageUrl || (selected as any).image_url || "/placeholder.svg"}
-              alt={selected.name}
-              onError={(e) => {
-                const target = e.currentTarget as HTMLImageElement;
-                const fallback = selected.imageUrl || (selected as any).image_url;
-                if (fallback && target.src !== fallback) {
-                  target.src = fallback;
-                }
-              }}
-            />
-            <p className="text-sm text-muted-foreground leading-7">{selected.description}</p>
-            <p className="text-xl text-primary mt-5">
-              {money(selected.price)}{" "}
-              <span className="text-xs text-muted-foreground">
-                / {selected.unit} · sample price
+            <div className="relative aspect-4/5 w-full rounded-2xl overflow-hidden border border-[#E5DAC4]/60 bg-muted/20 mb-4 shadow-sm">
+              <img
+                className="w-full h-full object-cover transition-all duration-300"
+                src={activeDisplayImage}
+                alt={`${currentProduct.name} - ${selectedColourOption?.colour || "View"}`}
+                onError={(e) => {
+                  const target = e.currentTarget as HTMLImageElement;
+                  const fallback = currentProduct.imageUrl || (currentProduct as any).image_url;
+                  if (fallback && target.src !== fallback) {
+                    target.src = fallback;
+                  } else {
+                    target.src = "/placeholder.svg";
+                  }
+                }}
+              />
+              <span className="absolute bottom-2.5 left-2.5 px-2.5 py-1 rounded-full bg-black/60 backdrop-blur-xs text-[11px] font-semibold text-white">
+                {selectedColourOption?.colour || currentProduct.colour}
+              </span>
+            </div>
+
+            <p className="text-sm text-muted-foreground leading-relaxed line-clamp-3">{currentProduct.description}</p>
+            <p className="text-xl font-bold text-primary mt-4">
+              {money(effectivePrice)}{" "}
+              <span className="text-xs font-normal text-muted-foreground">
+                / {currentProduct.unit} · sample price
               </span>
             </p>
-            {selected.sizes && (
-              <div className="mt-6">
-                <span className="text-xs">Size</span>
-                <div className="flex flex-wrap gap-2 mt-3">
-                  {selected.sizes.map((sz) => (
-                    <Button
-                      key={sz}
-                      size="sm"
-                      variant="filter"
-                      data-active={size === sz}
-                      onClick={() => setSize(sz)}
-                    >
-                      {sz}
-                    </Button>
-                  ))}
+
+            {/* 1. Colour Variants & Multi-Colour Photos */}
+            {colourOptions.length > 0 && (
+              <div className="mt-5 pt-4 border-t border-border">
+                <div className="flex items-center justify-between mb-2.5">
+                  <span className="text-xs font-semibold uppercase tracking-wider text-foreground">
+                    Colour: <span className="text-primary font-bold">{selectedColourOption?.colour || "Select Colour"}</span>
+                  </span>
+                  {colourOptions.length > 1 && (
+                    <span className="text-[11px] text-muted-foreground font-medium">
+                      {colourOptions.length} colours available
+                    </span>
+                  )}
+                </div>
+
+                <div className="flex flex-wrap gap-2">
+                  {colourOptions.map((opt) => {
+                    const isSelected = activeColour.toLowerCase() === opt.colour.toLowerCase();
+                    return (
+                      <button
+                        key={opt.id}
+                        type="button"
+                        onClick={() => handleSelectColour(opt)}
+                        className={`group relative flex items-center gap-2 p-1 pr-2.5 rounded-xl border-2 transition-all cursor-pointer ${
+                          isSelected
+                            ? "border-[#D15608] bg-[#D15608]/8 text-[#D15608] font-bold shadow-xs ring-2 ring-[#D15608]/20"
+                            : "border-border hover:border-[#D15608] bg-card text-foreground"
+                        }`}
+                        title={opt.colour}
+                      >
+                        {opt.image ? (
+                          <div className="relative size-8 rounded-lg overflow-hidden border border-black/10 shrink-0 bg-muted">
+                            <img
+                              src={opt.image}
+                              alt={opt.colour}
+                              className="w-full h-full object-cover"
+                            />
+                            {isSelected && (
+                              <span className="absolute inset-0 bg-black/40 flex items-center justify-center">
+                                <Check className="size-3 text-white" />
+                              </span>
+                            )}
+                          </div>
+                        ) : (
+                          <span
+                            className="size-5 rounded-full border border-black/20 shadow-2xs shrink-0 flex items-center justify-center"
+                            style={{ backgroundColor: opt.colourHex || getColourHex(opt.colour) }}
+                          >
+                            {isSelected && <Check className="size-2.5 text-white" />}
+                          </span>
+                        )}
+                        <span className="text-xs capitalize">{opt.colour}</span>
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
             )}
+
+            {/* 2. Clothing Size Selection */}
+            {availableSizes.length > 0 && (
+              <div className="mt-5 pt-4 border-t border-border">
+                <div className="flex justify-between items-center mb-2">
+                  <span className="text-xs font-semibold uppercase tracking-wider text-foreground">
+                    Size: <span className="text-primary font-bold">{size || "Select Size"}</span>
+                  </span>
+                  <span className="text-[11px] text-[#D15608]">Sizing: S to 6XL</span>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {availableSizes.map((sz) => {
+                    const isSelected = size === sz;
+                    return (
+                      <button
+                        key={sz}
+                        type="button"
+                        onClick={() => setSize(sz)}
+                        className={`h-9 min-w-10 px-3 rounded-lg text-xs font-bold transition-all border cursor-pointer ${
+                          isSelected
+                            ? "bg-[#D15608] border-[#D15608] text-white shadow-sm ring-2 ring-[#D15608]/20"
+                            : "bg-background border-border text-foreground hover:border-[#D15608] hover:text-[#D15608]"
+                        }`}
+                      >
+                        {sz}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
             <div className="flex items-center justify-between mt-6 mb-5">
-              <span className="text-xs">{selected.unit === "metre" ? "Metres" : "Quantity"}</span>
+              <span className="text-xs">{currentProduct.unit === "metre" ? "Metres" : "Quantity"}</span>
               <div className="quantity-control">
                 <Button
                   variant="ghost"
                   size="icon"
-                  aria-label="Decrease metres"
+                  aria-label="Decrease quantity"
                   disabled={quantity === 1}
                   onClick={() => setQuantity((q) => Math.max(1, q - 1))}
                 >
@@ -147,13 +374,14 @@ export function ShopSheet() {
                 <Button
                   variant="ghost"
                   size="icon"
-                  aria-label="Increase metres"
+                  aria-label="Increase quantity"
                   onClick={() => setQuantity((q) => q + 1)}
                 >
                   <Plus />
                 </Button>
               </div>
             </div>
+
             {/* Direct Pay & Buy Action Buttons */}
             <div className="space-y-2.5">
               <Button
@@ -163,14 +391,14 @@ export function ShopSheet() {
                 onClick={handleBuyNow}
               >
                 <Zap className="size-4.5 shrink-0 fill-amber-300 text-amber-300" />
-                <span>BUY NOW · {money(selected.price * quantity)}</span>
+                <span>BUY NOW · {money(effectivePrice * quantity)}</span>
               </Button>
 
               <div className="grid grid-cols-2 gap-2">
                 <Button
                   variant="outline"
                   className="!rounded-xl !h-auto min-h-[42px] py-2 px-2 text-xs font-semibold uppercase tracking-wider border-primary/30 text-primary hover:bg-primary/5 flex items-center justify-center gap-1.5 cursor-pointer touch-manipulation"
-                  onClick={addToBag}
+                  onClick={handleAddToCart}
                 >
                   <ShoppingBag className="size-3.5 shrink-0" />
                   <span className="truncate">Add to Bag</span>
