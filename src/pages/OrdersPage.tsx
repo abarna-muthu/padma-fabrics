@@ -248,10 +248,11 @@ export function OrdersPage() {
       id: item.productId || `prod-${Date.now()}`,
       name: item.productName,
       price: item.price || 999,
-      image: item.image || "/images/placeholder.jpg",
+      image: item.image || item.imageUrl || "/images/placeholder.jpg",
       category: "Fabrics",
+      colour: item.colour || "Custom",
     };
-    addToCart(prod, item.size || "Standard", 1);
+    addToCart(prod, item.size || "Standard", 1, item.colour, item.image || item.imageUrl, item.price);
     setIsCartOpen(true);
     toast.success(`Added "${item.productName}" back to your bag!`);
   };
@@ -587,6 +588,7 @@ export function OrdersPage() {
                       );
                       const prodImg = matchedProd?.images?.[0] || matchedProd?.image || item.image;
                       const prodName = item.productName || item.name || "Handcrafted Fabric / Apparel";
+                      const colourStr = item.colour ? ` · Colour: ${item.colour}` : "";
                       const sizeStr = item.size ? ` · Size: ${item.size}` : "";
                       const qtyStr = item.quantity ? ` · Qty: ${item.quantity}` : "";
                       const eligibleDate = formatEligibleDate(order.date || order.createdAt);
@@ -614,6 +616,7 @@ export function OrdersPage() {
                             <h4 className="font-display text-xs sm:text-sm font-semibold text-foreground line-clamp-2">
                               {prodName}
                               <span className="text-muted-foreground font-normal text-xs font-sans">
+                                {colourStr}
                                 {sizeStr}
                                 {qtyStr}
                               </span>

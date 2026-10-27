@@ -509,7 +509,14 @@ export function FeaturedCollectionCarousel() {
                           type="button"
                           onClick={(e) => {
                             e.stopPropagation();
-                            addToCart(product, sizes[0] || "Standard", 1);
+                            addToCart(
+                              product,
+                              sizes[0] || "Standard",
+                              1,
+                              product.colour,
+                              product.image,
+                              product.price,
+                            );
                           }}
                           className="inline-flex items-center gap-1.5 px-3 sm:px-4 py-1.5 sm:py-2 rounded-full bg-[#D15608] text-white hover:bg-[#9F160A] transition-all text-[10px] sm:text-[11px] font-semibold uppercase tracking-wider shadow-md cursor-pointer active:scale-95 touch-manipulation whitespace-nowrap"
                         >

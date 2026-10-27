@@ -54,7 +54,7 @@ export function WishlistPage() {
           : ["S", "M", "L", "XL"];
     const chosenSize = selectedSizes[product.id] || availableSizes[0] || "Standard";
 
-    addToCart(product, chosenSize, 1);
+    addToCart(product, chosenSize, 1, product.colour, product.image, product.price);
   };
 
   const handleBuyNow = (product: Product, e?: React.MouseEvent) => {
@@ -73,7 +73,7 @@ export function WishlistPage() {
             ? ["Free Size"]
             : ["S", "M", "L", "XL"];
       const chosenSize = selectedSizes[product.id] || availableSizes[0] || "Standard";
-      addToCart(product, chosenSize, 1);
+      addToCart(product, chosenSize, 1, product.colour, product.image, product.price);
     });
     toast.success(`Moved all ${wishlistedItems.length} items to your shopping bag!`);
     navigate({ to: "/cart" });

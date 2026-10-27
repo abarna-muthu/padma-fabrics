@@ -54,12 +54,12 @@ export function ProductCard({ product, light = false, badgeText, onQuickView }: 
 
   const handleAddToCart = (e: React.MouseEvent) => {
     e.stopPropagation();
-    addToCart(product, selectedSize, 1);
+    addToCart(product, selectedSize, 1, product.colour, product.image, product.price);
   };
 
   const handleBuyNow = (e: React.MouseEvent) => {
     e.stopPropagation();
-    addToCart(product, selectedSize, 1);
+    addToCart(product, selectedSize, 1, product.colour, product.image, product.price);
     buyNow(product, 1);
   };
 

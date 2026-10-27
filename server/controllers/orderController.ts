@@ -96,6 +96,34 @@ export async function createCheckoutOrder(req: Request, res: Response) {
 
       const product = rows[0];
       const requestedQty = Math.max(1, Number(item.quantity) || 1);
+      const chosenSize = String(item.size || "").trim();
+      const chosenColour = String(item.colour || "").trim();
+      const chosenImage = String(item.image || item.imageUrl || item.image_url || product.image_url || "");
+
+      let unitPrice = Number(product.price);
+      let parsedVariants: any[] = [];
+      try {
+        if (typeof product.variants === "string") parsedVariants = JSON.parse(product.variants);
+        else if (Array.isArray(product.variants)) parsedVariants = product.variants;
+      } catch {}
+
+      let matchedVariant: any = null;
+      if (parsedVariants.length > 0 && chosenColour) {
+        matchedVariant = parsedVariants.find(
+          (v: any) => v.colour && v.colour.toLowerCase() === chosenColour.toLowerCase(),
+        );
+        if (matchedVariant) {
+          if (matchedVariant.price && !isNaN(Number(matchedVariant.price)) && Number(matchedVariant.price) > 0) {
+            unitPrice = Number(matchedVariant.price);
+          }
+          if (matchedVariant.stock !== undefined && Number(matchedVariant.stock) < requestedQty) {
+            return res.status(400).json({
+              success: false,
+              error: `Insufficient stock for '${product.name}' in colour '${chosenColour}'. Only ${matchedVariant.stock} left.`,
+            });
+          }
+        }
+      }
 
       if (product.stock_quantity < requestedQty) {
         return res.status(400).json({
@@ -104,7 +132,6 @@ export async function createCheckoutOrder(req: Request, res: Response) {
         });
       }
 
-      const unitPrice = Number(product.price);
       const lineTotal = unitPrice * requestedQty;
       calculatedSubtotal += lineTotal;
 
@@ -113,7 +140,11 @@ export async function createCheckoutOrder(req: Request, res: Response) {
         quantity: requestedQty,
         unitPrice,
         lineTotal,
-        size: item.size || "",
+        size: chosenSize,
+        colour: chosenColour || product.colour || "",
+        image: chosenImage,
+        parsedVariants,
+        matchedVariant,
       });
     }
 
@@ -197,10 +228,19 @@ export async function createCheckoutOrder(req: Request, res: Response) {
       validatedItems.map(async (vItem) => {
         const oiId = `oi-${Date.now().toString(36)}-${Math.random().toString(36).substring(2, 6)}`;
         const newStock = Math.max(0, vItem.product.stock_quantity - vItem.quantity);
-        return Promise.all([
+        let updatedVariantsJson = null;
+        if (vItem.matchedVariant && Array.isArray(vItem.parsedVariants)) {
+          vItem.matchedVariant.stock = Math.max(
+            0,
+            (Number(vItem.matchedVariant.stock) || vItem.product.stock_quantity) - vItem.quantity,
+          );
+          updatedVariantsJson = JSON.stringify(vItem.parsedVariants);
+        }
+
+        const updates: Promise<any>[] = [
           db.execute(
-            `INSERT INTO order_items (id, order_id, product_id, product_name, product_sku, unit_price, quantity, unit, size, total_price)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            `INSERT INTO order_items (id, order_id, product_id, product_name, product_sku, unit_price, quantity, unit, size, colour, image_url, total_price)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
             [
               oiId,
               orderId,
@@ -211,13 +251,21 @@ export async function createCheckoutOrder(req: Request, res: Response) {
               vItem.quantity,
               vItem.product.unit || "piece",
               vItem.size,
+              vItem.colour,
+              vItem.image,
               vItem.lineTotal,
             ],
           ),
-          db.execute("UPDATE products SET stock_quantity = ? WHERE id = ?", [
-            newStock,
-            vItem.product.id,
-          ]),
+          updatedVariantsJson
+            ? db.execute("UPDATE products SET stock_quantity = ?, variants = ? WHERE id = ?", [
+                newStock,
+                updatedVariantsJson,
+                vItem.product.id,
+              ])
+            : db.execute("UPDATE products SET stock_quantity = ? WHERE id = ?", [
+                newStock,
+                vItem.product.id,
+              ]),
           db.execute(
             `INSERT INTO inventory_logs (id, product_id, previous_stock, new_stock, change_amount, reason)
              VALUES (?, ?, ?, ?, ?, ?)`,
@@ -230,7 +278,9 @@ export async function createCheckoutOrder(req: Request, res: Response) {
               `Order ${orderNumber} customer fulfillment deduction`,
             ],
           ),
-        ]);
+        ];
+
+        return Promise.all(updates);
       }),
     );
 
@@ -318,6 +368,9 @@ export async function getOrders(req: Request, res: Response) {
             unit: i.unit,
             price: Number(i.unit_price),
             size: i.size,
+            colour: i.colour || "",
+            image: i.image_url || i.image || "",
+            imageUrl: i.image_url || i.image || "",
             lineTotal: Number(i.total_price),
           })),
         };
@@ -371,10 +424,14 @@ export async function getOrderById(req: Request, res: Response) {
         items: items.map((i) => ({
           productId: i.product_id,
           productName: i.product_name,
+          sku: i.product_sku,
           quantity: Number(i.quantity),
           unit: i.unit,
           price: Number(i.unit_price),
           size: i.size,
+          colour: i.colour || "",
+          image: i.image_url || i.image || "",
+          imageUrl: i.image_url || i.image || "",
           lineTotal: Number(i.total_price),
         })),
       },

@@ -54,6 +54,34 @@ function parseSafeSizes(sizesVal: any): string[] {
   return [];
 }
 
+function parseSafeVariants(val: any): any[] {
+  if (Array.isArray(val)) return val;
+  if (typeof val === "string") {
+    try {
+      const parsed = JSON.parse(val);
+      if (Array.isArray(parsed)) return parsed;
+    } catch {}
+  }
+  return [];
+}
+
+function parseSafeImages(val: any, fallbackImg: string = ""): string[] {
+  if (Array.isArray(val)) return val.filter(Boolean);
+  if (typeof val === "string") {
+    try {
+      const parsed = JSON.parse(val);
+      if (Array.isArray(parsed)) return parsed.filter(Boolean);
+    } catch {}
+    if (val.includes(",")) {
+      return val.split(",").map((s) => s.trim()).filter(Boolean);
+    }
+    if (val.trim()) {
+      return [val.trim()];
+    }
+  }
+  return fallbackImg ? [fallbackImg] : [];
+}
+
 export async function getProducts(req: Request, res: Response) {
   try {
     const { category, search, featured, active_only = "true" } = req.query;
@@ -123,6 +151,8 @@ export async function getProducts(req: Request, res: Response) {
         description: p.description || "",
         image: img,
         imageUrl: img,
+        images: parseSafeImages(p.images, img),
+        variants: parseSafeVariants(p.variants),
         isActive: isActive,
         status: isActive ? "active" : "inactive",
         isFeatured: Boolean(p.is_featured ?? p.isFeatured),
@@ -160,6 +190,18 @@ export async function getProductById(req: Request, res: Response) {
     const catId = p.category_id || p.categoryId || (p.category ? p.category.toLowerCase().replace(/[^a-z0-9]+/g, "-") : "chudithar-top");
     const stock = Number(p.stock_quantity ?? p.stockQuantity ?? p.stock ?? 10);
 
+    let galleryImages = parseSafeImages(p.images, img);
+    try {
+      const extraImages = await db.query(
+        "SELECT image_url FROM product_images WHERE product_id = ? ORDER BY display_order ASC",
+        [p.id],
+      );
+      if (extraImages && extraImages.length > 0) {
+        const urls = extraImages.map((row: any) => row.image_url).filter(Boolean);
+        galleryImages = Array.from(new Set([...galleryImages, ...urls]));
+      }
+    } catch {}
+
     const product = {
       id: String(p.id),
       name: p.name,
@@ -178,6 +220,8 @@ export async function getProductById(req: Request, res: Response) {
       description: p.description || "",
       image: img,
       imageUrl: img,
+      images: galleryImages,
+      variants: parseSafeVariants(p.variants),
       isActive: isActive,
       status: isActive ? "active" : "inactive",
       isFeatured: Boolean(p.is_featured ?? p.isFeatured),
@@ -277,6 +321,8 @@ export async function createProduct(req: Request, res: Response) {
       sku,
       is_featured = 0,
       sizes = [],
+      variants = [],
+      images = [],
     } = req.body;
 
     if (!name || price === undefined || price === null || isNaN(Number(price))) {
@@ -302,6 +348,9 @@ export async function createProduct(req: Request, res: Response) {
     const finalCategory = CATEGORY_NAME_TO_ID[rawCat] || rawCat.toLowerCase().replace(/[^a-z0-9]+/g, "-");
     const finalImage = image_url || image || "/assets/burgundy-silk.jpg";
     const sizesJson = JSON.stringify(sizes);
+    const variantsJson = JSON.stringify(variants);
+    const resolvedImageList = Array.isArray(images) && images.length > 0 ? images : [finalImage];
+    const imagesJson = JSON.stringify(resolvedImageList);
 
     // Ensure category exists in categories table to satisfy FOREIGN KEY constraint
     const catCheck = await db.query("SELECT id FROM categories WHERE id = ?", [finalCategory]);
@@ -314,8 +363,8 @@ export async function createProduct(req: Request, res: Response) {
     }
 
     await db.execute(
-      `INSERT INTO products (id, sku, name, slug, category_id, colour, price, original_price, unit, stock_quantity, low_stock_threshold, badge, description, image_url, is_active, is_featured, sizes)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      `INSERT INTO products (id, sku, name, slug, category_id, colour, price, original_price, unit, stock_quantity, low_stock_threshold, badge, description, image_url, is_active, is_featured, sizes, variants, images)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         id,
         productSku,
@@ -334,6 +383,8 @@ export async function createProduct(req: Request, res: Response) {
         1,
         is_featured ? 1 : 0,
         sizesJson,
+        variantsJson,
+        imagesJson,
       ],
     );
 
@@ -367,6 +418,9 @@ export async function createProduct(req: Request, res: Response) {
       badge,
       description,
       image: finalImage,
+      imageUrl: finalImage,
+      images: resolvedImageList,
+      variants: Array.isArray(variants) ? variants : [],
       isActive: true,
       status: "active",
       sizes: Array.isArray(sizes) ? sizes : (typeof sizes === "string" ? JSON.parse(sizes || "[]") : []),
@@ -406,6 +460,8 @@ export async function updateProduct(req: Request, res: Response) {
       is_active,
       status,
       sizes,
+      variants,
+      images,
       sku,
     } = req.body;
 
@@ -440,9 +496,11 @@ export async function updateProduct(req: Request, res: Response) {
         .replace(/[^a-z0-9]+/g, "-")
         .replace(/(^-|-$)/g, "");
 
+      const resolvedImages = Array.isArray(images) && images.length > 0 ? images : [finalImage];
+
       await db.execute(
-        `INSERT INTO products (id, sku, name, slug, category_id, colour, price, original_price, unit, stock_quantity, low_stock_threshold, badge, description, image_url, is_active, is_featured, sizes)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        `INSERT INTO products (id, sku, name, slug, category_id, colour, price, original_price, unit, stock_quantity, low_stock_threshold, badge, description, image_url, is_active, is_featured, sizes, variants, images)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           id,
           productSku,
@@ -461,6 +519,8 @@ export async function updateProduct(req: Request, res: Response) {
           activeVal,
           0,
           JSON.stringify(sizes || []),
+          JSON.stringify(variants || []),
+          JSON.stringify(resolvedImages),
         ],
       );
     } else {
@@ -474,8 +534,26 @@ export async function updateProduct(req: Request, res: Response) {
               : JSON.stringify(previous.sizes)
             : JSON.stringify([]);
 
+      const variantsToSave =
+        variants !== undefined
+          ? JSON.stringify(variants)
+          : previous.variants
+            ? typeof previous.variants === "string"
+              ? previous.variants
+              : JSON.stringify(previous.variants)
+            : JSON.stringify([]);
+
+      const imagesToSave =
+        images !== undefined
+          ? JSON.stringify(images)
+          : previous.images
+            ? typeof previous.images === "string"
+              ? previous.images
+              : JSON.stringify(previous.images)
+            : JSON.stringify([finalImage]);
+
       await db.execute(
-        `UPDATE products SET name = ?, category_id = ?, colour = ?, price = ?, unit = ?, stock_quantity = ?, badge = ?, description = ?, image_url = ?, is_active = ?, sizes = ? WHERE id = ?`,
+        `UPDATE products SET name = ?, category_id = ?, colour = ?, price = ?, unit = ?, stock_quantity = ?, badge = ?, description = ?, image_url = ?, is_active = ?, sizes = ?, variants = ?, images = ? WHERE id = ?`,
         [
           name || previous.name,
           finalCategory,
@@ -488,6 +566,8 @@ export async function updateProduct(req: Request, res: Response) {
           finalImage,
           activeVal,
           sizesToSave,
+          variantsToSave,
+          imagesToSave,
           previous.id,
         ],
       );
@@ -519,6 +599,24 @@ export async function updateProduct(req: Request, res: Response) {
           ? JSON.parse(rows[0].sizes || "[]")
           : rows[0]?.sizes || [];
 
+    const resolvedVariants =
+      variants !== undefined
+        ? Array.isArray(variants)
+          ? variants
+          : JSON.parse(variants || "[]")
+        : typeof rows[0]?.variants === "string"
+          ? JSON.parse(rows[0].variants || "[]")
+          : rows[0]?.variants || [];
+
+    const resolvedImages =
+      images !== undefined
+        ? Array.isArray(images)
+          ? images
+          : JSON.parse(images || "[]")
+        : typeof rows[0]?.images === "string"
+          ? JSON.parse(rows[0].images || "[]")
+          : [finalImage];
+
     const updatedProduct = {
       id,
       name: name || rows[0]?.name,
@@ -533,6 +631,8 @@ export async function updateProduct(req: Request, res: Response) {
       description: description !== undefined ? description : rows[0]?.description,
       image: finalImage,
       imageUrl: finalImage,
+      images: resolvedImages,
+      variants: resolvedVariants,
       isActive: Boolean(activeVal),
       status: activeVal ? "active" : "inactive",
       sizes: resolvedSizes,

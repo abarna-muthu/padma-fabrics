@@ -130,6 +130,7 @@ export function CheckoutPage() {
         productId: item.id,
         quantity: item.quantity,
         size: item.size,
+        colour: item.colour,
         price: item.price,
         name: item.name,
         image: item.image,
@@ -582,7 +583,7 @@ export function CheckoutPage() {
                       {item.name}
                     </h5>
                     <p className="text-[11px] text-[#5C5549] dark:text-[#B5AC9E]">
-                      Size: {item.size || "Standard"} · Qty: {item.quantity}
+                      {item.colour ? `Colour: ${item.colour} · ` : ""}Size: {item.size || "Standard"} · Qty: {item.quantity}
                     </p>
                   </div>
                   <span className="text-xs font-bold text-[#9F160A] dark:text-[#FAF6EE] shrink-0">

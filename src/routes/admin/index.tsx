@@ -56,7 +56,7 @@ import storeImg from "@/assets/padmanabha-store.jpg";
 import { useAdminAuth } from "@/context/AdminAuthContext";
 import { useStore } from "@/context/StoreContext";
 import { useSiteContent } from "@/context/SiteContentContext";
-import { ALL, categories, money, type Product, type Order } from "@/lib/catalog";
+import { ALL, categories, money, type Product, type ProductVariant, type Order } from "@/lib/catalog";
 import { computeOrderTracking } from "@/lib/orderTracking";
 import { OrderTrackingModal } from "@/components/OrderTrackingModal";
 import { customerApi, productApi } from "@/lib/api";
@@ -81,6 +81,7 @@ export const AVAILABLE_SIZES = [
   "3XL",
   "4XL",
   "5XL",
+  "6XL",
 ] as const;
 
 export const DUMMY_PRODUCT_IMAGES = [
@@ -344,6 +345,96 @@ function AdminDashboardPage() {
   const [prodSku, setProdSku] = useState("");
   const [prodSizes, setProdSizes] = useState<string[]>([...AVAILABLE_SIZES]);
   const [prodImage, setProdImage] = useState("");
+  const [prodImages, setProdImages] = useState<string[]>([]);
+  const [prodVariants, setProdVariants] = useState<ProductVariant[]>([]);
+
+  // Quick-adder states for colour variants
+  const [variantColourInput, setVariantColourInput] = useState("");
+  const [variantHexInput, setVariantHexInput] = useState("#9F160A");
+  const [variantPriceInput, setVariantPriceInput] = useState("");
+  const [variantStockInput, setVariantStockInput] = useState("10");
+  const [manualImageInput, setManualImageInput] = useState("");
+
+  const handleAddColourVariant = () => {
+    const trimmed = variantColourInput.trim();
+    if (!trimmed) {
+      toast.error("Please enter a colour name (e.g. Rani Pink, Teal Blue)");
+      return;
+    }
+    const existingIndex = prodVariants.findIndex(
+      (v) => v.colour.toLowerCase() === trimmed.toLowerCase(),
+    );
+    const newVariant: ProductVariant = {
+      id: `var-${Date.now().toString(36)}`,
+      colour: trimmed,
+      colourHex: variantHexInput || "#9F160A",
+      price: variantPriceInput && Number(variantPriceInput) > 0 ? Number(variantPriceInput) : undefined,
+      stock: variantStockInput && Number(variantStockInput) >= 0 ? Number(variantStockInput) : 10,
+      images: prodImage ? [prodImage] : [],
+    };
+
+    if (existingIndex >= 0) {
+      setProdVariants((prev) => {
+        const copy = [...prev];
+        copy[existingIndex] = newVariant;
+        return copy;
+      });
+      toast.success(`Updated variant colour "${trimmed}"`);
+    } else {
+      setProdVariants((prev) => [...prev, newVariant]);
+      toast.success(`Added colour variant "${trimmed}"`);
+    }
+
+    setVariantColourInput("");
+    setVariantPriceInput("");
+    setVariantStockInput("10");
+  };
+
+  const handleRemoveColourVariant = (colourToRemove: string) => {
+    setProdVariants((prev) => prev.filter((v) => v.colour !== colourToRemove));
+  };
+
+  const handleAddImageFromUrl = () => {
+    const trimmed = manualImageInput.trim();
+    if (!trimmed) return;
+    setProdImages((prev) => Array.from(new Set([...prev, trimmed])));
+    if (!prodImage) setProdImage(trimmed);
+    setManualImageInput("");
+    toast.success("Image URL added to gallery!");
+  };
+
+  const handleRemoveGalleryImage = (indexToRemove: number) => {
+    setProdImages((prev) => {
+      const next = prev.filter((_, i) => i !== indexToRemove);
+      if (prodImage === prev[indexToRemove]) {
+        setProdImage(next[0] || "");
+      }
+      return next;
+    });
+  };
+
+  const handleSetPrimaryImage = (index: number) => {
+    setProdImages((prev) => {
+      if (index === 0 || !prev[index]) return prev;
+      const target = prev[index]!;
+      const rest = prev.filter((_, i) => i !== index);
+      const next = [target, ...rest];
+      setProdImage(target);
+      return next;
+    });
+    toast.success("Primary cover image updated!");
+  };
+
+  const handleMoveImage = (fromIndex: number, toIndex: number) => {
+    setProdImages((prev) => {
+      if (toIndex < 0 || toIndex >= prev.length) return prev;
+      const copy = [...prev];
+      const item = copy.splice(fromIndex, 1)[0]!;
+      copy.splice(toIndex, 0, item);
+      if (toIndex === 0) setProdImage(item);
+      return copy;
+    });
+  };
 
   const toggleSize = (sz: string) => {
     setProdSizes((prev) => {
@@ -413,15 +504,18 @@ function AdminDashboardPage() {
           if (uploadRes && uploadRes.success && (uploadRes.secure_url || uploadRes.url)) {
             const cloudUrl = uploadRes.secure_url || uploadRes.url;
             setProdImage(cloudUrl);
+            setProdImages((prev) => Array.from(new Set([...prev, cloudUrl])));
             setImageUploadStatus(`Cloudinary: ${file.name} (uploaded)`);
             toast.success("Photo uploaded to Cloudinary (padma_products)!");
           } else {
             setProdImage(base64Data);
+            setProdImages((prev) => Array.from(new Set([...prev, base64Data])));
             setImageUploadStatus(`${file.name} (local preview)`);
           }
         } catch (uploadErr: any) {
           console.warn("Cloudinary upload fallback to local preview:", uploadErr);
           setProdImage(base64Data);
+          setProdImages((prev) => Array.from(new Set([...prev, base64Data])));
           setImageUploadStatus(`${file.name} (local preview)`);
         } finally {
           setIsUploadingImage(false);
@@ -429,6 +523,7 @@ function AdminDashboardPage() {
       };
       img.onerror = () => {
         setProdImage(result);
+        setProdImages((prev) => Array.from(new Set([...prev, result])));
         setImageUploadStatus(`${file.name}`);
         setIsUploadingImage(false);
       };
@@ -569,6 +664,13 @@ function AdminDashboardPage() {
     setProdSku(`PF-${Math.floor(100 + Math.random() * 900)}`);
     setProdSizes([...AVAILABLE_SIZES]);
     setProdImage("");
+    setProdImages([]);
+    setProdVariants([]);
+    setVariantColourInput("");
+    setVariantHexInput("#9F160A");
+    setVariantPriceInput("");
+    setVariantStockInput("10");
+    setManualImageInput("");
     setImageUploadStatus("");
     setIsProductModalOpen(true);
   };
@@ -591,6 +693,18 @@ function AdminDashboardPage() {
         : [],
     );
     setProdImage(p.image);
+    const existingImages = Array.isArray((p as any).images) && (p as any).images.length > 0
+      ? (p as any).images
+      : p.image
+        ? [p.image]
+        : [];
+    setProdImages(existingImages);
+    setProdVariants(Array.isArray((p as any).variants) ? (p as any).variants : []);
+    setVariantColourInput("");
+    setVariantHexInput("#9F160A");
+    setVariantPriceInput("");
+    setVariantStockInput("10");
+    setManualImageInput("");
     setImageUploadStatus("");
     setIsProductModalOpen(true);
   };
@@ -619,6 +733,8 @@ function AdminDashboardPage() {
       }
     }
 
+    const galleryToSave = Array.from(new Set([finalImage, ...prodImages])).filter(Boolean);
+
     try {
       if (editingProduct) {
         await updateProduct(editingProduct.id, {
@@ -633,6 +749,8 @@ function AdminDashboardPage() {
           sku: prodSku,
           sizes: prodSizes,
           image: finalImage,
+          images: galleryToSave,
+          variants: prodVariants,
           status: editingProduct.status || "active",
           isActive: true,
         });
@@ -651,6 +769,8 @@ function AdminDashboardPage() {
           sku: prodSku,
           sizes: prodSizes,
           image: finalImage,
+          images: galleryToSave,
+          variants: prodVariants,
           status: "active",
           isActive: true,
         });
@@ -3733,7 +3853,7 @@ function AdminDashboardPage() {
       {/* ----------------- MODAL: ADD / EDIT PRODUCT ----------------- */}
       {isProductModalOpen && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-card border border-border w-full max-w-lg max-h-[90vh] overflow-y-auto p-6 shadow-xl">
+          <div className="bg-card border border-border w-full max-w-2xl sm:max-w-3xl max-h-[90vh] overflow-y-auto p-6 shadow-xl">
             <div className="flex justify-between items-center pb-4 border-b border-border">
               <h2 className="font-display text-xl font-medium">
                 {editingProduct ? "Edit Product Details" : "Add New Catalog Fabric / Apparel"}
@@ -3864,12 +3984,12 @@ function AdminDashboardPage() {
                 </div>
               </div>
 
-              {/* Product Size Options (S to 5XL) */}
+              {/* 1. Product Size Options (S to 6XL) */}
               <div className="space-y-2.5 p-3.5 bg-secondary/15 border border-border rounded-sm">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 pb-2 border-b border-border/50">
                   <div>
                     <label className="text-xs font-semibold uppercase tracking-wider text-foreground flex items-center gap-1.5">
-                      <span>Available Sizes (S to 5XL) *</span>
+                      <span>Available Sizes (S to 6XL) *</span>
                     </label>
                     <p className="text-[11px] text-muted-foreground">
                       Select which garment sizes are available in stock
@@ -3881,7 +4001,7 @@ function AdminDashboardPage() {
                       onClick={() => setProdSizes([...AVAILABLE_SIZES])}
                       className="text-[11px] font-semibold text-primary hover:underline cursor-pointer"
                     >
-                      All (S-5XL)
+                      All (S-6XL)
                     </button>
                     <span className="text-muted-foreground/40">·</span>
                     <button
@@ -3902,7 +4022,7 @@ function AdminDashboardPage() {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-4 sm:grid-cols-8 gap-2 pt-1">
+                <div className="grid grid-cols-3 sm:grid-cols-9 gap-1.5 pt-1">
                   {AVAILABLE_SIZES.map((sz) => {
                     const isSelected = prodSizes.includes(sz) || (sz === "2XL" && prodSizes.includes("XXL"));
                     return (
@@ -3910,7 +4030,7 @@ function AdminDashboardPage() {
                         key={sz}
                         type="button"
                         onClick={() => toggleSize(sz)}
-                        className={`h-9 px-2 rounded-xs text-xs font-semibold tracking-wider transition-all cursor-pointer flex items-center justify-center gap-1 border ${
+                        className={`h-9 px-1 rounded-xs text-xs font-semibold tracking-wider transition-all cursor-pointer flex items-center justify-center gap-0.5 border ${
                           isSelected
                             ? "bg-[#D15608] text-white border-[#D15608] shadow-xs ring-2 ring-[#D15608]/30 font-bold scale-[1.02]"
                             : "bg-background text-foreground/80 border-border hover:border-foreground/40 hover:bg-muted/40"
@@ -3929,7 +4049,7 @@ function AdminDashboardPage() {
                     {prodSizes.length > 0 ? (
                       <>
                         <span className="text-foreground font-semibold">
-                          {prodSizes.length} {prodSizes.length === 1 ? "size" : "sizes"} selected:
+                          {prodSizes.length} {prodSizes.length === 1 ? "size" : "sizes"} enabled:
                         </span>{" "}
                         <span className="font-mono text-primary font-bold">
                           {prodSizes.join(", ")}
@@ -3944,7 +4064,135 @@ function AdminDashboardPage() {
                 </div>
               </div>
 
-              {/* Product Image & Direct Device Upload */}
+              {/* 2. Colour Variants Management Section */}
+              <div className="space-y-3 p-3.5 bg-secondary/15 border border-border rounded-sm">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <label className="text-xs font-semibold uppercase tracking-wider text-foreground flex items-center gap-1.5">
+                      <span>Colour Variants & Variant Stock</span>
+                    </label>
+                    <p className="text-[11px] text-muted-foreground">
+                      Add multiple colours (Rani Pink, Teal Blue, Bottle Green, etc.) with custom price & stock
+                    </p>
+                  </div>
+                  <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-primary/10 text-primary">
+                    {prodVariants.length} {prodVariants.length === 1 ? "variant" : "variants"}
+                  </span>
+                </div>
+
+                {/* Variant Quick-Add Fields */}
+                <div className="grid grid-cols-1 sm:grid-cols-4 gap-2.5 p-3 bg-card border border-border rounded-xs">
+                  <div className="space-y-1">
+                    <label className="text-[11px] font-medium text-foreground">Colour Name</label>
+                    <Input
+                      value={variantColourInput}
+                      onChange={(e) => setVariantColourInput(e.target.value)}
+                      placeholder="e.g. Rani Pink"
+                      className="h-8 text-xs rounded-none"
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-[11px] font-medium text-foreground">Swatch Colour</label>
+                    <div className="flex items-center gap-1.5">
+                      <input
+                        type="color"
+                        value={variantHexInput}
+                        onChange={(e) => setVariantHexInput(e.target.value)}
+                        className="size-8 p-0 border border-border rounded cursor-pointer shrink-0"
+                        title="Pick swatch colour"
+                      />
+                      <Input
+                        value={variantHexInput}
+                        onChange={(e) => setVariantHexInput(e.target.value)}
+                        className="h-8 text-xs font-mono rounded-none uppercase"
+                        placeholder="#D81B60"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-[11px] font-medium text-foreground">Price Override (₹)</label>
+                    <Input
+                      type="number"
+                      value={variantPriceInput}
+                      onChange={(e) => setVariantPriceInput(e.target.value)}
+                      placeholder={prodPrice || "Default"}
+                      className="h-8 text-xs rounded-none tabular-nums"
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-[11px] font-medium text-foreground">Stock Qty</label>
+                    <div className="flex items-center gap-1">
+                      <Input
+                        type="number"
+                        min="0"
+                        value={variantStockInput}
+                        onChange={(e) => setVariantStockInput(Math.max(0, parseInt(e.target.value || "0", 10)).toString())}
+                        placeholder="10"
+                        className="h-8 text-xs rounded-none tabular-nums"
+                      />
+                      <Button
+                        type="button"
+                        onClick={handleAddColourVariant}
+                        size="sm"
+                        variant="editorial"
+                        className="h-8 text-xs px-2.5 shrink-0"
+                      >
+                        <Plus className="size-3.5 mr-1" /> Add
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Configured Variants Table */}
+                {prodVariants.length > 0 ? (
+                  <div className="border border-border rounded-xs overflow-hidden bg-card">
+                    <div className="divide-y divide-border/60">
+                      {prodVariants.map((v, vIdx) => (
+                        <div key={vIdx} className="flex items-center justify-between p-2.5 text-xs hover:bg-muted/30">
+                          <div className="flex items-center gap-2.5">
+                            <span
+                              className="size-4 rounded-full border border-black/20 shadow-2xs"
+                              style={{ backgroundColor: v.colourHex || "#9F160A" }}
+                            />
+                            <span className="font-semibold text-foreground">{v.colour}</span>
+                            <span className="text-[11px] text-muted-foreground font-mono">
+                              {v.colourHex}
+                            </span>
+                          </div>
+
+                          <div className="flex items-center gap-4">
+                            <span className="text-[11px] text-muted-foreground">
+                              Price: <span className="font-semibold text-foreground">{v.price ? `₹${v.price}` : "Default"}</span>
+                            </span>
+                            <span className="text-[11px] text-muted-foreground">
+                              Stock: <span className="font-semibold text-foreground">{v.stock ?? 10} pcs</span>
+                            </span>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              className="h-6 w-6 p-0 text-destructive hover:bg-destructive/10 cursor-pointer"
+                              onClick={() => handleRemoveColourVariant(v.colour)}
+                              title="Remove colour variant"
+                            >
+                              <Trash2 className="size-3.5" />
+                            </Button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ) : (
+                  <p className="text-[11px] text-muted-foreground italic">
+                    No extra colour variants added yet. Product will use the primary colour above ({prodColour || "Custom"}).
+                  </p>
+                )}
+              </div>
+
+              {/* 3. Product Gallery & Multi-Angle Photos */}
               <div className="space-y-3 p-3.5 bg-secondary/15 border border-border rounded-sm">
                 <input
                   type="file"
@@ -3954,92 +4202,108 @@ function AdminDashboardPage() {
                   className="hidden"
                 />
 
-                <div className="flex items-center justify-between">
-                  <label className="text-xs font-semibold uppercase tracking-wider text-foreground flex items-center gap-1.5">
-                    <ImageIcon className="size-3.5 text-primary" />
-                    <span>Product Image *</span>
-                  </label>
-                  {prodImage && (
-                    <button
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                  <div>
+                    <label className="text-xs font-semibold uppercase tracking-wider text-foreground flex items-center gap-1.5">
+                      <ImageIcon className="size-3.5 text-primary" />
+                      <span>Product Gallery & Angles (Front, Back, Side, Close-up)</span>
+                    </label>
+                    <p className="text-[11px] text-muted-foreground">
+                      Upload multi-angle photos. First image is used as the primary cover.
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Button
                       type="button"
-                      onClick={() => {
-                        setProdImage("");
-                        setImageUploadStatus("");
-                      }}
-                      className="text-[11px] font-medium text-destructive hover:underline flex items-center gap-1 cursor-pointer"
+                      variant="editorial"
+                      size="sm"
+                      className="h-8 text-xs flex items-center gap-1.5 cursor-pointer"
+                      onClick={() => fileInputRef.current?.click()}
+                      disabled={isUploadingImage}
                     >
-                      <Trash2 className="size-3" />
-                      <span>Remove Photo</span>
-                    </button>
-                  )}
+                      <Upload className="size-3.5" />
+                      <span>{isUploadingImage ? "Optimizing…" : "Upload Photo"}</span>
+                    </Button>
+                  </div>
                 </div>
 
-                {/* Direct Upload Box or Current Image Preview */}
-                {prodImage ? (
-                  <div className="flex flex-col sm:flex-row items-center gap-3.5 p-3 bg-card border border-border rounded-xs shadow-xs">
-                    <div className="relative w-20 h-24 bg-muted border border-border shrink-0 overflow-hidden rounded-xs group">
-                      <img
-                        src={prodImage}
-                        alt="Product Preview"
-                        className="w-full h-full object-cover"
-                        onError={(e) => {
-                          (e.currentTarget as HTMLImageElement).src = "/assets/burgundy-silk.jpg";
-                        }}
-                      />
-                      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                        <Button
-                          type="button"
-                          variant="secondary"
-                          size="sm"
-                          className="h-6 text-[10px] px-2"
-                          onClick={() => fileInputRef.current?.click()}
-                        >
-                          Change
-                        </Button>
-                      </div>
-                    </div>
+                {/* Gallery Cards Grid */}
+                {prodImages.length > 0 ? (
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 pt-1">
+                    {prodImages.map((imgUrl, imgIdx) => (
+                      <div
+                        key={imgIdx}
+                        className={`relative group bg-card border rounded-xs overflow-hidden shadow-2xs ${
+                          imgIdx === 0
+                            ? "border-[#D15608] ring-2 ring-[#D15608]/30"
+                            : "border-border"
+                        }`}
+                      >
+                        <div className="aspect-3/4 w-full bg-muted overflow-hidden relative">
+                          <img
+                            src={imgUrl}
+                            alt={`Product Angle ${imgIdx + 1}`}
+                            className="w-full h-full object-cover"
+                            onError={(e) => {
+                              (e.currentTarget as HTMLImageElement).src = "/placeholder.svg";
+                            }}
+                          />
 
-                    <div className="flex-1 space-y-1.5 text-left w-full min-w-0">
-                      <div className="flex items-center gap-1.5 text-xs font-semibold text-emerald-600 dark:text-emerald-400">
-                        <Check className="size-3.5" />
-                        <span>{prodImage.includes("cloudinary.com") ? "Cloudinary CDN Hosted" : "Photo Attached"}</span>
-                        {prodImage.includes("cloudinary.com") && (
-                          <span className="text-[10px] px-1.5 py-0.5 bg-sky-500/10 text-sky-600 border border-sky-500/20 rounded font-mono">
-                            padma_products
-                          </span>
-                        )}
-                      </div>
-                      <p className="text-[11px] text-muted-foreground truncate font-mono">
-                        {imageUploadStatus || prodImage}
-                      </p>
+                          {/* Cover Badge or Set As Cover button */}
+                          <div className="absolute top-1.5 left-1.5">
+                            {imgIdx === 0 ? (
+                              <span className="px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider bg-[#D15608] text-white rounded shadow-xs">
+                                Cover
+                              </span>
+                            ) : (
+                              <button
+                                type="button"
+                                onClick={() => handleSetPrimaryImage(imgIdx)}
+                                className="px-1.5 py-0.5 text-[9px] font-medium uppercase tracking-wider bg-black/70 hover:bg-black text-white rounded opacity-80 hover:opacity-100 transition-opacity cursor-pointer"
+                              >
+                                Set Cover
+                              </button>
+                            )}
+                          </div>
 
-                      <div className="flex flex-wrap items-center gap-2 pt-1">
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          className="h-7 text-xs font-medium cursor-pointer flex items-center gap-1"
-                          onClick={() => fileInputRef.current?.click()}
-                          disabled={isUploadingImage}
-                        >
-                          <Upload className="size-3 text-primary" />
-                          <span>{isUploadingImage ? "Optimizing…" : "Upload Different Image"}</span>
-                        </Button>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          className="h-7 text-xs text-destructive hover:bg-destructive/10 hover:text-destructive flex items-center gap-1 cursor-pointer"
-                          onClick={() => {
-                            setProdImage("");
-                            setImageUploadStatus("");
-                          }}
-                        >
-                          <Trash2 className="size-3" />
-                          <span>Remove</span>
-                        </Button>
+                          {/* Remove photo */}
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveGalleryImage(imgIdx)}
+                            className="absolute top-1.5 right-1.5 size-6 rounded bg-black/70 hover:bg-destructive text-white flex items-center justify-center opacity-80 hover:opacity-100 transition-opacity cursor-pointer"
+                            title="Remove photo"
+                          >
+                            <Trash2 className="size-3" />
+                          </button>
+
+                          {/* Rearrange order controls */}
+                          <div className="absolute bottom-1.5 inset-x-1.5 flex justify-between items-center opacity-80 group-hover:opacity-100 transition-opacity">
+                            <button
+                              type="button"
+                              disabled={imgIdx === 0}
+                              onClick={() => handleMoveImage(imgIdx, imgIdx - 1)}
+                              className="size-6 rounded bg-black/70 hover:bg-black text-white flex items-center justify-center disabled:opacity-20 cursor-pointer"
+                              title="Move photo left"
+                            >
+                              <ChevronLeft className="size-3.5" />
+                            </button>
+                            <button
+                              type="button"
+                              disabled={imgIdx === prodImages.length - 1}
+                              onClick={() => handleMoveImage(imgIdx, imgIdx + 1)}
+                              className="size-6 rounded bg-black/70 hover:bg-black text-white flex items-center justify-center disabled:opacity-20 cursor-pointer"
+                              title="Move photo right"
+                            >
+                              <ChevronRight className="size-3.5" />
+                            </button>
+                          </div>
+                        </div>
+
+                        <div className="p-1 text-center bg-card text-[10px] text-muted-foreground truncate">
+                          Photo {imgIdx + 1} {imgIdx === 0 ? "(Primary)" : ""}
+                        </div>
                       </div>
-                    </div>
+                    ))}
                   </div>
                 ) : (
                   <div
@@ -4051,40 +4315,33 @@ function AdminDashboardPage() {
                     </div>
                     <div>
                       <p className="text-xs font-semibold text-foreground">
-                        Click here to Upload Dress / Fabric Photo Directly
+                        Click here to Upload Multi-Angle Photos Directly
                       </p>
                       <p className="text-[11px] text-muted-foreground mt-0.5">
-                        Select any photo from your computer or phone (JPG, PNG, WebP)
+                        Add front view, back view, side angle, or close-up fabric detail shots (JPG, PNG, WebP)
                       </p>
                     </div>
-                    <Button
-                      type="button"
-                      variant="editorial"
-                      size="sm"
-                      className="h-8 text-xs uppercase tracking-wider font-semibold pointer-events-none mt-1"
-                    >
-                      <Upload className="size-3.5 mr-1.5" /> Select Image from Device
-                    </Button>
                   </div>
                 )}
 
-                {/* Optional URL input toggle */}
-                <details className="text-xs text-muted-foreground group">
-                  <summary className="cursor-pointer hover:text-foreground font-medium flex items-center gap-1 py-1">
-                    <span>Or enter image URL path manually</span>
-                  </summary>
-                  <div className="mt-1.5 space-y-1">
-                    <Input
-                      value={prodImage}
-                      onChange={(e) => {
-                        setProdImage(e.target.value);
-                        setImageUploadStatus("");
-                      }}
-                      placeholder="e.g. /assets/burgundy-silk.jpg or https://..."
-                      className="rounded-none text-xs h-8 font-sans"
-                    />
-                  </div>
-                </details>
+                {/* Add Photo by URL */}
+                <div className="flex items-center gap-2 pt-1">
+                  <Input
+                    value={manualImageInput}
+                    onChange={(e) => setManualImageInput(e.target.value)}
+                    placeholder="Or enter image URL path (e.g. /assets/fabric-hero.jpg or https://...)"
+                    className="h-8 text-xs rounded-none font-sans"
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="h-8 text-xs shrink-0 cursor-pointer"
+                    onClick={handleAddImageFromUrl}
+                  >
+                    <Plus className="size-3 mr-1" /> Add URL
+                  </Button>
+                </div>
               </div>
 
               <div className="space-y-1.5">

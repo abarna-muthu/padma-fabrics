@@ -600,6 +600,15 @@ async function runMigrations(pool: mysql.Pool) {
       await pool.query("ALTER TABLE products MODIFY COLUMN image_url LONGTEXT").catch(() => {});
       await pool.query("ALTER TABLE product_images MODIFY COLUMN image_url LONGTEXT").catch(() => {});
 
+      // Safely ensure variant and gallery columns exist in TiDB / MySQL
+      await pool.query("ALTER TABLE products ADD COLUMN variants JSON").catch(() => {});
+      await pool.query("ALTER TABLE products ADD COLUMN images JSON").catch(() => {});
+      await pool.query("ALTER TABLE product_images ADD COLUMN colour VARCHAR(100)").catch(() => {});
+      await pool.query("ALTER TABLE order_items ADD COLUMN colour VARCHAR(100)").catch(() => {});
+      await pool.query("ALTER TABLE order_items ADD COLUMN image_url TEXT").catch(() => {});
+      await pool.query("ALTER TABLE cart_items ADD COLUMN colour VARCHAR(100)").catch(() => {});
+      await pool.query("ALTER TABLE cart_items ADD COLUMN image_url TEXT").catch(() => {});
+
       console.log("[Database] Schema migrations applied successfully.");
 
       // Check if admin user needs initial seeding
@@ -760,7 +769,7 @@ function executeMemoryCommand(sql: string, params: any[] = []): any {
   // Product insert
   if (normalized.startsWith("insert into products")) {
     // id, sku, name, slug, category_id, colour, price, original_price, unit, stock_quantity, low_stock_threshold, badge, description, image_url, is_active, is_featured, sizes
-    const newP = {
+    const newP: any = {
       id: params[0],
       sku: params[1],
       name: params[2],
@@ -778,6 +787,8 @@ function executeMemoryCommand(sql: string, params: any[] = []): any {
       is_active: params[14] !== undefined ? params[14] : 1,
       is_featured: params[15] !== undefined ? params[15] : 0,
       sizes: typeof params[16] === "string" ? params[16] : JSON.stringify(params[16] || []),
+      variants: params[17] !== undefined ? (typeof params[17] === "string" ? params[17] : JSON.stringify(params[17])) : JSON.stringify([]),
+      images: params[18] !== undefined ? (typeof params[18] === "string" ? params[18] : JSON.stringify(params[18])) : JSON.stringify([]),
       created_at: new Date().toISOString(),
     };
     memoryDb.products = [newP, ...memoryDb.products.filter((p) => p.id !== newP.id)];
@@ -928,7 +939,7 @@ function executeMemoryCommand(sql: string, params: any[] = []): any {
 
   // Order items insert
   if (normalized.startsWith("insert into order_items")) {
-    const item = {
+    const item: any = {
       id: params[0],
       order_id: params[1],
       product_id: params[2],
@@ -938,9 +949,13 @@ function executeMemoryCommand(sql: string, params: any[] = []): any {
       quantity: Number(params[6]),
       unit: params[7],
       size: params[8],
-      total_price: Number(params[9]),
+      total_price: Number(params[params.length - 1]),
       created_at: new Date().toISOString(),
     };
+    if (params.length >= 12) {
+      item.colour = params[9];
+      item.image_url = params[10];
+    }
     memoryDb.order_items.push(item);
     return { insertId: item.id, affectedRows: 1 };
   }

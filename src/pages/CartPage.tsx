@@ -48,7 +48,15 @@ export function CartPage() {
 
   // WhatsApp order text
   const whatsappItemsText = cart
-    .map((item, i) => `${i + 1}. ${item.name} (${item.size || "Standard"}) x${item.quantity} - ${formatPrice(item.price * item.quantity)}`)
+    .map((item, i) => {
+      const details = [
+        item.colour ? `Colour: ${item.colour}` : "",
+        item.size ? `Size: ${item.size}` : "",
+      ]
+        .filter(Boolean)
+        .join(", ");
+      return `${i + 1}. ${item.name}${details ? ` (${details})` : ""} x${item.quantity} - ${formatPrice(item.price * item.quantity)}`;
+    })
     .join("\n");
   const whatsappUrl = `https://wa.me/919940135700?text=${encodeURIComponent(
     `Hello Padmanabha Fabrics! I want to order these items from my shopping bag:\n\n${whatsappItemsText}\n\nTotal: ${formatPrice(finalTotal)}\nPlease confirm availability and dispatch!`,
@@ -147,7 +155,12 @@ export function CartPage() {
                   <h4 className="font-semibold text-sm sm:text-base text-[#0E0E0E] dark:text-[#FAF6EE] truncate mt-0.5">
                     {item.name}
                   </h4>
-                  <div className="flex items-center gap-2 mt-1">
+                  <div className="flex flex-wrap items-center gap-1.5 mt-1.5">
+                    {item.colour && (
+                      <span className="px-2 py-0.5 rounded text-[11px] font-medium bg-[#9F160A]/10 text-[#9F160A] dark:text-[#EDBC3D] border border-[#9F160A]/20">
+                        Colour: {item.colour}
+                      </span>
+                    )}
                     <span className="px-2 py-0.5 rounded text-[11px] font-medium bg-[#FAF6EE] dark:bg-white/10 text-[#5C5549] dark:text-[#FAF6EE] border border-[#E5DAC4] dark:border-white/10">
                       Size: {item.size || "Standard"}
                     </span>

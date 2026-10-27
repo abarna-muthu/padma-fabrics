@@ -32,25 +32,44 @@ export const collections = [
   { name: "Combo Dresses", text: "Special curated sets", image: kids },
 ] as const;
 
+export type ProductVariant = {
+  id?: string;
+  colour: string;
+  colourHex?: string;
+  price?: number;
+  originalPrice?: number;
+  stock?: number;
+  sizes?: string[];
+  sizeStock?: Record<string, number>;
+  images?: string[];
+  imageUrl?: string;
+  sku?: string;
+};
+
 export type Item = {
   id: string;
   name: string;
   category: string;
   colour: string;
   price: number;
+  originalPrice?: number;
   image: string;
+  images?: string[];
+  variants?: ProductVariant[];
   badge: string;
   description: string;
   unit: string;
   sizes?: readonly string[];
   stock: number;
+  sizeStock?: Record<string, number>;
   status: "active" | "inactive" | "archived";
   isActive?: boolean;
   sku?: string;
   updatedAt?: string;
 };
 
-const adult = ["S", "M", "L", "XL", "XXL"] as const;
+export const CLOTHING_SIZES = ["S", "M", "L", "XL", "2XL", "3XL", "4XL", "5XL", "6XL"] as const;
+const adult = CLOTHING_SIZES;
 const child = ["2-3Y", "4-5Y", "6-7Y", "8-9Y", "10-12Y"] as const;
 
 const realCatalogProducts: Item[] = (fallbackProductsRaw as any[]).map((p) => ({
@@ -78,6 +97,20 @@ const realCatalogProducts: Item[] = (fallbackProductsRaw as any[]).map((p) => ({
           }
         })()
       : ["S", "M", "L", "XL"],
+  images: Array.isArray(p.images)
+    ? p.images
+    : (p.imageUrl || p.image_url || p.image ? [p.imageUrl || p.image_url || p.image] : []),
+  variants: Array.isArray(p.variants)
+    ? p.variants
+    : typeof p.variants === "string"
+      ? (() => {
+          try {
+            return JSON.parse(p.variants);
+          } catch {
+            return [];
+          }
+        })()
+      : [],
   isActive: p.isActive !== false,
 }));
 
@@ -92,6 +125,9 @@ export type OrderItem = {
   quantity: number;
   unit: string;
   price: number;
+  colour?: string;
+  size?: string;
+  image?: string;
 };
 
 export type Order = {

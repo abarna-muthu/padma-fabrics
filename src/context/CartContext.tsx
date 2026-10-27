@@ -4,7 +4,7 @@ import { toast } from "sonner";
 
 export interface CartItem {
   id: string; // product ID
-  cartItemId: string; // unique item id (productId + size)
+  cartItemId: string; // unique item id (productId + size + colour)
   name: string;
   price: number;
   originalPrice?: number | undefined;
@@ -12,6 +12,7 @@ export interface CartItem {
   category?: string | undefined;
   fabric?: string | undefined;
   size?: string | undefined;
+  colour?: string | undefined;
   quantity: number;
 }
 
@@ -21,7 +22,14 @@ interface CartContextType {
   subtotal: number;
   isCartOpen: boolean;
   setIsCartOpen: (open: boolean) => void;
-  addToCart: (product: Product | any, size?: string, quantity?: number) => void;
+  addToCart: (
+    product: Product | any,
+    size?: string,
+    quantity?: number,
+    colour?: string,
+    customImage?: string,
+    customPrice?: number,
+  ) => void;
   removeFromCart: (cartItemId: string) => void;
   updateQuantity: (cartItemId: string, delta: number) => void;
   clearCart: () => void;
@@ -60,9 +68,20 @@ export function CartProvider({ children }: { children: ReactNode }) {
     }
   }, [cart]);
 
-  const addToCart = (product: Product | any, size: string = "Standard", quantity: number = 1) => {
+  const addToCart = (
+    product: Product | any,
+    size: string = "Standard",
+    quantity: number = 1,
+    colour?: string,
+    customImage?: string,
+    customPrice?: number,
+  ) => {
     if (!product || !product.id) return;
-    const cartItemId = `${product.id}-${size}`;
+    const chosenSize = size || "Standard";
+    const chosenColour = colour || product.colour || "";
+    const cartItemId = `${product.id}-${chosenSize}-${chosenColour || "default"}`;
+    const itemPrice = customPrice !== undefined && Number(customPrice) > 0 ? Number(customPrice) : (Number(product.price) || 0);
+    const itemImage = customImage || product.image || "/placeholder.svg";
 
     setCart((prev) => {
       const existingIndex = prev.findIndex((item) => item.cartItemId === cartItemId);
@@ -80,19 +99,21 @@ export function CartProvider({ children }: { children: ReactNode }) {
         id: String(product.id),
         cartItemId,
         name: product.name,
-        price: Number(product.price) || 0,
+        price: itemPrice,
         originalPrice: product.originalPrice ? Number(product.originalPrice) : undefined,
-        image: product.image || "/placeholder.svg",
+        image: itemImage,
         category: product.category,
         fabric: product.fabric,
-        size,
+        size: chosenSize,
+        colour: chosenColour,
         quantity,
       };
 
       return [...prev, newItem];
     });
 
-    toast.success(`Added "${product.name}" (${size}) to your bag`);
+    const variantLabel = [chosenColour, chosenSize && chosenSize !== "Standard" ? `Size: ${chosenSize}` : ""].filter(Boolean).join(" - ");
+    toast.success(`Added "${product.name}"${variantLabel ? ` (${variantLabel})` : ""} to your bag`);
   };
 
   const removeFromCart = (cartItemId: string) => {

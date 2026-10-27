@@ -86,6 +86,7 @@ interface StoreContextType {
       productId: string;
       quantity: number;
       size?: string;
+      colour?: string;
       price?: number;
       name?: string;
       image?: string;
@@ -195,12 +196,22 @@ export function normalizeProduct(p: any): Product {
 
   const isActive = p.isActive !== false && p.is_active !== 0 && p.status !== "inactive";
 
+  const images = Array.isArray(p.images) && p.images.length > 0
+    ? p.images
+    : (typeof p.images === "string" ? (() => { try { return JSON.parse(p.images); } catch { return []; } })() : (img ? [img] : []));
+
+  const variants = Array.isArray(p.variants)
+    ? p.variants
+    : (typeof p.variants === "string" ? (() => { try { return JSON.parse(p.variants); } catch { return []; } })() : []);
+
   return {
     ...p,
     id: String(p.id),
     category: cat,
     image: img || "/placeholder.svg",
     imageUrl: img || "/placeholder.svg",
+    images,
+    variants,
     description: desc || "",
     isActive,
     status: isActive ? "active" : "inactive",
@@ -1059,6 +1070,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       productId: string;
       quantity: number;
       size?: string;
+      colour?: string;
       price?: number;
       name?: string;
       image?: string;
@@ -1067,7 +1079,15 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   }) => {
     const rawItems =
       details.items && details.items.length > 0
-        ? details.items.map((i) => ({ productId: i.productId, quantity: i.quantity, size: i.size }))
+        ? details.items.map((i) => ({
+            productId: i.productId,
+            quantity: i.quantity,
+            size: i.size,
+            colour: i.colour,
+            image: i.image,
+            price: i.price,
+            name: i.name,
+          }))
         : bag.map((b) => ({ productId: b.id, quantity: b.quantity }));
 
     if (rawItems.length === 0) {
@@ -1117,6 +1137,9 @@ export function StoreProvider({ children }: { children: ReactNode }) {
                     price: unitPrice,
                     unitPrice: unitPrice,
                     quantity: it.quantity,
+                    size: it.size,
+                    colour: it.colour,
+                    image: it.image || prod?.image,
                     unit: prod?.unit || "piece",
                     totalPrice: unitPrice * it.quantity,
                   };
