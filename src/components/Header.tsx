@@ -118,32 +118,32 @@ export function Header() {
               <Link
                 to="/"
                 activeOptions={{ exact: true }}
-                activeProps={{ className: "text-[#D15608] font-semibold" }}
-                className="hover:text-[#D15608] transition-colors py-2"
+                activeProps={{ className: "text-[#D15608] font-semibold after:!scale-x-100 after:!opacity-100" }}
+                className="relative py-2 hover:text-[#D15608] transition-colors after:content-[''] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-[2.5px] after:bg-[#D15608] after:rounded-full after:scale-x-0 after:opacity-0 hover:after:scale-x-75 hover:after:opacity-60 after:transition-all after:duration-200"
               >
                 Home
               </Link>
 
               <Link
                 to="/shop"
-                activeProps={{ className: "text-[#D15608] font-semibold" }}
-                className="hover:text-[#D15608] transition-colors py-2"
+                activeProps={{ className: "text-[#D15608] font-semibold after:!scale-x-100 after:!opacity-100" }}
+                className="relative py-2 hover:text-[#D15608] transition-colors after:content-[''] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-[2.5px] after:bg-[#D15608] after:rounded-full after:scale-x-0 after:opacity-0 hover:after:scale-x-75 hover:after:opacity-60 after:transition-all after:duration-200"
               >
                 Shop
               </Link>
 
               <Link
                 to="/about"
-                activeProps={{ className: "text-[#D15608] font-semibold" }}
-                className="hover:text-[#D15608] transition-colors py-2"
+                activeProps={{ className: "text-[#D15608] font-semibold after:!scale-x-100 after:!opacity-100" }}
+                className="relative py-2 hover:text-[#D15608] transition-colors after:content-[''] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-[2.5px] after:bg-[#D15608] after:rounded-full after:scale-x-0 after:opacity-0 hover:after:scale-x-75 hover:after:opacity-60 after:transition-all after:duration-200"
               >
                 About
               </Link>
 
               <Link
                 to="/contact"
-                activeProps={{ className: "text-[#D15608] font-semibold" }}
-                className="hover:text-[#D15608] transition-colors py-2"
+                activeProps={{ className: "text-[#D15608] font-semibold after:!scale-x-100 after:!opacity-100" }}
+                className="relative py-2 hover:text-[#D15608] transition-colors after:content-[''] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-[2.5px] after:bg-[#D15608] after:rounded-full after:scale-x-0 after:opacity-0 hover:after:scale-x-75 hover:after:opacity-60 after:transition-all after:duration-200"
               >
                 Contact
               </Link>
@@ -366,15 +366,18 @@ export function Header() {
               <div className="space-y-1">
                 <Link
                   to="/"
+                  activeOptions={{ exact: true }}
+                  activeProps={{ className: "text-[#D15608] font-semibold bg-[#D15608]/5 border-l-2 border-[#D15608]" }}
                   onClick={() => setIsMobileMenuOpen(false)}
-                  className="flex items-center justify-between py-2 px-2.5 rounded-lg hover:bg-black/5 hover:text-[#D15608] transition-colors"
+                  className="flex items-center justify-between py-2 px-2.5 rounded-lg hover:bg-black/5 hover:text-[#D15608] transition-colors border-l-2 border-transparent"
                 >
                   <span>Home</span>
                 </Link>
                 <Link
                   to="/shop"
+                  activeProps={{ className: "text-[#D15608] font-semibold bg-[#D15608]/5 border-l-2 border-[#D15608]" }}
                   onClick={() => setIsMobileMenuOpen(false)}
-                  className="flex items-center justify-between py-2 px-2.5 rounded-lg hover:bg-black/5 hover:text-[#D15608] transition-colors"
+                  className="flex items-center justify-between py-2 px-2.5 rounded-lg hover:bg-black/5 hover:text-[#D15608] transition-colors border-l-2 border-transparent"
                 >
                   <span>Shop All Collections</span>
                 </Link>
@@ -396,15 +399,17 @@ export function Header() {
 
                 <Link
                   to="/about"
+                  activeProps={{ className: "text-[#D15608] font-semibold bg-[#D15608]/5 border-l-2 border-[#D15608]" }}
                   onClick={() => setIsMobileMenuOpen(false)}
-                  className="flex items-center justify-between py-2 px-2.5 rounded-lg hover:bg-black/5 hover:text-[#D15608] transition-colors"
+                  className="flex items-center justify-between py-2 px-2.5 rounded-lg hover:bg-black/5 hover:text-[#D15608] transition-colors border-l-2 border-transparent"
                 >
                   <span>About Us</span>
                 </Link>
                 <Link
                   to="/contact"
+                  activeProps={{ className: "text-[#D15608] font-semibold bg-[#D15608]/5 border-l-2 border-[#D15608]" }}
                   onClick={() => setIsMobileMenuOpen(false)}
-                  className="flex items-center justify-between py-2 px-2.5 rounded-lg hover:bg-black/5 hover:text-[#D15608] transition-colors"
+                  className="flex items-center justify-between py-2 px-2.5 rounded-lg hover:bg-black/5 hover:text-[#D15608] transition-colors border-l-2 border-transparent"
                 >
                   <span>Contact</span>
                 </Link>
