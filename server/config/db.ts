@@ -502,7 +502,8 @@ export async function initDatabase(): Promise<DatabaseAdapter> {
       : undefined;
 
   // Support direct connection string (e.g. copied from TiDB Cloud Connection String tab)
-  const connectionUrl = process.env["DATABASE_URL"] || process.env["TIDB_URL"];
+  const rawUrl = (process.env["DATABASE_URL"] || process.env["TIDB_URL"] || "").trim();
+  const connectionUrl = rawUrl.replace(/^["']|["']$/g, "");
   if (connectionUrl) {
     try {
       const cleanUrl = connectionUrl.replace(/^mysql:\/\//, "http://");
