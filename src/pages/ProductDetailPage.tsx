@@ -209,6 +209,21 @@ export function ProductDetailPage({ id }: ProductDetailPageProps) {
   const [selectedSize, setSelectedSize] = useState<string>("");
   const [sizeError, setSizeError] = useState<boolean>(false);
   const [quantity, setQuantity] = useState<number>(1);
+  const [isSizeGuideOpen, setIsSizeGuideOpen] = useState<boolean>(false);
+  const [deliveryPin, setDeliveryPin] = useState<string>("");
+  const [pinCheckStatus, setPinCheckStatus] = useState<string | null>(null);
+
+  const handleCheckDeliveryPin = () => {
+    if (/^\d{6}$/.test(deliveryPin)) {
+      if (deliveryPin.startsWith("6")) {
+        setPinCheckStatus("Express 24-48 hr Delivery available in your zone | Free Shipping");
+      } else {
+        setPinCheckStatus("Standard Delivery available (2 - 4 business days) | Free Shipping");
+      }
+    } else {
+      setPinCheckStatus("Please enter a valid 6-digit Indian PIN code");
+    }
+  };
 
   if (!product) {
     return (
@@ -604,7 +619,13 @@ export function ProductDetailPage({ id }: ProductDetailPageProps) {
                     </span>
                   )}
                 </div>
-                <span className="text-[11px] text-[#D15608]">Sizing: S to 6XL</span>
+                <button
+                  type="button"
+                  onClick={() => setIsSizeGuideOpen(true)}
+                  className="text-[11px] font-bold uppercase tracking-wider text-[#9F160A] hover:underline cursor-pointer"
+                >
+                  Size Guide
+                </button>
               </div>
 
               {sizeError && (
@@ -640,6 +661,36 @@ export function ProductDetailPage({ id }: ProductDetailPageProps) {
                   );
                 })}
               </div>
+            </div>
+
+            {/* Pincode Delivery Checker */}
+            <div className="mt-5 p-3.5 rounded-xl bg-[#FAF6EE] dark:bg-black/20 border border-[#E5DAC4] dark:border-white/10 space-y-2">
+              <span className="text-[11px] font-bold uppercase tracking-wider text-[#0E0E0E] dark:text-[#FAF6EE] flex items-center gap-1.5">
+                <Truck className="size-3.5 text-[#9F160A]" />
+                <span>Check Delivery & Cash on Delivery Availability</span>
+              </span>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  maxLength={6}
+                  value={deliveryPin}
+                  onChange={(e) => setDeliveryPin(e.target.value.replace(/\D/g, ""))}
+                  placeholder="Enter 6-digit Pincode"
+                  className="bg-white dark:bg-black/40 border border-[#E5DAC4] dark:border-white/20 rounded-lg px-3 py-1.5 text-xs text-[#0E0E0E] dark:text-white font-mono tracking-wider focus:outline-none focus:border-[#9F160A] w-48"
+                />
+                <button
+                  type="button"
+                  onClick={handleCheckDeliveryPin}
+                  className="px-4 py-1.5 rounded-lg bg-[#9F160A] hover:bg-[#7D1107] text-white text-xs font-semibold uppercase tracking-wider transition-colors cursor-pointer"
+                >
+                  Check
+                </button>
+              </div>
+              {pinCheckStatus && (
+                <p className="text-[11px] font-medium text-emerald-700 dark:text-emerald-400">
+                  {pinCheckStatus}
+                </p>
+              )}
             </div>
 
             {/* Quantity */}
@@ -783,7 +834,96 @@ export function ProductDetailPage({ id }: ProductDetailPageProps) {
         </div>
       )}
 
-      {/* Sticky Mobile Bottom Purchase Bar */}
+      {/* Size Guide Modal */}
+      {isSizeGuideOpen && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in"
+          onClick={() => setIsSizeGuideOpen(false)}
+        >
+          <div
+            className="bg-white dark:bg-[#1E191A] rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-[#E5DAC4] dark:border-white/10 relative max-h-[90vh] overflow-y-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between pb-3 border-b border-[#E5DAC4] dark:border-white/10">
+              <div>
+                <h3 className="font-['Playfair_Display'] text-lg font-bold text-[#0E0E0E] dark:text-[#FAF6EE]">
+                  Size Guide & Measurements
+                </h3>
+                <p className="text-[11px] text-[#5C5549] dark:text-[#D4C3A3] mt-0.5">
+                  Standard Indian ethnic fit chart (in inches)
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsSizeGuideOpen(false)}
+                className="p-1 rounded-full text-[#5C5549] hover:bg-black/5 dark:hover:bg-white/10 cursor-pointer"
+                aria-label="Close size guide"
+              >
+                <X className="size-5" />
+              </button>
+            </div>
+
+            <div className="mt-4 overflow-x-auto">
+              <table className="w-full text-xs text-left">
+                <thead className="bg-[#FAF6EE] dark:bg-white/5 text-[#0E0E0E] dark:text-[#FAF6EE] uppercase font-bold text-[10px] tracking-wider">
+                  <tr>
+                    <th className="py-2.5 px-3">Size</th>
+                    <th className="py-2.5 px-3">Bust</th>
+                    <th className="py-2.5 px-3">Waist</th>
+                    <th className="py-2.5 px-3">Hip</th>
+                    <th className="py-2.5 px-3">Length</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-[#E5DAC4]/60 dark:divide-white/10 text-[#5C5549] dark:text-[#D4C3A3]">
+                  {[
+                    { sz: "XS", bust: '34"', waist: '28"', hip: '38"', len: '44"' },
+                    { sz: "S", bust: '36"', waist: '30"', hip: '40"', len: '44"' },
+                    { sz: "M", bust: '38"', waist: '32"', hip: '42"', len: '45"' },
+                    { sz: "L", bust: '40"', waist: '34"', hip: '44"', len: '45"' },
+                    { sz: "XL", bust: '42"', waist: '36"', hip: '46"', len: '46"' },
+                    { sz: "2XL", bust: '44"', waist: '38"', hip: '48"', len: '46"' },
+                    { sz: "3XL", bust: '46"', waist: '40"', hip: '50"', len: '46"' },
+                    { sz: "4XL", bust: '48"', waist: '42"', hip: '52"', len: '47"' },
+                    { sz: "5XL", bust: '50"', waist: '44"', hip: '54"', len: '47"' },
+                    { sz: "6XL", bust: '52"', waist: '46"', hip: '56"', len: '47"' },
+                  ].map((row) => (
+                    <tr
+                      key={row.sz}
+                      className={selectedSize === row.sz ? "bg-[#9F160A]/10 font-bold text-[#9F160A]" : "hover:bg-black/5 dark:hover:bg-white/5"}
+                    >
+                      <td className="py-2 px-3 font-semibold text-[#0E0E0E] dark:text-[#FAF6EE]">{row.sz}</td>
+                      <td className="py-2 px-3">{row.bust}</td>
+                      <td className="py-2 px-3">{row.waist}</td>
+                      <td className="py-2 px-3">{row.hip}</td>
+                      <td className="py-2 px-3">{row.len}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            <div className="mt-4 p-3 rounded-lg bg-[#FAF6EE] dark:bg-white/5 border border-[#E5DAC4] dark:border-white/10 text-[11px] text-[#5C5549] dark:text-[#D4C3A3] space-y-1">
+              <p className="font-semibold text-[#0E0E0E] dark:text-[#FAF6EE]">How to Measure:</p>
+              <p>• <strong>Bust:</strong> Measure around the fullest part of your chest.</p>
+              <p>• <strong>Waist:</strong> Measure around your natural waistline, keeping tape comfortable.</p>
+              <p>• <strong>Hips:</strong> Measure around the fullest part of your hips.</p>
+            </div>
+
+            <div className="mt-5 flex justify-end">
+              <button
+                type="button"
+                onClick={() => setIsSizeGuideOpen(false)}
+                className="px-5 py-2 rounded-lg bg-[#9F160A] hover:bg-[#7D1107] text-white text-xs font-semibold uppercase tracking-wider transition-colors cursor-pointer"
+              >
+                Got It
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="fixed bottom-0 inset-x-0 sm:hidden z-40 bg-white/95 dark:bg-[#1E191A]/95 backdrop-blur-md p-3 border-t border-[#E5DAC4] dark:border-white/10 shadow-[0_-4px_16px_rgba(0,0,0,0.08)] flex items-center gap-2.5">
         <button
           type="button"

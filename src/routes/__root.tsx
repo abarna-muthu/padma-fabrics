@@ -23,6 +23,7 @@ import { AuthProvider } from "../context/AuthContext";
 import { Header } from "../components/Header";
 import { Footer } from "../components/Footer";
 import { ShopSheet } from "../components/ShopSheet";
+import { MiniCartDrawer } from "../components/MiniCartDrawer";
 import { CheckoutModal } from "../components/CheckoutModal";
 import { CustomerPortalModal } from "../components/CustomerPortalModal";
 import { Toaster } from "@/components/ui/sonner";
@@ -195,6 +196,7 @@ function RootComponent() {
                         </div>
                         <Footer />
                         <ShopSheet />
+                        <MiniCartDrawer />
                         <GlobalCheckoutModal />
                         <CustomerPortalModal />
                       </div>
