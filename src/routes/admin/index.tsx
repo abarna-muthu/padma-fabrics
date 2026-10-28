@@ -57,7 +57,15 @@ import logo from "@/assets/padmanabha-logo.jpg";
 import storeImg from "@/assets/padmanabha-store.jpg";
 import { useAdminAuth } from "@/context/AdminAuthContext";
 import { useStore } from "@/context/StoreContext";
-import { useSiteContent } from "@/context/SiteContentContext";
+import {
+  useSiteContent,
+  DEFAULT_HERO_BANNERS,
+  DEFAULT_POPULAR_CATEGORIES,
+  DEFAULT_BESTSELLER_TABS,
+  type HeroBannerSlide,
+  type PopularCategoryItem,
+  type BestsellerCategoryTabItem,
+} from "@/context/SiteContentContext";
 import { ALL, categories, money, type Product, type ProductVariant, type Order } from "@/lib/catalog";
 import { computeOrderTracking } from "@/lib/orderTracking";
 import { OrderTrackingModal } from "@/components/OrderTrackingModal";
@@ -745,7 +753,12 @@ function AdminDashboardPage() {
     resetToDefaults,
   } = useSiteContent();
 
-  const [homeDraft, setHomeDraft] = useState(content.home);
+  const [homeDraft, setHomeDraft] = useState(() => ({
+    ...content.home,
+    heroBanners: content.home.heroBanners || DEFAULT_HERO_BANNERS,
+    popularCategories: content.home.popularCategories || DEFAULT_POPULAR_CATEGORIES,
+    bestsellerTabs: content.home.bestsellerTabs || DEFAULT_BESTSELLER_TABS,
+  }));
   const [aboutDraft, setAboutDraft] = useState(content.about);
   const [contactDraft, setContactDraft] = useState(content.contact);
   const [contentStatusMsg, setContentStatusMsg] = useState<{
@@ -753,8 +766,85 @@ function AdminDashboardPage() {
     text: string;
   } | null>(null);
 
+  const [isUploadingHomeMedia, setIsUploadingHomeMedia] = useState(false);
+
+  const handleUploadHomeMedia = async (
+    file: File | undefined,
+    folder: string,
+    onSuccess: (url: string) => void,
+  ) => {
+    if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      toast.error("Please select a valid image file (JPG, PNG, WebP).");
+      return;
+    }
+
+    setIsUploadingHomeMedia(true);
+    toast.info("Uploading image to Cloudinary...", { id: "home-upload" });
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const result = e.target?.result as string;
+      if (!result) {
+        setIsUploadingHomeMedia(false);
+        return;
+      }
+
+      const img = new Image();
+      img.onload = async () => {
+        try {
+          const canvas = document.createElement("canvas");
+          const maxDim = 1600;
+          let width = img.width;
+          let height = img.height;
+          if (width > maxDim || height > maxDim) {
+            if (width > height) {
+              height = Math.round((height * maxDim) / width);
+              width = maxDim;
+            } else {
+              width = Math.round((width * maxDim) / height);
+              height = maxDim;
+            }
+          }
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext("2d");
+          const base64Data = ctx
+            ? (ctx.drawImage(img, 0, 0, width, height), canvas.toDataURL("image/jpeg", 0.88))
+            : result;
+
+          const res = await productApi.uploadImage(base64Data, folder);
+          const cloudUrl =
+            res && res.success && (res.secure_url || res.url)
+              ? res.secure_url || res.url
+              : base64Data;
+
+          onSuccess(cloudUrl);
+          toast.success("Image uploaded to Cloudinary!", { id: "home-upload" });
+        } catch (err) {
+          console.warn("Upload error, using local data:", err);
+          onSuccess(result);
+          toast.success("Image updated (local fallback)!", { id: "home-upload" });
+        } finally {
+          setIsUploadingHomeMedia(false);
+        }
+      };
+      img.onerror = () => {
+        onSuccess(result);
+        setIsUploadingHomeMedia(false);
+      };
+      img.src = result;
+    };
+    reader.readAsDataURL(file);
+  };
+
   useEffect(() => {
-    setHomeDraft(content.home);
+    setHomeDraft({
+      ...content.home,
+      heroBanners: content.home.heroBanners || DEFAULT_HERO_BANNERS,
+      popularCategories: content.home.popularCategories || DEFAULT_POPULAR_CATEGORIES,
+      bestsellerTabs: content.home.bestsellerTabs || DEFAULT_BESTSELLER_TABS,
+    });
   }, [content.home]);
 
   useEffect(() => {
@@ -3562,6 +3652,365 @@ function AdminDashboardPage() {
                     onChange={(e) => setHomeDraft({ ...homeDraft, announcementText: e.target.value })}
                     className="text-xs h-9"
                   />
+                </div>
+              </div>
+
+              {/* Card: Hero Carousel Banners */}
+              <div className="bg-card border border-border p-5 space-y-4">
+                <div className="border-b border-border pb-2.5 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                  <div>
+                    <h3 className="font-medium text-sm text-foreground flex items-center gap-2">
+                      <ImageIcon className="size-4 text-primary" /> Hero Carousel Banner Slides
+                    </h3>
+                    <p className="text-[11px] text-muted-foreground">
+                      Upload and manage the full-width banners in the top carousel. You can add new promotional banners or replace existing slides.
+                    </p>
+                  </div>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    onClick={() => {
+                      const currentBanners = homeDraft.heroBanners || DEFAULT_HERO_BANNERS;
+                      const newBanner: HeroBannerSlide = {
+                        id: `banner-${Date.now()}`,
+                        image: "/hero-banner-1.jpg",
+                        alt: "Padmanabha Fabrics - New Collection Banner",
+                        href: "/shop",
+                      };
+                      setHomeDraft({
+                        ...homeDraft,
+                        heroBanners: [...currentBanners, newBanner],
+                      });
+                    }}
+                    className="text-xs h-8 gap-1.5 shrink-0"
+                  >
+                    <Plus className="size-3.5" />
+                    <span>Add Banner Slide</span>
+                  </Button>
+                </div>
+
+                <div className="space-y-3.5">
+                  {(homeDraft.heroBanners || DEFAULT_HERO_BANNERS).map((banner, index) => (
+                    <div
+                      key={banner.id || index}
+                      className="p-3.5 border border-border rounded-lg bg-background/50 flex flex-col sm:flex-row items-start sm:items-center gap-4"
+                    >
+                      <div className="relative w-full sm:w-44 aspect-[2/1] rounded overflow-hidden border border-border shrink-0 bg-muted/40">
+                        <img
+                          src={banner.image}
+                          alt={banner.alt}
+                          className="w-full h-full object-cover"
+                          onError={(e) => {
+                            (e.currentTarget as HTMLImageElement).src = "/placeholder.svg";
+                          }}
+                        />
+                      </div>
+
+                      <div className="flex-1 w-full grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
+                        <div className="space-y-1">
+                          <label className="font-medium text-[11px] text-muted-foreground">
+                            Banner Description / Alt Text
+                          </label>
+                          <Input
+                            value={banner.alt}
+                            onChange={(e) => {
+                              const updated = [...(homeDraft.heroBanners || DEFAULT_HERO_BANNERS)];
+                              updated[index] = { ...updated[index], alt: e.target.value };
+                              setHomeDraft({ ...homeDraft, heroBanners: updated });
+                            }}
+                            placeholder="Banner title or description"
+                            className="text-xs h-8"
+                          />
+                        </div>
+
+                        <div className="space-y-1">
+                          <label className="font-medium text-[11px] text-muted-foreground">
+                            Redirect Link on Click
+                          </label>
+                          <Input
+                            value={banner.href}
+                            onChange={(e) => {
+                              const updated = [...(homeDraft.heroBanners || DEFAULT_HERO_BANNERS)];
+                              updated[index] = { ...updated[index], href: e.target.value };
+                              setHomeDraft({ ...homeDraft, heroBanners: updated });
+                            }}
+                            placeholder="/shop or /shop?category=Saree"
+                            className="text-xs h-8"
+                          />
+                        </div>
+
+                        <div className="md:col-span-2 flex flex-wrap items-center gap-2 pt-1">
+                          <label className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded border border-border hover:bg-muted text-[11px] font-semibold cursor-pointer transition-colors shadow-2xs">
+                            <Upload className="size-3 text-primary" />
+                            <span>{isUploadingHomeMedia ? "Uploading..." : "Upload New Banner Photo"}</span>
+                            <input
+                              type="file"
+                              accept="image/*"
+                              className="hidden"
+                              disabled={isUploadingHomeMedia}
+                              onChange={(e) => {
+                                const file = e.target.files?.[0];
+                                if (file) {
+                                  handleUploadHomeMedia(file, "padma_banners", (url) => {
+                                    const updated = [...(homeDraft.heroBanners || DEFAULT_HERO_BANNERS)];
+                                    updated[index] = { ...updated[index], image: url };
+                                    setHomeDraft({ ...homeDraft, heroBanners: updated });
+                                  });
+                                }
+                              }}
+                            />
+                          </label>
+
+                          <span className="text-[10px] text-muted-foreground truncate max-w-[200px]" title={banner.image}>
+                            {banner.image}
+                          </span>
+
+                          {(homeDraft.heroBanners || DEFAULT_HERO_BANNERS).length > 1 && (
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => {
+                                const updated = (homeDraft.heroBanners || DEFAULT_HERO_BANNERS).filter((_, i) => i !== index);
+                                setHomeDraft({ ...homeDraft, heroBanners: updated });
+                              }}
+                              className="ml-auto text-rose-600 hover:text-rose-700 hover:bg-rose-50 h-7 text-xs px-2"
+                            >
+                              <Trash2 className="size-3 mr-1" />
+                              <span>Remove Slide</span>
+                            </Button>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Card: Popular Categories Section */}
+              <div className="bg-card border border-border p-5 space-y-4">
+                <div className="border-b border-border pb-2.5 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                  <div>
+                    <h3 className="font-medium text-sm text-foreground flex items-center gap-2">
+                      <Sparkles className="size-4 text-gold" /> Popular Categories (Home Section 6)
+                    </h3>
+                    <p className="text-[11px] text-muted-foreground">
+                      Change the category name and photo for each tile shown in the Popular Categories section.
+                    </p>
+                  </div>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    onClick={() => {
+                      const currentCats = homeDraft.popularCategories || DEFAULT_POPULAR_CATEGORIES;
+                      const newCat: PopularCategoryItem = {
+                        id: `cat-${Date.now()}`,
+                        title: "NEW CATEGORY",
+                        image: "https://images.unsplash.com/photo-1610030469983-98e550d6193c?auto=format&fit=crop&w=800&q=80",
+                        href: "/shop",
+                      };
+                      setHomeDraft({
+                        ...homeDraft,
+                        popularCategories: [...currentCats, newCat],
+                      });
+                    }}
+                    className="text-xs h-8 gap-1.5 shrink-0"
+                  >
+                    <Plus className="size-3.5" />
+                    <span>Add Category</span>
+                  </Button>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5">
+                  {(homeDraft.popularCategories || DEFAULT_POPULAR_CATEGORIES).map((cat, index) => (
+                    <div
+                      key={cat.id || index}
+                      className="p-3 border border-border rounded-lg bg-background/50 flex flex-col gap-2.5"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="size-16 rounded-md overflow-hidden border border-border shrink-0 bg-muted">
+                          <img
+                            src={cat.image}
+                            alt={cat.title}
+                            className="w-full h-full object-cover"
+                            onError={(e) => {
+                              (e.currentTarget as HTMLImageElement).src = "/placeholder.svg";
+                            }}
+                          />
+                        </div>
+                        <div className="flex-1 min-w-0 space-y-1">
+                          <label className="text-[10px] font-semibold text-muted-foreground uppercase">
+                            Category Name
+                          </label>
+                          <Input
+                            value={cat.title}
+                            onChange={(e) => {
+                              const updated = [...(homeDraft.popularCategories || DEFAULT_POPULAR_CATEGORIES)];
+                              const upper = e.target.value.toUpperCase();
+                              updated[index] = {
+                                ...updated[index],
+                                title: upper,
+                                href: `/shop?category=${encodeURIComponent(upper)}`,
+                              };
+                              setHomeDraft({ ...homeDraft, popularCategories: updated });
+                            }}
+                            placeholder="e.g. SAREE"
+                            className="text-xs h-8 font-bold"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="flex items-center justify-between gap-2 pt-1 border-t border-border/60">
+                        <label className="inline-flex items-center gap-1 px-2.5 py-1 rounded border border-border hover:bg-muted text-[11px] font-semibold cursor-pointer transition-colors shadow-2xs">
+                          <Upload className="size-3 text-primary" />
+                          <span>Change Photo</span>
+                          <input
+                            type="file"
+                            accept="image/*"
+                            className="hidden"
+                            disabled={isUploadingHomeMedia}
+                            onChange={(e) => {
+                              const file = e.target.files?.[0];
+                              if (file) {
+                                handleUploadHomeMedia(file, "padma_categories", (url) => {
+                                  const updated = [...(homeDraft.popularCategories || DEFAULT_POPULAR_CATEGORIES)];
+                                  updated[index] = { ...updated[index], image: url };
+                                  setHomeDraft({ ...homeDraft, popularCategories: updated });
+                                });
+                              }
+                            }}
+                          />
+                        </label>
+
+                        {(homeDraft.popularCategories || DEFAULT_POPULAR_CATEGORIES).length > 1 && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const updated = (homeDraft.popularCategories || DEFAULT_POPULAR_CATEGORIES).filter((_, i) => i !== index);
+                              setHomeDraft({ ...homeDraft, popularCategories: updated });
+                            }}
+                            className="text-rose-600 hover:text-rose-700 p-1 rounded hover:bg-rose-50 cursor-pointer"
+                            title="Delete Category"
+                          >
+                            <Trash2 className="size-3.5" />
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Card: Our Bestsellers Round Category Strip */}
+              <div className="bg-card border border-border p-5 space-y-4">
+                <div className="border-b border-border pb-2.5 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                  <div>
+                    <h3 className="font-medium text-sm text-foreground flex items-center gap-2">
+                      <Sparkles className="size-4 text-gold" /> Our Bestsellers Category Strip (Home Section 7)
+                    </h3>
+                    <p className="text-[11px] text-muted-foreground">
+                      Change the round circular thumbnail photo and label name for each category in the Bestseller bar.
+                    </p>
+                  </div>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    onClick={() => {
+                      const currentTabs = homeDraft.bestsellerTabs || DEFAULT_BESTSELLER_TABS;
+                      const newTab: BestsellerCategoryTabItem = {
+                        id: `tab-${Date.now()}`,
+                        label: "NEW CATEGORY",
+                        categoryKey: "New Category",
+                        image: "https://res.cloudinary.com/ugzb1wup/image/upload/v1792584958/padma_products/v9quby0cest8zrupfzqc.jpg",
+                      };
+                      setHomeDraft({
+                        ...homeDraft,
+                        bestsellerTabs: [...currentTabs, newTab],
+                      });
+                    }}
+                    className="text-xs h-8 gap-1.5 shrink-0"
+                  >
+                    <Plus className="size-3.5" />
+                    <span>Add Category Tab</span>
+                  </Button>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5">
+                  {(homeDraft.bestsellerTabs || DEFAULT_BESTSELLER_TABS).map((tab, index) => (
+                    <div
+                      key={tab.id || index}
+                      className="p-3 border border-border rounded-lg bg-background/50 flex flex-col gap-2.5"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="size-16 rounded-full overflow-hidden border-2 border-[#D0202B]/60 p-0.5 shrink-0 bg-muted">
+                          <img
+                            src={tab.image}
+                            alt={tab.label}
+                            className="w-full h-full object-cover rounded-full"
+                            onError={(e) => {
+                              (e.currentTarget as HTMLImageElement).src = "/placeholder.svg";
+                            }}
+                          />
+                        </div>
+                        <div className="flex-1 min-w-0 space-y-1">
+                          <label className="text-[10px] font-semibold text-muted-foreground uppercase">
+                            Tab Label Name
+                          </label>
+                          <Input
+                            value={tab.label}
+                            onChange={(e) => {
+                              const updated = [...(homeDraft.bestsellerTabs || DEFAULT_BESTSELLER_TABS)];
+                              const val = e.target.value.toUpperCase();
+                              updated[index] = { ...updated[index], label: val, categoryKey: val };
+                              setHomeDraft({ ...homeDraft, bestsellerTabs: updated });
+                            }}
+                            placeholder="e.g. CHUDITHAR TOP"
+                            className="text-xs h-8 font-bold"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="flex items-center justify-between gap-2 pt-1 border-t border-border/60">
+                        <label className="inline-flex items-center gap-1 px-2.5 py-1 rounded border border-border hover:bg-muted text-[11px] font-semibold cursor-pointer transition-colors shadow-2xs">
+                          <Upload className="size-3 text-primary" />
+                          <span>Change Photo</span>
+                          <input
+                            type="file"
+                            accept="image/*"
+                            className="hidden"
+                            disabled={isUploadingHomeMedia}
+                            onChange={(e) => {
+                              const file = e.target.files?.[0];
+                              if (file) {
+                                handleUploadHomeMedia(file, "padma_categories", (url) => {
+                                  const updated = [...(homeDraft.bestsellerTabs || DEFAULT_BESTSELLER_TABS)];
+                                  updated[index] = { ...updated[index], image: url };
+                                  setHomeDraft({ ...homeDraft, bestsellerTabs: updated });
+                                });
+                              }
+                            }}
+                          />
+                        </label>
+
+                        {(homeDraft.bestsellerTabs || DEFAULT_BESTSELLER_TABS).length > 1 && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const updated = (homeDraft.bestsellerTabs || DEFAULT_BESTSELLER_TABS).filter((_, i) => i !== index);
+                              setHomeDraft({ ...homeDraft, bestsellerTabs: updated });
+                            }}
+                            className="text-rose-600 hover:text-rose-700 p-1 rounded hover:bg-rose-50 cursor-pointer"
+                            title="Delete Tab"
+                          >
+                            <Trash2 className="size-3.5" />
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </div>
 

@@ -1,6 +1,8 @@
+import { useMemo } from "react";
 import { Link } from "@tanstack/react-router";
 import { SectionTitle } from "./SectionTitle";
 import { ImageSkeleton } from "./ImageSkeleton";
+import { useSiteContent } from "@/context/SiteContentContext";
 
 // Bundled high-res category imagery
 import sareeImg from "@/assets/silk-sarees-category.jpg";
@@ -75,18 +77,26 @@ const CATEGORIES: CategoryItem[] = [
 ];
 
 export function PopularCategories() {
+  const { content } = useSiteContent();
+  const categories = useMemo(() => {
+    if (content.home.popularCategories && content.home.popularCategories.length > 0) {
+      return content.home.popularCategories;
+    }
+    return CATEGORIES;
+  }, [content.home.popularCategories]);
+
   return (
     <section className="relative block w-full bg-white py-12 md:py-16 px-4 select-none clear-both overflow-hidden">
       <SectionTitle>POPULAR CATEGORIES</SectionTitle>
 
-      {/* Grid 3 columns x 3 rows (2 columns mobile with 9th tile spanning both columns) */}
+      {/* Grid 3 columns x 3 rows (2 columns mobile with last tile spanning both columns if odd) */}
       <div className="max-w-7xl mx-auto px-0 sm:px-4 grid grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4 md:gap-5">
-        {CATEGORIES.map((cat, idx) => (
+        {categories.map((cat, idx) => (
           <Link
-            key={cat.id}
-            to={cat.href}
+            key={cat.id || idx}
+            to={cat.href || `/shop?category=${encodeURIComponent(cat.title)}`}
             className={`group flex flex-col items-center ${
-              idx === CATEGORIES.length - 1 ? "col-span-2 md:col-span-1" : ""
+              idx === categories.length - 1 && categories.length % 2 !== 0 ? "col-span-2 md:col-span-1" : ""
             }`}
           >
             {/* Tile Image ~340x370 with hover scale 1.04 */}

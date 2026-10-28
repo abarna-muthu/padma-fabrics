@@ -1,8 +1,9 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { SectionTitle } from "./SectionTitle";
 import { CarouselShell } from "./CarouselShell";
 import { ProductCard, type LandingProduct } from "./ProductCard";
 import { useStore } from "@/context/StoreContext";
+import { useSiteContent } from "@/context/SiteContentContext";
 
 // Bundled high-res category imagery
 import sareeImg from "@/assets/silk-sarees-category.jpg";
@@ -168,7 +169,27 @@ interface OurBestsellersProps {
 
 export function OurBestsellers({ onOpenQuickSize }: OurBestsellersProps) {
   const { productsList, activeProducts } = useStore();
-  const [activeTab, setActiveTab] = useState(STORE_CATEGORY_TABS[0]?.id || "chudithar-top");
+  const { content } = useSiteContent();
+
+  const categoryTabs: StoreCategoryTab[] = useMemo(() => {
+    if (content.home.bestsellerTabs && content.home.bestsellerTabs.length > 0) {
+      return content.home.bestsellerTabs.map((t) => ({
+        id: t.id,
+        label: t.label,
+        categoryKey: t.categoryKey || t.label,
+        defaultImage: t.image,
+      }));
+    }
+    return STORE_CATEGORY_TABS;
+  }, [content.home.bestsellerTabs]);
+
+  const [activeTab, setActiveTab] = useState(categoryTabs[0]?.id || "chudithar-top");
+
+  useEffect(() => {
+    if (categoryTabs.length > 0 && !categoryTabs.some((t) => t.id === activeTab)) {
+      setActiveTab(categoryTabs[0]?.id || "chudithar-top");
+    }
+  }, [categoryTabs, activeTab]);
 
   // Map products from store catalog
   const mappedProducts: LandingProduct[] = useMemo(() => {
@@ -210,9 +231,9 @@ export function OurBestsellers({ onOpenQuickSize }: OurBestsellersProps) {
 
   // Derive live thumbnail images for tabs from actual store products
   const tabsWithLiveImages = useMemo(() => {
-    return STORE_CATEGORY_TABS.map((tab) => {
+    return categoryTabs.map((tab) => {
       if (!tab.categoryKey) {
-        // "BESTSELLERS" tab
+        // Fallback tab
         const firstWithValidImg = mappedProducts.find(
           (p) => p.image && !p.image.includes("placeholder")
         );
@@ -238,7 +259,7 @@ export function OurBestsellers({ onOpenQuickSize }: OurBestsellersProps) {
         image: prodInCat?.image || tab.defaultImage,
       };
     });
-  }, [mappedProducts]);
+  }, [mappedProducts, categoryTabs]);
 
   // Filter products by selected category tab
   const filteredProducts = useMemo(() => {
@@ -246,7 +267,7 @@ export function OurBestsellers({ onOpenQuickSize }: OurBestsellersProps) {
       return mappedProducts;
     }
 
-    const selectedTab = STORE_CATEGORY_TABS.find((t) => t.id === activeTab);
+    const selectedTab = categoryTabs.find((t) => t.id === activeTab);
     const targetKey = (selectedTab?.categoryKey || activeTab)
       .toLowerCase()
       .replace(/[^a-z0-9]/g, "");
@@ -257,7 +278,7 @@ export function OurBestsellers({ onOpenQuickSize }: OurBestsellersProps) {
     });
 
     return matches;
-  }, [mappedProducts, activeTab]);
+  }, [mappedProducts, activeTab, categoryTabs]);
 
   return (
     <section className="relative block w-full bg-[#FBF6EE] py-12 md:py-16 px-4 select-none clear-both overflow-hidden">
@@ -336,10 +357,10 @@ export function OurBestsellers({ onOpenQuickSize }: OurBestsellersProps) {
             </p>
             <button
               type="button"
-              onClick={() => setActiveTab(STORE_CATEGORY_TABS[0]?.id || "chudithar-top")}
+              onClick={() => setActiveTab(categoryTabs[0]?.id || "chudithar-top")}
               className="mt-4 px-4 py-2 bg-[#D0202B] text-white text-[11px] font-bold uppercase tracking-wider rounded-[2px] hover:bg-[#B01A24] transition-colors cursor-pointer"
             >
-              View Chudithar Top
+              View {categoryTabs[0]?.label || "Category"}
             </button>
           </div>
         )}
