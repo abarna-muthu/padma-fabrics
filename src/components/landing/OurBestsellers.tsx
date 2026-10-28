@@ -181,9 +181,10 @@ export function OurBestsellers({ onOpenQuickSize }: OurBestsellersProps) {
       return source.map((p) => {
         const rawImg = p.image || (p as any).imageUrl || "";
         const validImg =
-          rawImg && rawImg.startsWith("http")
-            ? rawImg
-            : rawImg && rawImg.startsWith("/")
+          rawImg &&
+          (rawImg.startsWith("http") ||
+            rawImg.startsWith("/") ||
+            rawImg.startsWith("data:"))
             ? rawImg
             : "/placeholder.svg";
 
@@ -250,13 +251,13 @@ export function OurBestsellers({ onOpenQuickSize }: OurBestsellersProps) {
 
     const matches = mappedProducts.filter((p) => {
       const prodCat = (p.category || "").toLowerCase().replace(/[^a-z0-9]/g, "");
-      return prodCat === targetKey;
+      return prodCat === targetKey || prodCat.includes(targetKey) || targetKey.includes(prodCat);
     });
 
     if (matches.length === 0) {
       return FALLBACK_SEED_PRODUCTS.filter((p) => {
         const prodCat = (p.category || "").toLowerCase().replace(/[^a-z0-9]/g, "");
-        return prodCat === targetKey;
+        return prodCat === targetKey || prodCat.includes(targetKey) || targetKey.includes(prodCat);
       });
     }
 

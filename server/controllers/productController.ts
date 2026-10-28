@@ -10,6 +10,7 @@ const CATEGORY_ID_TO_NAME: Record<string, string> = {
   "chudithar-top": "Chudithar Top",
   "2piece": "2piece",
   "combo-dresses": "Combo Dresses",
+  "palazzo": "palazzo",
   // Aliases for backward compatibility
   "sarees": "Saree",
   "fabrics": "Coordset",
@@ -17,6 +18,8 @@ const CATEGORY_ID_TO_NAME: Record<string, string> = {
   "t-shirts": "2piece",
   "womens-dresses": "Chudithar",
   "kids-wear": "Combo Dresses",
+  "palazzo-pants": "palazzo",
+  "palazzos": "palazzo",
 };
 
 const CATEGORY_NAME_TO_ID: Record<string, string> = {
@@ -28,6 +31,8 @@ const CATEGORY_NAME_TO_ID: Record<string, string> = {
   "Chudithar Top": "chudithar-top",
   "2piece": "2piece",
   "Combo Dresses": "combo-dresses",
+  "palazzo": "palazzo",
+  "Palazzo": "palazzo",
   // Aliases for backward compatibility
   "Sarees": "saree",
   "Fabrics": "coordset",
@@ -35,6 +40,7 @@ const CATEGORY_NAME_TO_ID: Record<string, string> = {
   "T-Shirts": "2piece",
   "Women's Dresses": "chudithar",
   "Kids Wear": "combo-dresses",
+  "Palazzo Pants": "palazzo",
 };
 
 function parseSafeSizes(sizesVal: any): string[] {
@@ -709,10 +715,6 @@ export const DEFAULT_PRODUCT_IDS = [
   "navy-tee",
   "maroon-anarkali",
   "pattu-pavadai",
-  "pf-mvi2hcnc",
-  "pf-mvi2jlu8",
-  "pf-mvp0gyhf",
-  "pf-mvp0jhqa",
 ];
 
 export async function removeDefaultProducts(req: Request, res: Response) {

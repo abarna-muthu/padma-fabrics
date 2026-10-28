@@ -122,11 +122,31 @@ export function isDemoProduct(p: any): boolean {
 
 const CATEGORY_MIGRATION: Record<string, string> = {
   Sarees: "Saree",
+  saree: "Saree",
+  sarees: "Saree",
   Fabrics: "Coordset",
+  coordset: "Coordset",
+  coordsets: "Coordset",
   Shirts: "Chudithar Top",
+  "Chudithar Top": "Chudithar Top",
+  "chudithar-top": "Chudithar Top",
+  "chudithar top": "Chudithar Top",
   "T-Shirts": "2piece",
+  "2piece": "2piece",
+  "2 piece": "2piece",
   "Women's Dresses": "Chudithar",
+  chudithar: "Chudithar",
+  Chudithar: "Chudithar",
   "Kids Wear": "Combo Dresses",
+  "combo-dresses": "Combo Dresses",
+  "Combo Dresses": "Combo Dresses",
+  palazzo: "palazzo",
+  Palazzo: "palazzo",
+  nighty: "Nighty",
+  Nighties: "Nighty",
+  Nighty: "Nighty",
+  maxi: "Maxi",
+  Maxi: "Maxi",
 };
 
 export function normalizeProduct(p: any): Product {
@@ -466,32 +486,13 @@ export function StoreProvider({ children }: { children: ReactNode }) {
           if (currentLocal) localList = JSON.parse(currentLocal);
         } catch {}
 
-        // If user has products locally, automatically store them in TiDB Cloud & clean demo items
+        // If user has products locally, store them in TiDB Cloud without deleting defaults
         if (Array.isArray(localList) && localList.length > 0) {
-          const defaultDemoIds = [
-            "wine-silk",
-            "heritage-silk",
-            "sage-cotton",
-            "ivory-brocade",
-            "linen-shirt",
-            "navy-tee",
-            "maroon-anarkali",
-            "pattu-pavadai",
-            "pf-mvi2hcnc",
-            "pf-mvi2jlu8",
-          ];
-          const hasUserAddedProducts = localList.some((p) => !defaultDemoIds.includes(p.id));
+          const hasUserAddedProducts = localList.some((p) => !DEMO_PRODUCT_IDS.has(p.id));
           if (hasUserAddedProducts) {
             try {
-              console.log("[TiDB Auto-Sync] Automatically syncing user's products to TiDB Cloud...");
-              const syncRes = await productApi.bulkSync(localList, true);
-              console.log("[TiDB Auto-Sync] Products stored in TiDB Cloud successfully!");
-              if (syncRes && syncRes.success) {
-                toast.success(`TiDB Cloud: ${(syncRes as any)?.syncedCount || localList.length} products automatically saved to database!`, {
-                  id: "tidb-auto-sync",
-                  duration: 4000,
-                });
-              }
+              console.log("[TiDB Auto-Sync] Safely syncing products to database...");
+              await productApi.bulkSync(localList, false);
             } catch (syncErr) {
               console.warn("[TiDB Auto-Sync] Background sync notice:", syncErr);
             }
@@ -506,113 +507,48 @@ export function StoreProvider({ children }: { children: ReactNode }) {
             deletedIds = JSON.parse(localStorage.getItem(STORAGE_DELETED_PRODUCTS_KEY) || "[]");
           } catch {}
 
-          // Ensure all 41 master products are never accidentally masked by old deleted IDs
-          if (serverProds.length >= 41 && deletedIds.length > 0 && (serverProds.length - deletedIds.length < 41)) {
-            deletedIds = [];
-            try {
-              localStorage.removeItem(STORAGE_DELETED_PRODUCTS_KEY);
-            } catch {}
-          }
+          const masterOriginals = (staticProducts as Product[]).filter((p) => !isDemoProduct(p)).map(normalizeProduct);
 
           // Filter out deleted items and demo items from server response
           const activeServerProds = serverProds
             .filter((sp: any) => !deletedIds.includes(sp.id) && !DEMO_PRODUCT_IDS.has(sp.id))
             .map(normalizeProduct);
-          let merged: Product[] = activeServerProds;
 
-          if (currentLocal) {
-            try {
-              const localList: Product[] = JSON.parse(currentLocal);
-              if (Array.isArray(localList)) {
-                const mergedMap = new Map<string, Product>();
+          setProductsList((currentList) => {
+            const mergedMap = new Map<string, Product>();
 
-                // First populate with server products
-                for (const sp of activeServerProds) {
-                  mergedMap.set(sp.id, sp);
+            // 1. Guarantee all 60 master baseline catalog products are always present
+            for (const mo of masterOriginals) {
+              mergedMap.set(mo.id, mo);
+            }
+
+            // 2. Overlay server products
+            for (const sp of activeServerProds) {
+              mergedMap.set(sp.id, sp);
+            }
+
+            // 3. Intelligently overlay current in-memory / local user products (especially new uploads)
+            for (const cl of currentList) {
+              if (DEMO_PRODUCT_IDS.has(cl.id) || deletedIds.includes(cl.id)) continue;
+              const sp = mergedMap.get(cl.id);
+              if (!sp) {
+                mergedMap.set(cl.id, cl);
+              } else {
+                const clTime = cl.updatedAt ? new Date(cl.updatedAt).getTime() : 0;
+                const spTime =
+                  (sp as any).updatedAt || (sp as any).updated_at
+                    ? new Date((sp as any).updatedAt || (sp as any).updated_at).getTime()
+                    : 0;
+                if (clTime >= spTime) {
+                  mergedMap.set(cl.id, { ...sp, ...cl });
                 }
-
-                // Intelligently overlay local products (ignoring demo items)
-                for (const rawLp of localList) {
-                  if (DEMO_PRODUCT_IDS.has(rawLp.id)) continue;
-                  const lp = normalizeProduct(rawLp);
-                  if (deletedIds.includes(lp.id)) continue;
-
-                  const sp = mergedMap.get(lp.id);
-                  if (!sp) {
-                    // Local-only product (freshly added in admin)
-                    mergedMap.set(lp.id, lp);
-                    productApi.create(lp).catch(() => {});
-                  } else {
-                    // Both exist: preserve the valid image URL (especially Cloudinary)
-                    const validImg =
-                      (sp.image && sp.image.startsWith("http"))
-                        ? sp.image
-                        : (lp.image && lp.image.startsWith("http"))
-                          ? lp.image
-                          : sp.image || lp.image;
-
-                    const validVariants =
-                      Array.isArray(lp.variants) && lp.variants.length > 0
-                        ? lp.variants
-                        : Array.isArray(sp.variants) && sp.variants.length > 0
-                          ? sp.variants
-                          : [];
-
-                    const validImages =
-                      Array.isArray(lp.images) && lp.images.length > 1
-                        ? lp.images
-                        : Array.isArray(sp.images) && sp.images.length > 0
-                          ? sp.images
-                          : lp.images || [validImg];
-
-                    const lpTime = lp.updatedAt ? new Date(lp.updatedAt).getTime() : 0;
-                    const spTime =
-                      (sp as any).updatedAt || (sp as any).updated_at
-                        ? new Date((sp as any).updatedAt || (sp as any).updated_at).getTime()
-                        : 0;
-
-                    if (lpTime >= spTime) {
-                      mergedMap.set(lp.id, {
-                        ...sp,
-                        ...lp,
-                        image: validImg,
-                        imageUrl: validImg,
-                        variants: validVariants,
-                        images: validImages,
-                      });
-                      // Synchronize latest admin edit to backend
-                      productApi.update(lp.id, {
-                        ...lp,
-                        image: validImg,
-                        variants: validVariants,
-                        images: validImages,
-                      }).catch(() => {});
-                    } else {
-                      mergedMap.set(lp.id, {
-                        ...lp,
-                        ...sp,
-                        image: validImg,
-                        imageUrl: validImg,
-                        variants: validVariants,
-                        images: validImages,
-                      });
-                      // If local has variants that server lacked, sync back to backend
-                      if (Array.isArray(lp.variants) && lp.variants.length > 0 && (!Array.isArray(sp.variants) || sp.variants.length === 0)) {
-                        productApi.update(lp.id, {
-                          ...sp,
-                          variants: validVariants,
-                          images: validImages,
-                        }).catch(() => {});
-                      }
-                    }
-                  }
-                }
-                merged = Array.from(mergedMap.values());
               }
-            } catch {}
-          }
-          setProductsList(merged.map(normalizeProduct));
-          localStorage.setItem(STORAGE_PRODUCTS_KEY, JSON.stringify(merged));
+            }
+
+            const merged = Array.from(mergedMap.values());
+            saveProducts(merged);
+            return merged;
+          });
         }
 
         const ordersRes = await orderApi.getAll();
@@ -642,18 +578,40 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const saveProducts = (updated: Product[]) => {
+    // 1. Immediately update in-memory state
     setProductsList(updated);
+
     if (typeof window !== "undefined") {
-      // 1. Always persist to IndexedDB (unlimited quota, never fails with QuotaExceededError)
+      // 2. Always persist to IndexedDB (unlimited quota, never fails with QuotaExceededError)
       idbSaveProducts(updated).catch(() => {});
 
-      // 2. Also save to localStorage for fast synchronous bootstrap
+      // 3. Also save to localStorage with quota overflow fallback
       try {
         localStorage.setItem(STORAGE_PRODUCTS_KEY, JSON.stringify(updated));
-        window.dispatchEvent(new CustomEvent("pf_products_updated", { detail: updated }));
       } catch (err) {
-        console.warn("localStorage quota full (saved safely in IndexedDB):", err);
+        console.warn("localStorage quota full, saving compact catalog to localStorage:", err);
+        try {
+          const compact = updated.map((p) => {
+            const isBase64Img = typeof p.image === "string" && p.image.startsWith("data:");
+            return {
+              ...p,
+              image: isBase64Img ? p.imageUrl || "/placeholder.svg" : p.image,
+              images: Array.isArray(p.images)
+                ? p.images.filter((img) => typeof img === "string" && !img.startsWith("data:"))
+                : [],
+              variants: Array.isArray(p.variants)
+                ? p.variants.map((v) => ({ ...v, image: v.image?.startsWith("data:") ? "" : v.image }))
+                : [],
+            };
+          });
+          localStorage.setItem(STORAGE_PRODUCTS_KEY, JSON.stringify(compact));
+        } catch {}
       }
+
+      // 4. ALWAYS dispatch in-window and cross-tab update event
+      try {
+        window.dispatchEvent(new CustomEvent("pf_products_updated", { detail: updated }));
+      } catch {}
     }
   };
 
@@ -766,7 +724,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         : typeof newP.stock === "string" && !isNaN(parseInt(newP.stock, 10))
           ? parseInt(newP.stock, 10)
           : 10;
-    const product: Product = {
+    const product: Product = normalizeProduct({
       ...newP,
       id,
       isActive: true,
@@ -774,9 +732,18 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       stock: parsedStock,
       sku: newP.sku || `PF-NEW-${Math.floor(100 + Math.random() * 900)}`,
       updatedAt: nowIso,
-    };
-    const updated = [product, ...productsList.filter((p) => p.id !== id)];
-    saveProducts(updated);
+    });
+
+    // 1. Immediately update state using functional updater - existing products can NEVER be lost
+    setProductsList((currentList) => {
+      const masterOriginals = (staticProducts as Product[]).filter((p) => !isDemoProduct(p)).map(normalizeProduct);
+      const base = currentList && currentList.length >= masterOriginals.length
+        ? currentList
+        : [...currentList, ...masterOriginals.filter((mo) => !currentList.some((cl) => cl.id === mo.id))];
+      const updated = [product, ...base.filter((p) => p.id !== id)];
+      saveProducts(updated);
+      return updated;
+    });
 
     // Remove from deleted list if re-added
     try {
@@ -787,21 +754,24 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       localStorage.setItem(STORAGE_DELETED_PRODUCTS_KEY, JSON.stringify(filtered));
     } catch {}
 
-    // Persist to backend database API
+    // 2. Persist to backend database API
     try {
       const res = await productApi.create(product);
       if (res && res.success) {
         const serverProduct = (res as any).product || res.data;
         if (serverProduct && serverProduct.id) {
-          const finalItem = {
+          const finalItem = normalizeProduct({
             ...product,
             ...serverProduct,
             isActive: true,
             status: "active",
             sizes: serverProduct.sizes || product.sizes,
-          };
-          const reconciled = [finalItem, ...productsList.filter((p) => p.id !== id && p.id !== finalItem.id)];
-          saveProducts(reconciled);
+          });
+          setProductsList((currentList) => {
+            const updated = [finalItem, ...currentList.filter((p) => p.id !== id && p.id !== finalItem.id)];
+            saveProducts(updated);
+            return updated;
+          });
           return finalItem;
         }
       }
@@ -812,7 +782,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     return product;
   };
 
-  const syncCatalogToDatabase = async (clearDefaults: boolean = true) => {
+  const syncCatalogToDatabase = async (clearDefaults: boolean = false) => {
     try {
       const localProducts = productsList;
       if (!localProducts || localProducts.length === 0) {
@@ -853,7 +823,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       setProductsList(masterList);
       saveProducts(masterList);
       try {
-        await productApi.bulkSync(masterList, true);
+        await productApi.bulkSync(masterList, false);
       } catch (syncErr) {
         console.warn("Could not sync restored products to backend:", syncErr);
       }
@@ -864,36 +834,50 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   };
 
   const updateProduct = async (id: string, updates: Partial<Product>) => {
-    const previous = productsList.find((p) => p.id === id);
     const nowIso = new Date().toISOString();
-    const updated = productsList.map((p) => {
-      if (p.id === id) {
-        const nextStatus = updates.status || p.status || "active";
-        return {
-          ...p,
-          ...updates,
-          isActive: nextStatus !== "inactive" && nextStatus !== "archived",
-          status: nextStatus,
-          updatedAt: nowIso,
-        };
+    let prevStock: number | undefined;
+    let prevName: string | undefined;
+
+    setProductsList((currentList) => {
+      const found = currentList.find((p) => p.id === id);
+      if (found) {
+        prevStock = found.stock;
+        prevName = found.name;
       }
-      return p;
+      const updated = currentList.map((p) => {
+        if (p.id === id) {
+          const nextStatus = updates.status || p.status || "active";
+          return normalizeProduct({
+            ...p,
+            ...updates,
+            isActive: nextStatus !== "inactive" && nextStatus !== "archived",
+            status: nextStatus,
+            updatedAt: nowIso,
+          });
+        }
+        return p;
+      });
+      saveProducts(updated);
+      return updated;
     });
-    saveProducts(updated);
 
     // If stock changed, record log
-    if (updates.stock !== undefined && previous && Number(updates.stock) !== previous.stock) {
+    if (updates.stock !== undefined && prevStock !== undefined && Number(updates.stock) !== prevStock) {
       const newLog: StockLog = {
         id: `LOG-${Date.now().toString(36)}`,
         productId: id,
-        productName: updates.name || previous.name,
-        previousStock: previous.stock,
+        productName: updates.name || prevName || "Product",
+        previousStock: prevStock,
         newStock: Number(updates.stock),
-        change: Number(updates.stock) - previous.stock,
+        change: Number(updates.stock) - prevStock,
         reason: "Manual admin inventory update",
         date: new Date().toISOString().split("T")[0] || "",
       };
-      saveStockLogs([newLog, ...stockLogs]);
+      setStockLogs((currentLogs) => {
+        const updated = [newLog, ...currentLogs];
+        saveStockLogs(updated);
+        return updated;
+      });
     }
 
     // Persist to backend database API
@@ -905,8 +889,11 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   };
 
   const deleteProduct = (id: string) => {
-    const updated = productsList.filter((p) => p.id !== id);
-    saveProducts(updated);
+    setProductsList((currentList) => {
+      const updated = currentList.filter((p) => p.id !== id);
+      saveProducts(updated);
+      return updated;
+    });
 
     try {
       const deletedIds: string[] = JSON.parse(
@@ -925,18 +912,21 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   };
 
   const toggleProductStatus = (id: string) => {
-    const updated = productsList.map((p) => {
-      if (p.id === id) {
-        const nextStatus = p.status === "active" ? ("inactive" as const) : ("active" as const);
-        return {
-          ...p,
-          status: nextStatus,
-          isActive: nextStatus === "active",
-        };
-      }
-      return p;
+    setProductsList((currentList) => {
+      const updated = currentList.map((p) => {
+        if (p.id === id) {
+          const nextStatus = p.status === "active" ? ("inactive" as const) : ("active" as const);
+          return {
+            ...p,
+            status: nextStatus,
+            isActive: nextStatus === "active",
+          };
+        }
+        return p;
+      });
+      saveProducts(updated);
+      return updated;
     });
-    saveProducts(updated);
 
     // Persist to backend database API
     productApi.toggleStatus(id).catch((err) => {
@@ -946,25 +936,34 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
   // Inventory actions
   const adjustStock = (productId: string, newStock: number, reason: string) => {
-    const target = productsList.find((p) => p.id === productId);
-    if (!target) return;
-    const previousStock = target.stock;
-    const diff = newStock - previousStock;
+    let targetProd: Product | undefined;
+    setProductsList((currentList) => {
+      targetProd = currentList.find((p) => p.id === productId);
+      if (!targetProd) return currentList;
+      const updated = currentList.map((p) => (p.id === productId ? { ...p, stock: newStock } : p));
+      saveProducts(updated);
+      return updated;
+    });
 
-    const updated = productsList.map((p) => (p.id === productId ? { ...p, stock: newStock } : p));
-    saveProducts(updated);
-
-    const log: StockLog = {
-      id: `LOG-${Date.now().toString(36)}`,
-      productId,
-      productName: target.name,
-      previousStock,
-      newStock,
-      change: diff,
-      reason: reason || "Manual stock adjustment",
-      date: new Date().toISOString().split("T")[0] || "",
-    };
-    saveStockLogs([log, ...stockLogs]);
+    if (targetProd) {
+      const previousStock = targetProd.stock;
+      const diff = newStock - previousStock;
+      const log: StockLog = {
+        id: `LOG-${Date.now().toString(36)}`,
+        productId,
+        productName: targetProd.name,
+        previousStock,
+        newStock,
+        change: diff,
+        reason: reason || "Manual stock adjustment",
+        date: new Date().toISOString().split("T")[0] || "",
+      };
+      setStockLogs((currentLogs) => {
+        const updated = [log, ...currentLogs];
+        saveStockLogs(updated);
+        return updated;
+      });
+    }
 
     // Persist to backend database API
     inventoryApi.adjustStock(productId, newStock, reason).catch((err) => {

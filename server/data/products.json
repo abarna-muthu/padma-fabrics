@@ -1168,5 +1168,501 @@
     "image_url": "https://res.cloudinary.com/ugzb1wup/image/upload/v1792585308/padma_products/qso4ntuv1hs5vg9vqybf.jpg",
     "imageUrl": "https://res.cloudinary.com/ugzb1wup/image/upload/v1792585308/padma_products/qso4ntuv1hs5vg9vqybf.jpg",
     "is_active": 1
+  },
+  {
+    "id": "pf-mvnknqxl",
+    "name": "Embroidered nighty",
+    "category": "Nighty",
+    "colour": "purple",
+    "price": 275,
+    "originalPrice": null,
+    "image": "https://res.cloudinary.com/ugzb1wup/image/upload/v1792655859/padma_products/twhfhbsqikwsslt47tdo.jpg",
+    "imageUrl": "https://res.cloudinary.com/ugzb1wup/image/upload/v1792655859/padma_products/twhfhbsqikwsslt47tdo.jpg",
+    "images": [
+      "https://res.cloudinary.com/ugzb1wup/image/upload/v1792655859/padma_products/twhfhbsqikwsslt47tdo.jpg"
+    ],
+    "badge": "New arrival",
+    "description": "Embroidered nighty in purple. Exquisite fabric craftsmanship with traditional detailing from Padmanabha Fabrics.",
+    "unit": "piece",
+    "stock": 10,
+    "status": "active",
+    "isActive": true,
+    "sku": "PF-136",
+    "sizes": [
+      "S",
+      "M",
+      "L",
+      "XL",
+      "2XL"
+    ],
+    "variants": []
+  },
+  {
+    "id": "pf-mvnkpr8s",
+    "name": "Embroidered nighty",
+    "category": "Nighty",
+    "colour": "Pink",
+    "price": 275,
+    "originalPrice": null,
+    "image": "https://res.cloudinary.com/ugzb1wup/image/upload/v1792655859/padma_products/twhfhbsqikwsslt47tdo.jpg",
+    "imageUrl": "https://res.cloudinary.com/ugzb1wup/image/upload/v1792655859/padma_products/twhfhbsqikwsslt47tdo.jpg",
+    "images": [
+      "https://res.cloudinary.com/ugzb1wup/image/upload/v1792655859/padma_products/twhfhbsqikwsslt47tdo.jpg"
+    ],
+    "badge": "New arrival",
+    "description": "Embroidered nighty in Pink. Exquisite fabric craftsmanship with traditional detailing from Padmanabha Fabrics.",
+    "unit": "piece",
+    "stock": 10,
+    "status": "active",
+    "isActive": true,
+    "sku": "PF-474",
+    "sizes": [
+      "S",
+      "M",
+      "L",
+      "XL",
+      "2XL"
+    ],
+    "variants": []
+  },
+  {
+    "id": "pf-mvnks2m1",
+    "name": "Embroidered nighty",
+    "category": "Nighty",
+    "colour": "dark green",
+    "price": 275,
+    "originalPrice": null,
+    "image": "https://res.cloudinary.com/ugzb1wup/image/upload/v1792655859/padma_products/twhfhbsqikwsslt47tdo.jpg",
+    "imageUrl": "https://res.cloudinary.com/ugzb1wup/image/upload/v1792655859/padma_products/twhfhbsqikwsslt47tdo.jpg",
+    "images": [
+      "https://res.cloudinary.com/ugzb1wup/image/upload/v1792655859/padma_products/twhfhbsqikwsslt47tdo.jpg"
+    ],
+    "badge": "New arrival",
+    "description": "Embroidered nighty in dark green. Exquisite fabric craftsmanship with traditional detailing from Padmanabha Fabrics.",
+    "unit": "piece",
+    "stock": 10,
+    "status": "active",
+    "isActive": true,
+    "sku": "PF-878",
+    "sizes": [
+      "S",
+      "M",
+      "L",
+      "XL",
+      "2XL"
+    ],
+    "variants": []
+  },
+  {
+    "id": "pf-mvnku862",
+    "name": "Embroidered nighty",
+    "category": "Nighty",
+    "colour": "Blue",
+    "price": 275,
+    "originalPrice": null,
+    "image": "https://res.cloudinary.com/ugzb1wup/image/upload/v1792655859/padma_products/twhfhbsqikwsslt47tdo.jpg",
+    "imageUrl": "https://res.cloudinary.com/ugzb1wup/image/upload/v1792655859/padma_products/twhfhbsqikwsslt47tdo.jpg",
+    "images": [
+      "https://res.cloudinary.com/ugzb1wup/image/upload/v1792655859/padma_products/twhfhbsqikwsslt47tdo.jpg"
+    ],
+    "badge": "New arrival",
+    "description": "Embroidered nighty in Blue. Exquisite fabric craftsmanship with traditional detailing from Padmanabha Fabrics.",
+    "unit": "piece",
+    "stock": 10,
+    "status": "active",
+    "isActive": true,
+    "sku": "PF-276",
+    "sizes": [
+      "S",
+      "M",
+      "L",
+      "XL",
+      "2XL"
+    ],
+    "variants": []
+  },
+  {
+    "id": "pf-mvnkxh8q",
+    "name": "Embroidered nighty",
+    "category": "Nighty",
+    "colour": "black",
+    "price": 275,
+    "originalPrice": null,
+    "image": "https://res.cloudinary.com/ugzb1wup/image/upload/v1792655859/padma_products/twhfhbsqikwsslt47tdo.jpg",
+    "imageUrl": "https://res.cloudinary.com/ugzb1wup/image/upload/v1792655859/padma_products/twhfhbsqikwsslt47tdo.jpg",
+    "images": [
+      "https://res.cloudinary.com/ugzb1wup/image/upload/v1792655859/padma_products/twhfhbsqikwsslt47tdo.jpg"
+    ],
+    "badge": "New arrival",
+    "description": "Embroidered nighty in black. Exquisite fabric craftsmanship with traditional detailing from Padmanabha Fabrics.",
+    "unit": "piece",
+    "stock": 10,
+    "status": "active",
+    "isActive": true,
+    "sku": "PF-728",
+    "sizes": [
+      "S",
+      "M",
+      "L",
+      "XL",
+      "2XL"
+    ],
+    "variants": []
+  },
+  {
+    "id": "pf-mvnkzvb7",
+    "name": "Embroidered nighty",
+    "category": "Nighty",
+    "colour": "purple",
+    "price": 275,
+    "originalPrice": null,
+    "image": "https://res.cloudinary.com/ugzb1wup/image/upload/v1792655859/padma_products/twhfhbsqikwsslt47tdo.jpg",
+    "imageUrl": "https://res.cloudinary.com/ugzb1wup/image/upload/v1792655859/padma_products/twhfhbsqikwsslt47tdo.jpg",
+    "images": [
+      "https://res.cloudinary.com/ugzb1wup/image/upload/v1792655859/padma_products/twhfhbsqikwsslt47tdo.jpg"
+    ],
+    "badge": "New arrival",
+    "description": "Embroidered nighty in purple. Exquisite fabric craftsmanship with traditional detailing from Padmanabha Fabrics.",
+    "unit": "piece",
+    "stock": 10,
+    "status": "active",
+    "isActive": true,
+    "sku": "PF-108",
+    "sizes": [
+      "S",
+      "M",
+      "L",
+      "XL",
+      "2XL"
+    ],
+    "variants": []
+  },
+  {
+    "id": "pf-mvnkzxyl",
+    "name": "Embroidered nighty",
+    "category": "Nighty",
+    "colour": "purple",
+    "price": 275,
+    "originalPrice": null,
+    "image": "https://res.cloudinary.com/ugzb1wup/image/upload/v1792655859/padma_products/twhfhbsqikwsslt47tdo.jpg",
+    "imageUrl": "https://res.cloudinary.com/ugzb1wup/image/upload/v1792655859/padma_products/twhfhbsqikwsslt47tdo.jpg",
+    "images": [
+      "https://res.cloudinary.com/ugzb1wup/image/upload/v1792655859/padma_products/twhfhbsqikwsslt47tdo.jpg"
+    ],
+    "badge": "New arrival",
+    "description": "Embroidered nighty in purple. Exquisite fabric craftsmanship with traditional detailing from Padmanabha Fabrics.",
+    "unit": "piece",
+    "stock": 10,
+    "status": "active",
+    "isActive": true,
+    "sku": "PF-108-525",
+    "sizes": [
+      "S",
+      "M",
+      "L",
+      "XL",
+      "2XL"
+    ],
+    "variants": []
+  },
+  {
+    "id": "pf-mvnl1vtf",
+    "name": "Embroidered nighty",
+    "category": "Nighty",
+    "colour": "purple",
+    "price": 275,
+    "originalPrice": null,
+    "image": "https://res.cloudinary.com/ugzb1wup/image/upload/v1792655859/padma_products/twhfhbsqikwsslt47tdo.jpg",
+    "imageUrl": "https://res.cloudinary.com/ugzb1wup/image/upload/v1792655859/padma_products/twhfhbsqikwsslt47tdo.jpg",
+    "images": [
+      "https://res.cloudinary.com/ugzb1wup/image/upload/v1792655859/padma_products/twhfhbsqikwsslt47tdo.jpg"
+    ],
+    "badge": "New arrival",
+    "description": "Embroidered nighty in purple. Exquisite fabric craftsmanship with traditional detailing from Padmanabha Fabrics.",
+    "unit": "piece",
+    "stock": 10,
+    "status": "active",
+    "isActive": true,
+    "sku": "PF-859",
+    "sizes": [
+      "S",
+      "M",
+      "L",
+      "XL",
+      "2XL"
+    ],
+    "variants": []
+  },
+  {
+    "id": "pf-mvnl5doo",
+    "name": "Embroidered nighty",
+    "category": "Nighty",
+    "colour": "navy blue ",
+    "price": 275,
+    "originalPrice": null,
+    "image": "https://res.cloudinary.com/ugzb1wup/image/upload/v1792655859/padma_products/twhfhbsqikwsslt47tdo.jpg",
+    "imageUrl": "https://res.cloudinary.com/ugzb1wup/image/upload/v1792655859/padma_products/twhfhbsqikwsslt47tdo.jpg",
+    "images": [
+      "https://res.cloudinary.com/ugzb1wup/image/upload/v1792655859/padma_products/twhfhbsqikwsslt47tdo.jpg"
+    ],
+    "badge": "New arrival",
+    "description": "Embroidered nighty in navy blue . Exquisite fabric craftsmanship with traditional detailing from Padmanabha Fabrics.",
+    "unit": "piece",
+    "stock": 10,
+    "status": "active",
+    "isActive": true,
+    "sku": "PF-677",
+    "sizes": [
+      "S",
+      "M",
+      "L",
+      "XL",
+      "2XL"
+    ],
+    "variants": []
+  },
+  {
+    "id": "pf-mvnl7fsl",
+    "name": "Embroidered nighty",
+    "category": "Nighty",
+    "colour": "deep wine",
+    "price": 275,
+    "originalPrice": null,
+    "image": "https://res.cloudinary.com/ugzb1wup/image/upload/v1792655859/padma_products/twhfhbsqikwsslt47tdo.jpg",
+    "imageUrl": "https://res.cloudinary.com/ugzb1wup/image/upload/v1792655859/padma_products/twhfhbsqikwsslt47tdo.jpg",
+    "images": [
+      "https://res.cloudinary.com/ugzb1wup/image/upload/v1792655859/padma_products/twhfhbsqikwsslt47tdo.jpg"
+    ],
+    "badge": "New arrival",
+    "description": "Embroidered nighty in deep wine. Exquisite fabric craftsmanship with traditional detailing from Padmanabha Fabrics.",
+    "unit": "piece",
+    "stock": 10,
+    "status": "active",
+    "isActive": true,
+    "sku": "PF-770",
+    "sizes": [
+      "S",
+      "M",
+      "L",
+      "XL",
+      "2XL"
+    ],
+    "variants": []
+  },
+  {
+    "id": "pf-mvp1zjaw",
+    "name": "The Royal Indigo Silk Saree",
+    "category": "Saree",
+    "colour": "Indigo & Silver",
+    "price": 4900,
+    "originalPrice": null,
+    "image": "/assets/burgundy-silk.jpg",
+    "imageUrl": "/assets/burgundy-silk.jpg",
+    "images": [
+      "/assets/burgundy-silk.jpg"
+    ],
+    "badge": "Signature",
+    "description": "Fine indigo silk with handwoven silver zari motif border.",
+    "unit": "piece",
+    "stock": 15,
+    "status": "active",
+    "isActive": true,
+    "sku": "PF-960",
+    "sizes": [
+      "Free Size"
+    ],
+    "variants": []
+  },
+  {
+    "id": "pf-mvp2kpvb",
+    "name": "The Royal Indigo Silk Saree",
+    "category": "Saree",
+    "colour": "Indigo & Silver",
+    "price": 4900,
+    "originalPrice": null,
+    "image": "/assets/burgundy-silk.jpg",
+    "imageUrl": "/assets/burgundy-silk.jpg",
+    "images": [
+      "/assets/burgundy-silk.jpg"
+    ],
+    "badge": "Signature",
+    "description": "Fine indigo silk with handwoven silver zari motif border.",
+    "unit": "piece",
+    "stock": 15,
+    "status": "active",
+    "isActive": true,
+    "sku": "PF-785",
+    "sizes": [
+      "Free Size"
+    ],
+    "variants": []
+  },
+  {
+    "id": "pf-mvp36w3v",
+    "name": "The Royal Indigo Silk Saree",
+    "category": "Saree",
+    "colour": "Indigo & Silver",
+    "price": 4900,
+    "originalPrice": null,
+    "image": "/assets/burgundy-silk.jpg",
+    "imageUrl": "/assets/burgundy-silk.jpg",
+    "images": [
+      "/assets/burgundy-silk.jpg"
+    ],
+    "badge": "Signature",
+    "description": "Fine indigo silk with handwoven silver zari motif border.",
+    "unit": "piece",
+    "stock": 15,
+    "status": "active",
+    "isActive": true,
+    "sku": "PF-490",
+    "sizes": [
+      "Free Size"
+    ],
+    "variants": []
+  },
+  {
+    "id": "pf-mvp441v7",
+    "name": "The Royal Indigo Silk Saree",
+    "category": "Saree",
+    "colour": "Indigo & Silver",
+    "price": 4900,
+    "originalPrice": null,
+    "image": "/assets/burgundy-silk.jpg",
+    "imageUrl": "/assets/burgundy-silk.jpg",
+    "images": [
+      "/assets/burgundy-silk.jpg"
+    ],
+    "badge": "Signature",
+    "description": "Fine indigo silk with handwoven silver zari motif border.",
+    "unit": "piece",
+    "stock": 15,
+    "status": "active",
+    "isActive": true,
+    "sku": "PF-215",
+    "sizes": [
+      "Free Size"
+    ],
+    "variants": []
+  },
+  {
+    "id": "pf-mvp4ohtq",
+    "name": "The Royal Indigo Silk Saree",
+    "category": "Saree",
+    "colour": "Indigo & Silver",
+    "price": 4900,
+    "originalPrice": null,
+    "image": "/assets/burgundy-silk.jpg",
+    "imageUrl": "/assets/burgundy-silk.jpg",
+    "images": [
+      "/assets/burgundy-silk.jpg"
+    ],
+    "badge": "Signature",
+    "description": "Fine indigo silk with handwoven silver zari motif border.",
+    "unit": "piece",
+    "stock": 15,
+    "status": "active",
+    "isActive": true,
+    "sku": "PF-802",
+    "sizes": [
+      "Free Size"
+    ],
+    "variants": []
+  },
+  {
+    "id": "pf-mvp5xz24",
+    "name": "The Royal Indigo Silk Saree",
+    "category": "Saree",
+    "colour": "Indigo & Silver",
+    "price": 4900,
+    "originalPrice": null,
+    "image": "/assets/burgundy-silk.jpg",
+    "imageUrl": "/assets/burgundy-silk.jpg",
+    "images": [
+      "/assets/burgundy-silk.jpg"
+    ],
+    "badge": "Signature",
+    "description": "Fine indigo silk with handwoven silver zari motif border.",
+    "unit": "piece",
+    "stock": 15,
+    "status": "active",
+    "isActive": true,
+    "sku": "PF-860",
+    "sizes": [
+      "Free Size"
+    ],
+    "variants": []
+  },
+  {
+    "id": "pf-mvp67ezo",
+    "name": "The Royal Indigo Silk Saree",
+    "category": "Saree",
+    "colour": "Indigo & Silver",
+    "price": 4900,
+    "originalPrice": null,
+    "image": "/assets/burgundy-silk.jpg",
+    "imageUrl": "/assets/burgundy-silk.jpg",
+    "images": [
+      "/assets/burgundy-silk.jpg"
+    ],
+    "badge": "Signature",
+    "description": "Fine indigo silk with handwoven silver zari motif border.",
+    "unit": "piece",
+    "stock": 15,
+    "status": "active",
+    "isActive": true,
+    "sku": "PF-495",
+    "sizes": [
+      "Free Size"
+    ],
+    "variants": []
+  },
+  {
+    "id": "pf-mvp7faxf",
+    "name": "The Royal Indigo Silk Saree",
+    "category": "Saree",
+    "colour": "Indigo & Silver",
+    "price": 4900,
+    "originalPrice": null,
+    "image": "/assets/burgundy-silk.jpg",
+    "imageUrl": "/assets/burgundy-silk.jpg",
+    "images": [
+      "/assets/burgundy-silk.jpg"
+    ],
+    "badge": "Signature",
+    "description": "Fine indigo silk with handwoven silver zari motif border.",
+    "unit": "piece",
+    "stock": 15,
+    "status": "active",
+    "isActive": true,
+    "sku": "PF-568",
+    "sizes": [
+      "Free Size"
+    ],
+    "variants": []
+  },
+  {
+    "id": "pf-mvp7gefx",
+    "name": "The Royal Indigo Silk Saree",
+    "category": "Saree",
+    "colour": "Indigo & Silver",
+    "price": 4900,
+    "originalPrice": null,
+    "image": "/assets/burgundy-silk.jpg",
+    "imageUrl": "/assets/burgundy-silk.jpg",
+    "images": [
+      "/assets/burgundy-silk.jpg"
+    ],
+    "badge": "Signature",
+    "description": "Fine indigo silk with handwoven silver zari motif border.",
+    "unit": "piece",
+    "stock": 15,
+    "status": "active",
+    "isActive": true,
+    "sku": "PF-403",
+    "sizes": [
+      "Free Size"
+    ],
+    "variants": []
   }
 ]

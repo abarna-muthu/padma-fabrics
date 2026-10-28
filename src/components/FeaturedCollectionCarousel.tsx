@@ -25,10 +25,6 @@ const DEMO_IDS = new Set([
   "navy-tee",
   "maroon-anarkali",
   "pattu-pavadai",
-  "pf-mvi2hcnc",
-  "pf-mvi2jlu8",
-  "pf-mvp0gyhf",
-  "pf-mvp0jhqa",
 ]);
 
 function isDummyOrDemo(p: any): boolean {
