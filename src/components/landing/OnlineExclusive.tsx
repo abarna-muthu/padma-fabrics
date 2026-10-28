@@ -1,6 +1,8 @@
+import { useMemo } from "react";
 import { CarouselShell } from "./CarouselShell";
 import { ProductCard, type LandingProduct } from "./ProductCard";
 import { ImageSkeleton } from "./ImageSkeleton";
+import { useStore } from "@/context/StoreContext";
 
 const EXCLUSIVE_PRODUCTS: LandingProduct[] = [
   {
@@ -50,6 +52,47 @@ interface OnlineExclusiveProps {
 }
 
 export function OnlineExclusive({ onOpenQuickSize }: OnlineExclusiveProps) {
+  const { productsList, activeProducts } = useStore();
+
+  const exclusiveProducts: LandingProduct[] = useMemo(() => {
+    const source =
+      activeProducts && activeProducts.length > 0
+        ? activeProducts
+        : productsList && productsList.length > 0
+        ? productsList
+        : [];
+
+    if (source.length > 0) {
+      return source.map((p) => {
+        const rawImg = p.image || (p as any).imageUrl || "";
+        const validImg =
+          rawImg &&
+          (rawImg.startsWith("http") ||
+            rawImg.startsWith("/") ||
+            rawImg.startsWith("data:"))
+            ? rawImg
+            : "/placeholder.svg";
+
+        return {
+          id: p.id,
+          name: p.name,
+          price: Number(p.price) || 0,
+          originalPrice: p.originalPrice ? Number(p.originalPrice) : undefined,
+          image: validImg,
+          fabricTag: p.fabric || (p.category ? `${p.category}` : "Pure Cotton"),
+          isNew: true,
+          category: p.category || "",
+          availableSizes:
+            Array.isArray(p.sizes) && p.sizes.length > 0
+              ? p.sizes
+              : ["S", "M", "L", "XL"],
+        };
+      });
+    }
+
+    return EXCLUSIVE_PRODUCTS;
+  }, [activeProducts, productsList]);
+
   return (
     <section className="relative block w-full bg-white py-12 md:py-16 px-4 select-none clear-both overflow-hidden">
       <div className="max-w-7xl mx-auto px-0 sm:px-4 flex flex-col lg:flex-row items-stretch gap-8 lg:gap-10">
@@ -85,7 +128,7 @@ export function OnlineExclusive({ onOpenQuickSize }: OnlineExclusiveProps) {
 
           <div className="w-full">
             <CarouselShell showArrows={true} ariaLabel="Online Exclusive Carousel">
-              {EXCLUSIVE_PRODUCTS.map((prod) => (
+              {exclusiveProducts.map((prod) => (
                 <div
                   key={prod.id}
                   className="w-[240px] sm:w-[260px] md:w-[280px] shrink-0 snap-start mr-6"
