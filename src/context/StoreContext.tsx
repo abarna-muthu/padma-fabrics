@@ -14,7 +14,7 @@ import {
   type StockLog,
 } from "@/lib/catalog";
 import { productApi, orderApi, inventoryApi } from "@/lib/api";
-import { idbSaveProducts, idbGetProducts } from "@/lib/indexedDb";
+import { idbSaveProducts, idbGetProducts, idbSaveSingleProduct, idbDeleteProduct } from "@/lib/indexedDb";
 import { toast } from "sonner";
 
 interface StoreContextType {
@@ -98,6 +98,7 @@ interface StoreContextType {
 }
 
 const STORAGE_PRODUCTS_KEY = "pf_admin_products_catalog";
+const STORAGE_CUSTOM_PRODUCTS_KEY = "pf_custom_user_products";
 const STORAGE_CATEGORIES_KEY = "pf_admin_categories";
 const STORAGE_ORDERS_KEY = "pf_admin_orders";
 const STORAGE_STOCK_LOGS_KEY = "pf_admin_stock_logs";
@@ -291,7 +292,57 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   };
 
   // Catalog products (shared with public storefront)
-  const [productsList, setProductsList] = useState<Product[]>((staticProducts as Product[]).map(normalizeProduct));
+  const [productsList, setProductsList] = useState<Product[]>(() => {
+    const masterOriginals = (staticProducts as Product[]).filter((p) => !isDemoProduct(p)).map(normalizeProduct);
+    if (typeof window === "undefined") {
+      return masterOriginals;
+    }
+    try {
+      let deletedIds: string[] = [];
+      try {
+        deletedIds = JSON.parse(localStorage.getItem(STORAGE_DELETED_PRODUCTS_KEY) || "[]");
+      } catch {}
+
+      const initialMap = new Map<string, Product>();
+
+      // 1. Seed with baseline 60 catalog products (unless deleted)
+      for (const mo of masterOriginals) {
+        if (!deletedIds.includes(mo.id)) {
+          initialMap.set(mo.id, mo);
+        }
+      }
+
+      // 2. Read full stored catalog if available
+      const stored = localStorage.getItem(STORAGE_PRODUCTS_KEY);
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (Array.isArray(parsed)) {
+          for (const p of parsed) {
+            if (p && p.id && !deletedIds.includes(p.id) && !isDemoProduct(p)) {
+              initialMap.set(p.id, normalizeProduct(p));
+            }
+          }
+        }
+      }
+
+      // 3. Read custom user-added products (guaranteed persistence across refreshes)
+      const customStored = localStorage.getItem(STORAGE_CUSTOM_PRODUCTS_KEY);
+      if (customStored) {
+        const parsedCustom = JSON.parse(customStored);
+        if (Array.isArray(parsedCustom)) {
+          for (const cp of parsedCustom) {
+            if (cp && cp.id && !deletedIds.includes(cp.id) && !isDemoProduct(cp)) {
+              initialMap.set(cp.id, normalizeProduct(cp));
+            }
+          }
+        }
+      }
+
+      return Array.from(initialMap.values());
+    } catch {
+      return masterOriginals;
+    }
+  });
 
   // Orders & inventory
   const [orders, setOrders] = useState<Order[]>(initialOrders);
@@ -301,141 +352,134 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (typeof window === "undefined") return;
 
-    // 1. Initial read from localStorage
-    try {
-      const storedProducts = localStorage.getItem(STORAGE_PRODUCTS_KEY);
-      let loadedProds: Product[] = [];
-      const masterOriginals = (staticProducts as Product[]).filter((p) => !isDemoProduct(p)).map(normalizeProduct);
+    let isCancelled = false;
 
-      if (storedProducts) {
-        const parsed = JSON.parse(storedProducts);
-        if (Array.isArray(parsed)) {
-          // Evict all mock/demo products from local storage
-          loadedProds = parsed
-            .filter((p: any) => !isDemoProduct(p))
-            .map(normalizeProduct);
+    // 1. Comprehensive hydration: merge LocalStorage + Custom Store + IndexedDB
+    const hydrateStorage = async () => {
+      try {
+        let deletedIds: string[] = [];
+        try {
+          deletedIds = JSON.parse(localStorage.getItem(STORAGE_DELETED_PRODUCTS_KEY) || "[]");
+        } catch {}
+
+        const masterOriginals = (staticProducts as Product[]).filter((p) => !isDemoProduct(p)).map(normalizeProduct);
+        const unifiedMap = new Map<string, Product>();
+
+        // Step A: 60 Baseline master catalog products
+        for (const mo of masterOriginals) {
+          if (!deletedIds.includes(mo.id)) {
+            unifiedMap.set(mo.id, mo);
+          }
         }
-      }
 
-      // Ensure all products have their real Cloudinary images and descriptions restored
-      loadedProds = loadedProds.map((lp) => {
-        const orig = masterOriginals.find(
-          (mo) => mo.id === lp.id || mo.name.trim().toLowerCase() === lp.name.trim().toLowerCase(),
-        );
-        if (orig) {
-          const validImg =
-            !lp.image ||
-            lp.image.includes("/assets/") ||
-            lp.image.includes("burgundy-silk") ||
-            lp.image === "/placeholder.svg"
-              ? orig.image
-              : lp.image;
-          const validDesc =
-            !lp.description || lp.description.trim() === "" ? orig.description : lp.description;
-          return {
-            ...lp,
-            image: validImg,
-            imageUrl: validImg,
-            description: validDesc,
-            isActive: lp.isActive !== false,
-            status: lp.status !== "inactive" ? "active" : lp.status,
-          };
-        }
-        return lp;
-      });
-
-      // Evict any lingering demo products
-      loadedProds = loadedProds.filter((p) => !isDemoProduct(p));
-
-      // If local storage has fewer than 41 products or was empty, seed with the 41 original products
-      // while preserving any custom products the user added in admin
-      if (loadedProds.length < masterOriginals.length) {
-        localStorage.removeItem(STORAGE_DELETED_PRODUCTS_KEY);
-        const userAddedOnly = loadedProds.filter((lp) => !masterOriginals.some((mo) => mo.id === lp.id));
-        loadedProds = [...userAddedOnly, ...masterOriginals];
-        saveProducts(loadedProds);
-      } else {
-        saveProducts(loadedProds);
-      }
-      setProductsList(loadedProds);
-
-      // 1b. Check IndexedDB to restore any user-added products that may have exceeded localStorage quota
-      idbGetProducts().then((idbProds) => {
-        if (Array.isArray(idbProds) && idbProds.length > 0) {
-          setProductsList((currentList) => {
-            const currentMap = new Map(currentList.map((p) => [p.id, p]));
-            let changed = false;
-            for (const ip of idbProds) {
-              if (ip && ip.id) {
-                if (!currentMap.has(ip.id)) {
-                  currentMap.set(ip.id, normalizeProduct(ip));
-                  changed = true;
-                } else {
-                  const existing = currentMap.get(ip.id)!;
-                  if (Array.isArray(ip.variants) && ip.variants.length > (existing.variants?.length || 0)) {
-                    currentMap.set(ip.id, normalizeProduct({ ...existing, variants: ip.variants }));
-                    changed = true;
-                  }
+        // Step B: Catalog storage
+        try {
+          const storedCatalog = localStorage.getItem(STORAGE_PRODUCTS_KEY);
+          if (storedCatalog) {
+            const parsed = JSON.parse(storedCatalog);
+            if (Array.isArray(parsed)) {
+              for (const p of parsed) {
+                if (p && p.id && !deletedIds.includes(p.id) && !isDemoProduct(p)) {
+                  unifiedMap.set(p.id, normalizeProduct(p));
                 }
               }
             }
-            if (changed) {
-              const merged = Array.from(currentMap.values());
-              saveProducts(merged);
-              return merged;
-            }
-            return currentList;
-          });
-        }
-      }).catch(() => {});
+          }
+        } catch {}
 
-      const storedOrders = localStorage.getItem(STORAGE_ORDERS_KEY);
-      if (storedOrders) {
+        // Step C: Dedicated user custom products (always preserves newly uploaded items)
+        try {
+          const customStored = localStorage.getItem(STORAGE_CUSTOM_PRODUCTS_KEY);
+          if (customStored) {
+            const parsed = JSON.parse(customStored);
+            if (Array.isArray(parsed)) {
+              for (const cp of parsed) {
+                if (cp && cp.id && !deletedIds.includes(cp.id) && !isDemoProduct(cp)) {
+                  unifiedMap.set(cp.id, normalizeProduct(cp));
+                }
+              }
+            }
+          }
+        } catch {}
+
+        // Step D: IndexedDB products (contains full images without 5MB storage limits)
+        try {
+          const idbProds = await idbGetProducts();
+          if (Array.isArray(idbProds) && idbProds.length > 0) {
+            for (const ip of idbProds) {
+              if (ip && ip.id && !deletedIds.includes(ip.id) && !isDemoProduct(ip)) {
+                const norm = normalizeProduct(ip);
+                const existing = unifiedMap.get(norm.id);
+                if (!existing) {
+                  unifiedMap.set(norm.id, norm);
+                } else {
+                  const hasBetterImg =
+                    typeof norm.image === "string" &&
+                    norm.image &&
+                    norm.image !== "/placeholder.svg" &&
+                    (!existing.image || existing.image === "/placeholder.svg" || existing.image.includes("/assets/"));
+                  const hasMoreVariants = Array.isArray(norm.variants) && norm.variants.length > (existing.variants?.length || 0);
+                  unifiedMap.set(norm.id, {
+                    ...existing,
+                    ...norm,
+                    image: hasBetterImg ? norm.image : (existing.image || norm.image),
+                    imageUrl: hasBetterImg ? norm.image : (existing.imageUrl || norm.imageUrl),
+                    variants: hasMoreVariants ? norm.variants : existing.variants,
+                  });
+                }
+              }
+            }
+          }
+        } catch (idbErr) {
+          console.warn("[IndexedDB Hydration Notice]", idbErr);
+        }
+
+        const merged = Array.from(unifiedMap.values());
+        if (!isCancelled) {
+          setProductsList(merged);
+          saveProducts(merged);
+        }
+      } catch (err) {
+        console.warn("[Storage Hydration Error]", err);
+      }
+    };
+
+    hydrateStorage();
+
+    const storedOrders = localStorage.getItem(STORAGE_ORDERS_KEY);
+    if (storedOrders) {
+      try {
         const parsed = JSON.parse(storedOrders);
-        if (Array.isArray(parsed)) {
-          setOrders(parsed);
-        }
-      }
-      const storedLogs = localStorage.getItem(STORAGE_STOCK_LOGS_KEY);
-      if (storedLogs) {
+        if (Array.isArray(parsed)) setOrders(parsed);
+      } catch {}
+    }
+    const storedLogs = localStorage.getItem(STORAGE_STOCK_LOGS_KEY);
+    if (storedLogs) {
+      try {
         const parsed = JSON.parse(storedLogs);
-        if (Array.isArray(parsed)) {
-          setStockLogs(parsed);
-        }
-      }
-    } catch (err) {
-      console.warn("Failed to load local store:", err);
+        if (Array.isArray(parsed)) setStockLogs(parsed);
+      } catch {}
     }
 
-    // 2. Real-time listener for other open tabs
+    // 2. Real-time listeners for storage events and cross-tab communication
     const handleStorageChange = (e: StorageEvent) => {
+      if ((e.key === STORAGE_PRODUCTS_KEY || e.key === STORAGE_CUSTOM_PRODUCTS_KEY) && e.newValue) {
+        hydrateStorage();
+      }
       if (e.key === STORAGE_CATEGORIES_KEY && e.newValue) {
         try {
           const parsed = JSON.parse(e.newValue);
-          if (Array.isArray(parsed)) {
-            setCategoriesList(parsed);
-          }
-        } catch (err) {}
-      }
-      if (e.key === STORAGE_PRODUCTS_KEY && e.newValue) {
-        try {
-          const parsed = JSON.parse(e.newValue);
-          if (Array.isArray(parsed)) {
-            setProductsList(parsed.map(normalizeProduct));
-          }
-        } catch (err) {}
+          if (Array.isArray(parsed)) setCategoriesList(parsed);
+        } catch {}
       }
       if (e.key === STORAGE_ORDERS_KEY && e.newValue) {
         try {
           const parsed = JSON.parse(e.newValue);
-          if (Array.isArray(parsed)) {
-            setOrders(parsed);
-          }
-        } catch (err) {}
+          if (Array.isArray(parsed)) setOrders(parsed);
+        } catch {}
       }
     };
 
-    // 3. In-tab custom event listener
     const handleCustomProductUpdate = (e: any) => {
       if (e.detail && Array.isArray(e.detail)) {
         setProductsList(e.detail.map(normalizeProduct));
@@ -457,7 +501,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     window.addEventListener("pf_categories_updated", handleCustomCategoryUpdate);
     window.addEventListener("pf_orders_updated", handleCustomOrderUpdate);
 
-    // 4. Background fetch categories from database
+    // 3. Background fetch categories from database
     productApi.getCategories().then((res) => {
       const backendCats = (res as any)?.categories || res?.data;
       if (Array.isArray(backendCats) && backendCats.length > 0) {
@@ -480,18 +524,27 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     // 4. Background sync with database API
     const syncWithBackend = async () => {
       try {
+        let deletedIds: string[] = [];
+        try {
+          deletedIds = JSON.parse(localStorage.getItem(STORAGE_DELETED_PRODUCTS_KEY) || "[]");
+        } catch {}
+
+        const masterOriginals = (staticProducts as Product[]).filter((p) => !isDemoProduct(p)).map(normalizeProduct);
+        const masterIds = new Set(masterOriginals.map((p) => p.id));
+
+        // Read all current products including custom ones from local storage
         const currentLocal = localStorage.getItem(STORAGE_PRODUCTS_KEY);
         let localList: Product[] = [];
         try {
           if (currentLocal) localList = JSON.parse(currentLocal);
         } catch {}
 
-        // If user has products locally, store them in TiDB Cloud without deleting defaults
+        // If user has custom products locally, auto-sync them to TiDB Cloud without deleting defaults
         if (Array.isArray(localList) && localList.length > 0) {
-          const hasUserAddedProducts = localList.some((p) => !DEMO_PRODUCT_IDS.has(p.id));
+          const hasUserAddedProducts = localList.some((p) => !isDemoProduct(p) && !masterIds.has(p.id));
           if (hasUserAddedProducts) {
             try {
-              console.log("[TiDB Auto-Sync] Safely syncing products to database...");
+              console.log("[TiDB Auto-Sync] Safely syncing custom products to database...");
               await productApi.bulkSync(localList, false);
             } catch (syncErr) {
               console.warn("[TiDB Auto-Sync] Background sync notice:", syncErr);
@@ -502,13 +555,6 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         const prodRes = await productApi.getAll();
         const serverProds = (prodRes as any).products || prodRes.data;
         if (prodRes.success && Array.isArray(serverProds) && serverProds.length > 0) {
-          let deletedIds: string[] = [];
-          try {
-            deletedIds = JSON.parse(localStorage.getItem(STORAGE_DELETED_PRODUCTS_KEY) || "[]");
-          } catch {}
-
-          const masterOriginals = (staticProducts as Product[]).filter((p) => !isDemoProduct(p)).map(normalizeProduct);
-
           // Filter out deleted items and demo items from server response
           const activeServerProds = serverProds
             .filter((sp: any) => !deletedIds.includes(sp.id) && !DEMO_PRODUCT_IDS.has(sp.id))
@@ -517,17 +563,21 @@ export function StoreProvider({ children }: { children: ReactNode }) {
           setProductsList((currentList) => {
             const mergedMap = new Map<string, Product>();
 
-            // 1. Guarantee all 60 master baseline catalog products are always present
+            // 1. Guarantee all 60 master baseline catalog products are always present (unless deleted)
             for (const mo of masterOriginals) {
-              mergedMap.set(mo.id, mo);
+              if (!deletedIds.includes(mo.id)) {
+                mergedMap.set(mo.id, mo);
+              }
             }
 
             // 2. Overlay server products
             for (const sp of activeServerProds) {
-              mergedMap.set(sp.id, sp);
+              if (!deletedIds.includes(sp.id)) {
+                mergedMap.set(sp.id, sp);
+              }
             }
 
-            // 3. Intelligently overlay current in-memory / local user products (especially new uploads)
+            // 3. Intelligently preserve current local user products (user uploaded products must NEVER be lost)
             for (const cl of currentList) {
               if (DEMO_PRODUCT_IDS.has(cl.id) || deletedIds.includes(cl.id)) continue;
               const sp = mergedMap.get(cl.id);
@@ -544,6 +594,21 @@ export function StoreProvider({ children }: { children: ReactNode }) {
                 }
               }
             }
+
+            // 4. Also check STORAGE_CUSTOM_PRODUCTS_KEY to ensure NO custom product is omitted
+            try {
+              const customStored = localStorage.getItem(STORAGE_CUSTOM_PRODUCTS_KEY);
+              if (customStored) {
+                const parsed = JSON.parse(customStored);
+                if (Array.isArray(parsed)) {
+                  for (const cp of parsed) {
+                    if (cp && cp.id && !deletedIds.includes(cp.id) && !mergedMap.has(cp.id)) {
+                      mergedMap.set(cp.id, normalizeProduct(cp));
+                    }
+                  }
+                }
+              }
+            } catch {}
 
             const merged = Array.from(mergedMap.values());
             saveProducts(merged);
@@ -570,6 +635,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     syncWithBackend();
 
     return () => {
+      isCancelled = true;
       window.removeEventListener("storage", handleStorageChange);
       window.removeEventListener("pf_products_updated", handleCustomProductUpdate);
       window.removeEventListener("pf_categories_updated", handleCustomCategoryUpdate);
@@ -582,10 +648,33 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     setProductsList(updated);
 
     if (typeof window !== "undefined") {
-      // 2. Always persist to IndexedDB (unlimited quota, never fails with QuotaExceededError)
+      // 2. Always persist to IndexedDB (unlimited quota, preserves all full-res photos)
       idbSaveProducts(updated).catch(() => {});
 
-      // 3. Also save to localStorage with quota overflow fallback
+      // 3. Keep dedicated custom products store updated (never lost on refresh)
+      const masterIds = new Set((staticProducts as Product[]).map((p) => p.id));
+      const customOnly = updated.filter((p) => !masterIds.has(p.id) && !isDemoProduct(p));
+      try {
+        localStorage.setItem(STORAGE_CUSTOM_PRODUCTS_KEY, JSON.stringify(customOnly));
+      } catch (e) {
+        try {
+          const compactCustom = customOnly.map((p) => {
+            const isBase64Img = typeof p.image === "string" && p.image.startsWith("data:");
+            const isBase64Url = typeof p.imageUrl === "string" && p.imageUrl.startsWith("data:");
+            return {
+              ...p,
+              image: isBase64Img ? "/placeholder.svg" : p.image,
+              imageUrl: isBase64Url ? "/placeholder.svg" : p.imageUrl,
+              images: Array.isArray(p.images)
+                ? p.images.filter((img) => typeof img === "string" && !img.startsWith("data:"))
+                : [],
+            };
+          });
+          localStorage.setItem(STORAGE_CUSTOM_PRODUCTS_KEY, JSON.stringify(compactCustom));
+        } catch {}
+      }
+
+      // 4. Also save to localStorage catalog with quota overflow fallback
       try {
         localStorage.setItem(STORAGE_PRODUCTS_KEY, JSON.stringify(updated));
       } catch (err) {
@@ -593,14 +682,22 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         try {
           const compact = updated.map((p) => {
             const isBase64Img = typeof p.image === "string" && p.image.startsWith("data:");
+            const isBase64Url = typeof p.imageUrl === "string" && p.imageUrl.startsWith("data:");
             return {
               ...p,
-              image: isBase64Img ? p.imageUrl || "/placeholder.svg" : p.image,
+              image: isBase64Img ? "/placeholder.svg" : p.image,
+              imageUrl: isBase64Url ? "/placeholder.svg" : p.imageUrl,
               images: Array.isArray(p.images)
                 ? p.images.filter((img) => typeof img === "string" && !img.startsWith("data:"))
                 : [],
               variants: Array.isArray(p.variants)
-                ? p.variants.map((v) => ({ ...v, image: v.image?.startsWith("data:") ? "" : v.image }))
+                ? p.variants.map((v) => ({
+                    ...v,
+                    image: typeof v.image === "string" && v.image.startsWith("data:") ? "" : v.image,
+                    images: Array.isArray(v.images)
+                      ? v.images.filter((img: any) => typeof img === "string" && !img.startsWith("data:"))
+                      : [],
+                  }))
                 : [],
             };
           });
@@ -608,7 +705,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         } catch {}
       }
 
-      // 4. ALWAYS dispatch in-window and cross-tab update event
+      // 5. ALWAYS dispatch in-window and cross-tab update event
       try {
         window.dispatchEvent(new CustomEvent("pf_products_updated", { detail: updated }));
       } catch {}
@@ -734,7 +831,35 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       updatedAt: nowIso,
     });
 
-    // 1. Immediately update state using functional updater - existing products can NEVER be lost
+    // 1. Immediately save to IndexedDB with full images and variants
+    idbSaveSingleProduct(product).catch(() => {});
+
+    // 2. Remove from deleted IDs
+    try {
+      const deletedIds: string[] = JSON.parse(
+        localStorage.getItem(STORAGE_DELETED_PRODUCTS_KEY) || "[]",
+      );
+      const filtered = deletedIds.filter((x) => x !== id);
+      localStorage.setItem(STORAGE_DELETED_PRODUCTS_KEY, JSON.stringify(filtered));
+    } catch {}
+
+    // 3. Immediately save to dedicated custom user products store (guaranteed persistence on refresh)
+    try {
+      const customStored = localStorage.getItem(STORAGE_CUSTOM_PRODUCTS_KEY);
+      let customList: Product[] = [];
+      if (customStored) {
+        try {
+          const parsed = JSON.parse(customStored);
+          if (Array.isArray(parsed)) customList = parsed;
+        } catch {}
+      }
+      customList = [product, ...customList.filter((p) => p.id !== id)];
+      localStorage.setItem(STORAGE_CUSTOM_PRODUCTS_KEY, JSON.stringify(customList));
+    } catch (e) {
+      console.warn("Custom product storage notice:", e);
+    }
+
+    // 4. Immediately update state using functional updater - existing products can NEVER be lost
     setProductsList((currentList) => {
       const masterOriginals = (staticProducts as Product[]).filter((p) => !isDemoProduct(p)).map(normalizeProduct);
       const base = currentList && currentList.length >= masterOriginals.length
@@ -745,16 +870,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       return updated;
     });
 
-    // Remove from deleted list if re-added
-    try {
-      const deletedIds: string[] = JSON.parse(
-        localStorage.getItem(STORAGE_DELETED_PRODUCTS_KEY) || "[]",
-      );
-      const filtered = deletedIds.filter((x) => x !== id);
-      localStorage.setItem(STORAGE_DELETED_PRODUCTS_KEY, JSON.stringify(filtered));
-    } catch {}
-
-    // 2. Persist to backend database API
+    // 5. Persist to backend database API
     try {
       const res = await productApi.create(product);
       if (res && res.success) {
@@ -861,6 +977,30 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       return updated;
     });
 
+    // Also update in STORAGE_CUSTOM_PRODUCTS_KEY if present
+    try {
+      const customStored = localStorage.getItem(STORAGE_CUSTOM_PRODUCTS_KEY);
+      if (customStored) {
+        const parsed = JSON.parse(customStored);
+        if (Array.isArray(parsed) && parsed.some((p: any) => p.id === id)) {
+          const updatedCustom = parsed.map((p: any) =>
+            p.id === id ? { ...p, ...updates, updatedAt: nowIso } : p,
+          );
+          localStorage.setItem(STORAGE_CUSTOM_PRODUCTS_KEY, JSON.stringify(updatedCustom));
+        }
+      }
+    } catch {}
+
+    // Also update in IndexedDB
+    try {
+      idbGetProducts().then((all) => {
+        const target = all?.find((p: any) => p.id === id);
+        if (target) {
+          idbSaveSingleProduct({ ...target, ...updates, updatedAt: nowIso }).catch(() => {});
+        }
+      }).catch(() => {});
+    } catch {}
+
     // If stock changed, record log
     if (updates.stock !== undefined && prevStock !== undefined && Number(updates.stock) !== prevStock) {
       const newLog: StockLog = {
@@ -889,12 +1029,29 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   };
 
   const deleteProduct = (id: string) => {
+    // 1. Immediately remove from state
     setProductsList((currentList) => {
       const updated = currentList.filter((p) => p.id !== id);
       saveProducts(updated);
       return updated;
     });
 
+    // 2. Explicitly remove from STORAGE_CUSTOM_PRODUCTS_KEY
+    try {
+      const customStored = localStorage.getItem(STORAGE_CUSTOM_PRODUCTS_KEY);
+      if (customStored) {
+        const parsed = JSON.parse(customStored);
+        if (Array.isArray(parsed)) {
+          const filtered = parsed.filter((p: any) => p.id !== id);
+          localStorage.setItem(STORAGE_CUSTOM_PRODUCTS_KEY, JSON.stringify(filtered));
+        }
+      }
+    } catch {}
+
+    // 3. Explicitly delete from IndexedDB
+    idbDeleteProduct(id).catch(() => {});
+
+    // 4. Mark as deleted in STORAGE_DELETED_PRODUCTS_KEY
     try {
       const deletedIds: string[] = JSON.parse(
         localStorage.getItem(STORAGE_DELETED_PRODUCTS_KEY) || "[]",
@@ -905,7 +1062,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       }
     } catch {}
 
-    // Persist to backend database API
+    // 5. Persist to backend database API
     productApi.delete(id).catch((err) => {
       console.warn("Could not sync deleted product to backend API:", err);
     });

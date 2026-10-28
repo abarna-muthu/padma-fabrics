@@ -348,6 +348,13 @@ export async function createProduct(req: Request, res: Response) {
     if (existingSlug && existingSlug.length > 0) {
       productSlug = `${productSlug}-${Date.now().toString(36)}`;
     }
+
+    const existingSku = await db.query("SELECT id FROM products WHERE sku = ?", [productSku]);
+    let finalSku = productSku;
+    if (existingSku && existingSku.length > 0 && existingSku[0]?.id !== id) {
+      finalSku = `${productSku}-${Date.now().toString(36).slice(-4)}`;
+    }
+
     const rawCat = categoryId || category || "sarees";
     const finalCategory = CATEGORY_NAME_TO_ID[rawCat] || rawCat.toLowerCase().replace(/[^a-z0-9]+/g, "-");
     const finalImage = image_url || image || "/assets/burgundy-silk.jpg";
@@ -366,31 +373,60 @@ export async function createProduct(req: Request, res: Response) {
       ).catch(() => {});
     }
 
-    await db.execute(
-      `INSERT INTO products (id, sku, name, slug, category_id, colour, price, original_price, unit, stock_quantity, low_stock_threshold, badge, description, image_url, is_active, is_featured, sizes, variants, images)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      [
-        id,
-        productSku,
-        name,
-        productSlug,
-        finalCategory,
-        colour || "Custom",
-        Number(price),
-        original_price ? Number(original_price) : null,
-        unit,
-        Number(stock) || 0,
-        5,
-        badge,
-        description,
-        finalImage,
-        1,
-        is_featured ? 1 : 0,
-        sizesJson,
-        variantsJson,
-        imagesJson,
-      ],
-    );
+    const existingId = await db.query("SELECT id FROM products WHERE id = ?", [id]);
+    if (existingId && existingId.length > 0) {
+      await db.execute(
+        `UPDATE products SET 
+          name = ?, category_id = ?, colour = ?, price = ?, original_price = ?,
+          unit = ?, stock_quantity = ?, badge = ?, description = ?, image_url = ?,
+          is_active = ?, is_featured = ?, sizes = ?, variants = ?, images = ?, updated_at = CURRENT_TIMESTAMP
+         WHERE id = ?`,
+        [
+          name,
+          finalCategory,
+          colour || "Custom",
+          Number(price),
+          original_price ? Number(original_price) : null,
+          unit,
+          Number(stock) || 0,
+          badge,
+          description,
+          finalImage,
+          1,
+          is_featured ? 1 : 0,
+          sizesJson,
+          variantsJson,
+          imagesJson,
+          id,
+        ],
+      );
+    } else {
+      await db.execute(
+        `INSERT INTO products (id, sku, name, slug, category_id, colour, price, original_price, unit, stock_quantity, low_stock_threshold, badge, description, image_url, is_active, is_featured, sizes, variants, images)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [
+          id,
+          finalSku,
+          name,
+          productSlug,
+          finalCategory,
+          colour || "Custom",
+          Number(price),
+          original_price ? Number(original_price) : null,
+          unit,
+          Number(stock) || 0,
+          5,
+          badge,
+          description,
+          finalImage,
+          1,
+          is_featured ? 1 : 0,
+          sizesJson,
+          variantsJson,
+          imagesJson,
+        ],
+      );
+    }
 
     // Record inventory log
     if (Number(stock) > 0) {

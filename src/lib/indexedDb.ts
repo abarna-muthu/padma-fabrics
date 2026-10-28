@@ -28,13 +28,15 @@ function openDb(): Promise<IDBDatabase | null> {
   });
 }
 
+/**
+ * Upserts a list of products in IndexedDB without clearing existing items.
+ */
 export async function idbSaveProducts(products: any[]): Promise<boolean> {
   try {
     const db = await openDb();
     if (!db) return false;
     const tx = db.transaction(STORE_NAME, "readwrite");
     const store = tx.objectStore(STORE_NAME);
-    store.clear();
     for (const p of products) {
       if (p && p.id) {
         store.put(p);
@@ -51,6 +53,53 @@ export async function idbSaveProducts(products: any[]): Promise<boolean> {
   }
 }
 
+/**
+ * Upserts a single product in IndexedDB immediately.
+ */
+export async function idbSaveSingleProduct(product: any): Promise<boolean> {
+  try {
+    if (!product || !product.id) return false;
+    const db = await openDb();
+    if (!db) return false;
+    const tx = db.transaction(STORE_NAME, "readwrite");
+    const store = tx.objectStore(STORE_NAME);
+    store.put(product);
+    return new Promise((resolve) => {
+      tx.oncomplete = () => resolve(true);
+      tx.onerror = () => resolve(false);
+      tx.onabort = () => resolve(false);
+    });
+  } catch (err) {
+    console.warn("[IndexedDB] Save single product error:", err);
+    return false;
+  }
+}
+
+/**
+ * Permanently deletes a single product from IndexedDB by id.
+ */
+export async function idbDeleteProduct(id: string): Promise<boolean> {
+  try {
+    if (!id) return false;
+    const db = await openDb();
+    if (!db) return false;
+    const tx = db.transaction(STORE_NAME, "readwrite");
+    const store = tx.objectStore(STORE_NAME);
+    store.delete(String(id));
+    return new Promise((resolve) => {
+      tx.oncomplete = () => resolve(true);
+      tx.onerror = () => resolve(false);
+      tx.onabort = () => resolve(false);
+    });
+  } catch (err) {
+    console.warn("[IndexedDB] Delete product error:", err);
+    return false;
+  }
+}
+
+/**
+ * Retrieves all stored products from IndexedDB.
+ */
 export async function idbGetProducts(): Promise<any[] | null> {
   try {
     const db = await openDb();

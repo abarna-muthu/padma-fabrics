@@ -914,8 +914,9 @@ function AdminDashboardPage() {
       });
     }
 
+    const cleanProdImages = prodImages.map((img) => (img.startsWith("data:") && finalImage.startsWith("http") ? finalImage : img));
     const variantImages = processedVariants.map((v) => v.image).filter(Boolean) as string[];
-    const galleryToSave = Array.from(new Set([finalImage, ...prodImages, ...variantImages])).filter(Boolean);
+    const galleryToSave = Array.from(new Set([finalImage, ...cleanProdImages, ...variantImages])).filter(Boolean);
 
     try {
       if (editingProduct) {
