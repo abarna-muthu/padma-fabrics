@@ -98,6 +98,27 @@ export async function idbDeleteProduct(id: string): Promise<boolean> {
 }
 
 /**
+ * Permanently clears all products from IndexedDB.
+ */
+export async function idbClearProducts(): Promise<boolean> {
+  try {
+    const db = await openDb();
+    if (!db) return false;
+    const tx = db.transaction(STORE_NAME, "readwrite");
+    const store = tx.objectStore(STORE_NAME);
+    store.clear();
+    return new Promise((resolve) => {
+      tx.oncomplete = () => resolve(true);
+      tx.onerror = () => resolve(false);
+      tx.onabort = () => resolve(false);
+    });
+  } catch (err) {
+    console.warn("[IndexedDB] Clear products error:", err);
+    return false;
+  }
+}
+
+/**
  * Retrieves all stored products from IndexedDB.
  */
 export async function idbGetProducts(): Promise<any[] | null> {

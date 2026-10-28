@@ -317,10 +317,10 @@ function ShopPage() {
         {visible.length === 0 ? (
           <div className="p-16 rounded-2xl bg-white border border-dashed border-[rgba(14,14,14,0.15)] shadow-xs text-center my-6">
             <h3 className="font-['Manrope'] text-lg font-medium text-[#0E0E0E]">
-              No fabrics matching your selection
+              {activeProducts.length === 0 ? "No products available in the catalog yet" : "No fabrics matching your selection"}
             </h3>
             <p className="text-xs text-[#0E0E0E]/60 mt-1 mb-4">
-              Try adjusting the pattern or category filters above.
+              {activeProducts.length === 0 ? "New arrivals will be listed here as soon as they are added in the Admin Panel." : "Try adjusting the pattern or category filters above."}
             </p>
             <button
               type="button"

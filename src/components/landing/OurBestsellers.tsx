@@ -210,7 +210,7 @@ export function OurBestsellers({ onOpenQuickSize }: OurBestsellersProps) {
       });
     }
 
-    return FALLBACK_SEED_PRODUCTS;
+    return [];
   }, [activeProducts, productsList]);
 
   // Derive live thumbnail images for tabs from actual store products
@@ -260,13 +260,6 @@ export function OurBestsellers({ onOpenQuickSize }: OurBestsellersProps) {
       const prodCat = (p.category || "").toLowerCase().replace(/[^a-z0-9]/g, "");
       return prodCat === targetKey || prodCat.includes(targetKey) || targetKey.includes(prodCat);
     });
-
-    if (matches.length === 0) {
-      return FALLBACK_SEED_PRODUCTS.filter((p) => {
-        const prodCat = (p.category || "").toLowerCase().replace(/[^a-z0-9]/g, "");
-        return prodCat === targetKey || prodCat.includes(targetKey) || targetKey.includes(prodCat);
-      });
-    }
 
     return matches;
   }, [mappedProducts, activeTab]);

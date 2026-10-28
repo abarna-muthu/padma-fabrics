@@ -14,7 +14,7 @@ import {
   type StockLog,
 } from "@/lib/catalog";
 import { productApi, orderApi, inventoryApi } from "@/lib/api";
-import { idbSaveProducts, idbGetProducts, idbSaveSingleProduct, idbDeleteProduct } from "@/lib/indexedDb";
+import { idbSaveProducts, idbGetProducts, idbSaveSingleProduct, idbDeleteProduct, idbClearProducts } from "@/lib/indexedDb";
 import { toast } from "sonner";
 
 interface StoreContextType {
@@ -99,6 +99,7 @@ interface StoreContextType {
 
 const STORAGE_PRODUCTS_KEY = "pf_admin_products_catalog";
 const STORAGE_CUSTOM_PRODUCTS_KEY = "pf_custom_user_products";
+const STORAGE_PURGE_LEGACY_KEY = "pf_legacy_products_purged_v2";
 const STORAGE_CATEGORIES_KEY = "pf_admin_categories";
 const STORAGE_ORDERS_KEY = "pf_admin_orders";
 const STORAGE_STOCK_LOGS_KEY = "pf_admin_stock_logs";
@@ -293,11 +294,20 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
   // Catalog products (shared with public storefront)
   const [productsList, setProductsList] = useState<Product[]>(() => {
-    const masterOriginals = (staticProducts as Product[]).filter((p) => !isDemoProduct(p)).map(normalizeProduct);
     if (typeof window === "undefined") {
-      return masterOriginals;
+      return [];
     }
     try {
+      // Purge legacy sample/demo products once as requested by user
+      if (localStorage.getItem(STORAGE_PURGE_LEGACY_KEY) !== "true") {
+        localStorage.removeItem(STORAGE_PRODUCTS_KEY);
+        localStorage.removeItem(STORAGE_CUSTOM_PRODUCTS_KEY);
+        localStorage.removeItem(STORAGE_DELETED_PRODUCTS_KEY);
+        localStorage.setItem(STORAGE_PURGE_LEGACY_KEY, "true");
+        idbClearProducts().catch(() => {});
+        return [];
+      }
+
       let deletedIds: string[] = [];
       try {
         deletedIds = JSON.parse(localStorage.getItem(STORAGE_DELETED_PRODUCTS_KEY) || "[]");
@@ -305,10 +315,16 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
       const initialMap = new Map<string, Product>();
 
-      // 1. Seed with baseline 60 catalog products (unless deleted)
-      for (const mo of masterOriginals) {
-        if (!deletedIds.includes(mo.id)) {
-          initialMap.set(mo.id, mo);
+      // 1. Read custom user-added products (guaranteed persistence across refreshes)
+      const customStored = localStorage.getItem(STORAGE_CUSTOM_PRODUCTS_KEY);
+      if (customStored) {
+        const parsedCustom = JSON.parse(customStored);
+        if (Array.isArray(parsedCustom)) {
+          for (const cp of parsedCustom) {
+            if (cp && cp.id && !deletedIds.includes(cp.id) && !isDemoProduct(cp)) {
+              initialMap.set(cp.id, normalizeProduct(cp));
+            }
+          }
         }
       }
 
@@ -325,22 +341,9 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         }
       }
 
-      // 3. Read custom user-added products (guaranteed persistence across refreshes)
-      const customStored = localStorage.getItem(STORAGE_CUSTOM_PRODUCTS_KEY);
-      if (customStored) {
-        const parsedCustom = JSON.parse(customStored);
-        if (Array.isArray(parsedCustom)) {
-          for (const cp of parsedCustom) {
-            if (cp && cp.id && !deletedIds.includes(cp.id) && !isDemoProduct(cp)) {
-              initialMap.set(cp.id, normalizeProduct(cp));
-            }
-          }
-        }
-      }
-
       return Array.from(initialMap.values());
     } catch {
-      return masterOriginals;
+      return [];
     }
   });
 
@@ -357,20 +360,40 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     // 1. Comprehensive hydration: merge LocalStorage + Custom Store + IndexedDB
     const hydrateStorage = async () => {
       try {
+        // Enforce purge of legacy sample/demo products
+        if (localStorage.getItem(STORAGE_PURGE_LEGACY_KEY) !== "true") {
+          localStorage.removeItem(STORAGE_PRODUCTS_KEY);
+          localStorage.removeItem(STORAGE_CUSTOM_PRODUCTS_KEY);
+          localStorage.removeItem(STORAGE_DELETED_PRODUCTS_KEY);
+          localStorage.setItem(STORAGE_PURGE_LEGACY_KEY, "true");
+          await idbClearProducts().catch(() => {});
+          if (!isCancelled) {
+            setProductsList([]);
+          }
+          return;
+        }
+
         let deletedIds: string[] = [];
         try {
           deletedIds = JSON.parse(localStorage.getItem(STORAGE_DELETED_PRODUCTS_KEY) || "[]");
         } catch {}
 
-        const masterOriginals = (staticProducts as Product[]).filter((p) => !isDemoProduct(p)).map(normalizeProduct);
         const unifiedMap = new Map<string, Product>();
 
-        // Step A: 60 Baseline master catalog products
-        for (const mo of masterOriginals) {
-          if (!deletedIds.includes(mo.id)) {
-            unifiedMap.set(mo.id, mo);
+        // Step A: Dedicated user custom products (always preserves newly uploaded items)
+        try {
+          const customStored = localStorage.getItem(STORAGE_CUSTOM_PRODUCTS_KEY);
+          if (customStored) {
+            const parsed = JSON.parse(customStored);
+            if (Array.isArray(parsed)) {
+              for (const cp of parsed) {
+                if (cp && cp.id && !deletedIds.includes(cp.id) && !isDemoProduct(cp)) {
+                  unifiedMap.set(cp.id, normalizeProduct(cp));
+                }
+              }
+            }
           }
-        }
+        } catch {}
 
         // Step B: Catalog storage
         try {
@@ -387,22 +410,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
           }
         } catch {}
 
-        // Step C: Dedicated user custom products (always preserves newly uploaded items)
-        try {
-          const customStored = localStorage.getItem(STORAGE_CUSTOM_PRODUCTS_KEY);
-          if (customStored) {
-            const parsed = JSON.parse(customStored);
-            if (Array.isArray(parsed)) {
-              for (const cp of parsed) {
-                if (cp && cp.id && !deletedIds.includes(cp.id) && !isDemoProduct(cp)) {
-                  unifiedMap.set(cp.id, normalizeProduct(cp));
-                }
-              }
-            }
-          }
-        } catch {}
-
-        // Step D: IndexedDB products (contains full images without 5MB storage limits)
+        // Step C: IndexedDB products (contains full images without 5MB storage limits)
         try {
           const idbProds = await idbGetProducts();
           if (Array.isArray(idbProds) && idbProds.length > 0) {
@@ -529,9 +537,6 @@ export function StoreProvider({ children }: { children: ReactNode }) {
           deletedIds = JSON.parse(localStorage.getItem(STORAGE_DELETED_PRODUCTS_KEY) || "[]");
         } catch {}
 
-        const masterOriginals = (staticProducts as Product[]).filter((p) => !isDemoProduct(p)).map(normalizeProduct);
-        const masterIds = new Set(masterOriginals.map((p) => p.id));
-
         // Read all current products including custom ones from local storage
         const currentLocal = localStorage.getItem(STORAGE_PRODUCTS_KEY);
         let localList: Product[] = [];
@@ -539,9 +544,9 @@ export function StoreProvider({ children }: { children: ReactNode }) {
           if (currentLocal) localList = JSON.parse(currentLocal);
         } catch {}
 
-        // If user has custom products locally, auto-sync them to TiDB Cloud without deleting defaults
+        // If user has custom products locally, auto-sync them to TiDB Cloud
         if (Array.isArray(localList) && localList.length > 0) {
-          const hasUserAddedProducts = localList.some((p) => !isDemoProduct(p) && !masterIds.has(p.id));
+          const hasUserAddedProducts = localList.some((p) => !isDemoProduct(p));
           if (hasUserAddedProducts) {
             try {
               console.log("[TiDB Auto-Sync] Safely syncing custom products to database...");
@@ -554,7 +559,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
         const prodRes = await productApi.getAll();
         const serverProds = (prodRes as any).products || prodRes.data;
-        if (prodRes.success && Array.isArray(serverProds) && serverProds.length > 0) {
+        if (prodRes.success && Array.isArray(serverProds)) {
           // Filter out deleted items and demo items from server response
           const activeServerProds = serverProds
             .filter((sp: any) => !deletedIds.includes(sp.id) && !DEMO_PRODUCT_IDS.has(sp.id))
@@ -563,21 +568,14 @@ export function StoreProvider({ children }: { children: ReactNode }) {
           setProductsList((currentList) => {
             const mergedMap = new Map<string, Product>();
 
-            // 1. Guarantee all 60 master baseline catalog products are always present (unless deleted)
-            for (const mo of masterOriginals) {
-              if (!deletedIds.includes(mo.id)) {
-                mergedMap.set(mo.id, mo);
-              }
-            }
-
-            // 2. Overlay server products
+            // 1. Overlay server products
             for (const sp of activeServerProds) {
               if (!deletedIds.includes(sp.id)) {
                 mergedMap.set(sp.id, sp);
               }
             }
 
-            // 3. Intelligently preserve current local user products (user uploaded products must NEVER be lost)
+            // 2. Intelligently preserve current local user products (user uploaded products must NEVER be lost)
             for (const cl of currentList) {
               if (DEMO_PRODUCT_IDS.has(cl.id) || deletedIds.includes(cl.id)) continue;
               const sp = mergedMap.get(cl.id);
@@ -595,7 +593,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
               }
             }
 
-            // 4. Also check STORAGE_CUSTOM_PRODUCTS_KEY to ensure NO custom product is omitted
+            // 3. Also check STORAGE_CUSTOM_PRODUCTS_KEY to ensure NO custom product is omitted
             try {
               const customStored = localStorage.getItem(STORAGE_CUSTOM_PRODUCTS_KEY);
               if (customStored) {
@@ -652,8 +650,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       idbSaveProducts(updated).catch(() => {});
 
       // 3. Keep dedicated custom products store updated (never lost on refresh)
-      const masterIds = new Set((staticProducts as Product[]).map((p) => p.id));
-      const customOnly = updated.filter((p) => !masterIds.has(p.id) && !isDemoProduct(p));
+      const customOnly = updated.filter((p) => !isDemoProduct(p));
       try {
         localStorage.setItem(STORAGE_CUSTOM_PRODUCTS_KEY, JSON.stringify(customOnly));
       } catch (e) {
@@ -859,13 +856,9 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       console.warn("Custom product storage notice:", e);
     }
 
-    // 4. Immediately update state using functional updater - existing products can NEVER be lost
+    // 4. Immediately update state using functional updater
     setProductsList((currentList) => {
-      const masterOriginals = (staticProducts as Product[]).filter((p) => !isDemoProduct(p)).map(normalizeProduct);
-      const base = currentList && currentList.length >= masterOriginals.length
-        ? currentList
-        : [...currentList, ...masterOriginals.filter((mo) => !currentList.some((cl) => cl.id === mo.id))];
-      const updated = [product, ...base.filter((p) => p.id !== id)];
+      const updated = [product, ...currentList.filter((p) => p.id !== id)];
       saveProducts(updated);
       return updated;
     });
@@ -933,20 +926,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   };
 
   const restoreAllProducts = async () => {
-    try {
-      localStorage.removeItem(STORAGE_DELETED_PRODUCTS_KEY);
-      const masterList = (staticProducts as Product[]).map(normalizeProduct);
-      setProductsList(masterList);
-      saveProducts(masterList);
-      try {
-        await productApi.bulkSync(masterList, false);
-      } catch (syncErr) {
-        console.warn("Could not sync restored products to backend:", syncErr);
-      }
-      toast.success(`Successfully restored all ${masterList.length} products with complete photos, descriptions, and categories!`);
-    } catch (err: any) {
-      toast.error(`Restore failed: ${err?.message || "Unknown error"}`);
-    }
+    toast.info("Legacy sample products have been permanently cleared as requested. Please add your new products using '+ ADD PRODUCT'.");
   };
 
   const updateProduct = async (id: string, updates: Partial<Product>) => {
