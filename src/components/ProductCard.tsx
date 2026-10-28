@@ -1,8 +1,9 @@
 import { useState } from "react";
+import { useNavigate } from "@tanstack/react-router";
 import { Heart, ShoppingBag } from "lucide-react";
 import { formatPrice } from "@/utils/formatters";
 import { useWishlist } from "@/context/WishlistContext";
-import { useCart } from "@/context/CartContext";
+import { useCart, type CartItem } from "@/context/CartContext";
 import { useStore } from "@/context/StoreContext";
 import type { Product } from "@/lib/catalog";
 
@@ -14,8 +15,9 @@ interface ProductCardProps {
 }
 
 export function ProductCard({ product, light = false, badgeText, onQuickView }: ProductCardProps) {
+  const navigate = useNavigate();
   const { wishlist, toggleWishlist } = useWishlist();
-  const { addToCart } = useCart();
+  const { addToCart, setDirectCheckoutItem } = useCart();
   const { openProduct, buyNow } = useStore();
 
   const isFavorite = wishlist.includes(String(product.id));
@@ -59,8 +61,24 @@ export function ProductCard({ product, light = false, badgeText, onQuickView }: 
 
   const handleBuyNow = (e: React.MouseEvent) => {
     e.stopPropagation();
-    addToCart(product, selectedSize, 1, product.colour, product.image, product.price);
-    buyNow(product, 1);
+    const chosenSize = selectedSize || "Standard";
+    const chosenColour = product.colour || "";
+    const cartItemId = `${product.id}-${chosenSize}-${chosenColour || "default"}`;
+    const singleItem: CartItem = {
+      id: String(product.id),
+      cartItemId,
+      name: product.name,
+      price: Number(product.price) || 0,
+      originalPrice: product.originalPrice ? Number(product.originalPrice) : undefined,
+      image: product.image || product.imageUrl || "/placeholder.svg",
+      category: product.category,
+      fabric: product.fabric,
+      size: chosenSize,
+      colour: chosenColour,
+      quantity: 1,
+    };
+    setDirectCheckoutItem(singleItem);
+    navigate({ to: "/checkout" });
   };
 
   const handleWishlistClick = (e: React.MouseEvent) => {

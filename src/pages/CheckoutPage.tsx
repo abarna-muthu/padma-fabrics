@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
 import {
   ShieldCheck,
@@ -21,7 +21,7 @@ import {
 } from "lucide-react";
 import { Breadcrumb } from "@/components/Breadcrumb";
 import { SectionHeading } from "@/components/SectionHeading";
-import { useCart } from "@/context/CartContext";
+import { useCart, type CartItem } from "@/context/CartContext";
 import { useStore } from "@/context/StoreContext";
 import { useCustomerAuth } from "@/context/CustomerAuthContext";
 import { formatPrice } from "@/utils/formatters";
@@ -29,9 +29,43 @@ import { toast } from "sonner";
 
 export function CheckoutPage() {
   const navigate = useNavigate();
-  const { cart, cartCount, subtotal, clearCart } = useCart();
+  const {
+    cart,
+    cartCount,
+    subtotal,
+    clearCart,
+    removeFromCart,
+    directCheckoutItem,
+    clearDirectCheckout,
+  } = useCart();
   const { createCheckoutOrder } = useStore();
   const { customer, registerCustomer, loginCustomer, updateCustomerProfile } = useCustomerAuth();
+
+  // Allow selecting only a single product to buy if multiple exist
+  const [selectedSingleItemId, setSelectedSingleItemId] = useState<string | null>(null);
+
+  // Active items being ordered
+  const checkoutItems: CartItem[] = useMemo(() => {
+    // 1. Direct single product checkout initiated via "Buy Now" or "Buy This Item"
+    if (directCheckoutItem) {
+      return [directCheckoutItem];
+    }
+    // 2. User clicked a specific item in the Order Summary list
+    if (selectedSingleItemId) {
+      const match = cart.find((i) => i.cartItemId === selectedSingleItemId);
+      if (match) return [match];
+    }
+    // 3. Fallback: all items in cart
+    return cart;
+  }, [directCheckoutItem, selectedSingleItemId, cart]);
+
+  const checkoutCount = useMemo(() => {
+    return checkoutItems.reduce((acc, item) => acc + item.quantity, 0);
+  }, [checkoutItems]);
+
+  const checkoutSubtotal = useMemo(() => {
+    return checkoutItems.reduce((acc, item) => acc + item.price * item.quantity, 0);
+  }, [checkoutItems]);
 
   // Customer form fields
   const [customerName, setCustomerName] = useState("");
@@ -103,8 +137,8 @@ export function CheckoutPage() {
       return;
     }
 
-    if (cart.length === 0) {
-      setErrorMsg("Your shopping bag is empty. Please add items before checking out.");
+    if (checkoutItems.length === 0) {
+      setErrorMsg("No items selected for checkout. Please select a product to buy.");
       return;
     }
 
@@ -125,8 +159,8 @@ export function CheckoutPage() {
         await new Promise((r) => setTimeout(r, 600));
       }
 
-      // 3. Prepare items payload from CartContext
-      const orderItems = cart.map((item) => ({
+      // 3. Prepare items payload from active checkoutItems
+      const orderItems = checkoutItems.map((item) => ({
         productId: item.id,
         quantity: item.quantity,
         size: item.size,
@@ -162,18 +196,28 @@ export function CheckoutPage() {
           customerPhone: phone,
           customerEmail: email,
           address: fullAddress,
-          totalAmount: subtotal,
+          totalAmount: checkoutSubtotal,
           paymentMethod: paymentMethod === "online" ? `Online UPI (${selectedUpiApp.toUpperCase()})` : "Cash on Delivery (COD)",
           date: new Date().toLocaleDateString("en-IN", {
             day: "numeric",
             month: "short",
             year: "numeric",
           }),
-          itemsCount: cartCount,
+          itemsCount: checkoutCount,
         };
 
         setConfirmedOrder(successRecord);
-        clearCart();
+
+        // Remove ONLY the purchased items from bag, preserving others
+        if (directCheckoutItem) {
+          removeFromCart(directCheckoutItem.cartItemId);
+          clearDirectCheckout();
+        } else if (selectedSingleItemId) {
+          removeFromCart(selectedSingleItemId);
+          setSelectedSingleItemId(null);
+        } else {
+          clearCart();
+        }
         toast.success(`Order #${orderNum} confirmed! Dispatching from Chennai showroom.`);
       } else {
         setErrorMsg(res?.error || "Could not place order. Please try again or order via WhatsApp.");
@@ -280,7 +324,7 @@ export function CheckoutPage() {
   // -------------------------------------------------------------
   // VIEW: EMPTY BAG PROMPT
   // -------------------------------------------------------------
-  if (cart.length === 0) {
+  if (checkoutItems.length === 0) {
     return (
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <Breadcrumb
@@ -566,31 +610,88 @@ export function CheckoutPage() {
           <div className="p-6 border border-[#D15608]/30 rounded-xl bg-[#FAF6EE] dark:bg-[#1E191A] shadow-xs space-y-4">
             <h4 className="font-['Playfair_Display'] text-lg font-bold text-[#9F160A] dark:text-[#FAF6EE] flex items-center justify-between">
               <span>Order Summary</span>
-              <span className="text-xs font-sans text-[#D15608]">{cartCount} Items</span>
+              <span className="text-xs font-sans text-[#D15608]">
+                {checkoutCount} {checkoutCount === 1 ? "Item" : "Items"}
+              </span>
             </h4>
 
+            {/* Direct purchase indicator if buying only 1 product */}
+            {(directCheckoutItem || selectedSingleItemId) && cart.length > 1 && (
+              <div className="flex items-center justify-between bg-white dark:bg-black/20 p-2.5 rounded-lg border border-[#D15608]/30 text-xs">
+                <span className="text-[#0E0E0E] dark:text-[#FAF6EE] font-semibold flex items-center gap-1.5">
+                  <CheckCircle2 className="size-3.5 text-emerald-600" />
+                  <span>Buying only this 1 product</span>
+                </span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    clearDirectCheckout();
+                    setSelectedSingleItemId(null);
+                  }}
+                  className="text-[11px] font-bold text-[#D15608] hover:underline cursor-pointer"
+                >
+                  View all {cart.length} items
+                </button>
+              </div>
+            )}
+
             {/* Cart Items List */}
-            <div className="max-h-64 overflow-y-auto space-y-3 pr-1 divide-y divide-[#E5DAC4]/60 dark:divide-white/10">
-              {cart.map((item) => (
-                <div key={item.cartItemId} className="pt-2.5 flex items-center gap-3 first:pt-0">
-                  <img
-                    src={item.image}
-                    alt={item.name}
-                    className="size-12 object-cover rounded border border-[#D15608]/20 shrink-0 bg-white"
-                  />
-                  <div className="flex-1 min-w-0 text-xs">
-                    <h5 className="font-medium truncate text-[#0E0E0E] dark:text-[#FAF6EE]">
-                      {item.name}
-                    </h5>
-                    <p className="text-[11px] text-[#5C5549] dark:text-[#B5AC9E]">
-                      {item.colour ? `Colour: ${item.colour} · ` : ""}Size: {item.size || "Standard"} · Qty: {item.quantity}
-                    </p>
+            <div className="max-h-72 overflow-y-auto space-y-2.5 pr-1 divide-y divide-[#E5DAC4]/60 dark:divide-white/10">
+              {(directCheckoutItem ? [directCheckoutItem] : cart).map((item) => {
+                const isSelected = checkoutItems.some((ci) => ci.cartItemId === item.cartItemId);
+                const canSelectOnlyThis = !directCheckoutItem && cart.length > 1;
+
+                return (
+                  <div
+                    key={item.cartItemId}
+                    onClick={() => {
+                      if (canSelectOnlyThis) {
+                        setSelectedSingleItemId(item.cartItemId);
+                      }
+                    }}
+                    className={`pt-2.5 first:pt-0 flex items-center gap-3 transition-all rounded-lg p-1.5 ${
+                      isSelected
+                        ? "bg-white/80 dark:bg-white/5 border border-[#D15608]/40"
+                        : "opacity-60 hover:opacity-100"
+                    } ${canSelectOnlyThis ? "cursor-pointer" : ""}`}
+                    title={canSelectOnlyThis ? "Click to buy only this product" : undefined}
+                  >
+                    {canSelectOnlyThis && (
+                      <div
+                        className={`size-4 rounded-full border flex items-center justify-center shrink-0 ${
+                          isSelected
+                            ? "border-[#D15608] bg-[#D15608] text-white"
+                            : "border-[#999999] bg-white"
+                        }`}
+                      >
+                        {isSelected && <span className="size-1.5 rounded-full bg-white" />}
+                      </div>
+                    )}
+
+                    <img
+                      src={item.image}
+                      alt={item.name}
+                      className="size-12 object-cover rounded border border-[#D15608]/20 shrink-0 bg-white"
+                    />
+                    <div className="flex-1 min-w-0 text-xs">
+                      <h5 className="font-medium truncate text-[#0E0E0E] dark:text-[#FAF6EE]">
+                        {item.name}
+                      </h5>
+                      <p className="text-[11px] text-[#5C5549] dark:text-[#B5AC9E]">
+                        {item.colour ? `Colour: ${item.colour} · ` : ""}Size: {item.size || "Standard"} · Qty: {item.quantity}
+                      </p>
+                      {canSelectOnlyThis && !isSelected && (
+                        <span className="text-[10px] text-[#D15608] font-semibold hover:underline">
+                          Click to buy only this
+                        </span>
+                      )}
+                    </div>
+                    <span className="text-xs font-bold text-[#9F160A] dark:text-[#FAF6EE] shrink-0">
+                      {formatPrice(item.price * item.quantity)}
+                    </span>
                   </div>
-                  <span className="text-xs font-bold text-[#9F160A] dark:text-[#FAF6EE] shrink-0">
-                    {formatPrice(item.price * item.quantity)}
-                  </span>
-                </div>
-              ))}
+                );
+              })}
             </div>
 
             {/* Price Calculations */}
@@ -598,7 +699,7 @@ export function CheckoutPage() {
               <div className="flex justify-between text-[#5C5549] dark:text-[#B5AC9E]">
                 <span>Items Subtotal</span>
                 <span className="font-semibold text-[#0E0E0E] dark:text-[#FAF6EE]">
-                  {formatPrice(subtotal)}
+                  {formatPrice(checkoutSubtotal)}
                 </span>
               </div>
               <div className="flex justify-between text-[#8A9A7B] font-semibold">
@@ -607,7 +708,7 @@ export function CheckoutPage() {
               </div>
               <div className="pt-2 border-t border-[#D15608]/20 flex justify-between text-base font-bold text-[#9F160A] dark:text-[#FAF6EE]">
                 <span>Total Amount</span>
-                <span className="text-xl">{formatPrice(subtotal)}</span>
+                <span className="text-xl">{formatPrice(checkoutSubtotal)}</span>
               </div>
             </div>
 
@@ -625,7 +726,7 @@ export function CheckoutPage() {
               ) : (
                 <>
                   <Lock className="size-3.5" />
-                  <span>Place Order · {formatPrice(subtotal)}</span>
+                  <span>Place Order · {formatPrice(checkoutSubtotal)}</span>
                 </>
               )}
             </button>

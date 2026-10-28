@@ -3,7 +3,7 @@ import { Breadcrumb } from "@/components/Breadcrumb";
 import { SectionHeading } from "@/components/SectionHeading";
 import { useCart } from "@/context/CartContext";
 import { formatPrice } from "@/utils/formatters";
-import { Link } from "@tanstack/react-router";
+import { Link, useNavigate } from "@tanstack/react-router";
 import {
   ShoppingBag,
   ArrowRight,
@@ -14,11 +14,13 @@ import {
   Tag,
   ArrowLeft,
   CheckCircle2,
+  Zap,
 } from "lucide-react";
 import { toast } from "sonner";
 
 export function CartPage() {
-  const { cart, cartCount, subtotal, removeFromCart, updateQuantity, clearCart } = useCart();
+  const navigate = useNavigate();
+  const { cart, cartCount, subtotal, removeFromCart, updateQuantity, clearCart, setDirectCheckoutItem } = useCart();
 
   // Coupon state
   const [couponCode, setCouponCode] = useState("");
@@ -182,8 +184,8 @@ export function CartPage() {
                   </div>
                 </div>
 
-                {/* Quantity Controls & Remove */}
-                <div className="flex items-center justify-between sm:justify-end gap-4 shrink-0 pt-2 sm:pt-0 border-t sm:border-t-0 border-[#E5DAC4]/60 dark:border-white/10">
+                {/* Quantity Controls & Actions */}
+                <div className="flex flex-wrap items-center justify-between sm:justify-end gap-3 shrink-0 pt-2 sm:pt-0 border-t sm:border-t-0 border-[#E5DAC4]/60 dark:border-white/10">
                   <div className="flex items-center border border-[#E5DAC4] dark:border-white/20 rounded-md bg-[#FAF6EE] dark:bg-black/20">
                     <button
                       type="button"
@@ -203,6 +205,20 @@ export function CartPage() {
                       +
                     </button>
                   </div>
+
+                  {/* Direct Buy Single Item */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setDirectCheckoutItem(item);
+                      navigate({ to: "/checkout" });
+                    }}
+                    className="px-3 py-1.5 rounded-lg bg-[#9F160A] hover:bg-[#7D1107] text-white text-[11px] font-bold uppercase tracking-wider flex items-center gap-1.5 transition-all cursor-pointer shadow-xs active:scale-95 touch-manipulation"
+                    title="Buy only this item"
+                  >
+                    <Zap className="size-3 text-amber-300 fill-amber-300" />
+                    <span>Buy This Item</span>
+                  </button>
 
                   <button
                     type="button"
@@ -288,13 +304,17 @@ export function CartPage() {
               </form>
 
               {/* Direct Checkout Button */}
-              <Link
-                to="/checkout"
+              <button
+                type="button"
+                onClick={() => {
+                  setDirectCheckoutItem(null);
+                  navigate({ to: "/checkout" });
+                }}
                 className="w-full min-h-[48px] py-3.5 px-4 rounded-xl bg-[#D15608] hover:bg-[#9F160A] text-white text-xs sm:text-sm font-bold uppercase tracking-wider flex items-center justify-center gap-2 shadow-md hover:shadow-lg transition-all cursor-pointer touch-manipulation"
               >
                 <span>Proceed to Checkout</span>
                 <ArrowRight className="size-4" />
-              </Link>
+              </button>
 
               {/* WhatsApp instant enquiry / buy button */}
               <a

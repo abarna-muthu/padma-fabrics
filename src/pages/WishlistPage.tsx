@@ -14,7 +14,7 @@ import {
 import { Breadcrumb } from "@/components/Breadcrumb";
 import { SectionHeading } from "@/components/SectionHeading";
 import { useWishlist } from "@/context/WishlistContext";
-import { useCart } from "@/context/CartContext";
+import { useCart, type CartItem } from "@/context/CartContext";
 import { useStore } from "@/context/StoreContext";
 import { products as staticCatalog, type Product } from "@/lib/catalog";
 import { formatPrice } from "@/utils/formatters";
@@ -23,7 +23,7 @@ import { toast } from "sonner";
 export function WishlistPage() {
   const navigate = useNavigate();
   const { wishlist, wishlistCount, removeFromWishlist, clearWishlist } = useWishlist();
-  const { addToCart } = useCart();
+  const { addToCart, setDirectCheckoutItem } = useCart();
   const { productsList, activeProducts, openProduct } = useStore();
 
   // Selected sizes for each wishlisted product
@@ -59,7 +59,28 @@ export function WishlistPage() {
 
   const handleBuyNow = (product: Product, e?: React.MouseEvent) => {
     if (e) e.stopPropagation();
-    handleAddToCart(product);
+    const availableSizes =
+      Array.isArray(product.sizes) && product.sizes.length > 0
+        ? product.sizes
+        : product.category === "Saree"
+          ? ["Free Size"]
+          : ["S", "M", "L", "XL"];
+    const chosenSize = selectedSizes[product.id] || availableSizes[0] || "Standard";
+    const cartItemId = `${product.id}-${chosenSize}-${product.colour || "default"}`;
+    const singleItem: CartItem = {
+      id: String(product.id),
+      cartItemId,
+      name: product.name,
+      price: Number(product.price) || 0,
+      originalPrice: product.originalPrice ? Number(product.originalPrice) : undefined,
+      image: product.image || "/placeholder.svg",
+      category: product.category,
+      fabric: product.fabric,
+      size: chosenSize,
+      colour: product.colour || "",
+      quantity: 1,
+    };
+    setDirectCheckoutItem(singleItem);
     navigate({ to: "/checkout" });
   };
 

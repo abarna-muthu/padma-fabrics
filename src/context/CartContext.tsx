@@ -33,9 +33,13 @@ interface CartContextType {
   removeFromCart: (cartItemId: string) => void;
   updateQuantity: (cartItemId: string, delta: number) => void;
   clearCart: () => void;
+  directCheckoutItem: CartItem | null;
+  setDirectCheckoutItem: (item: CartItem | null) => void;
+  clearDirectCheckout: () => void;
 }
 
 const STORAGE_CART_KEY = "pf_cart_items_v2";
+const STORAGE_DIRECT_CHECKOUT_KEY = "pf_direct_checkout_item";
 
 const CartContext = createContext<CartContextType | null>(null);
 
@@ -54,6 +58,40 @@ export function CartProvider({ children }: { children: ReactNode }) {
     }
     return [];
   });
+
+  const [directCheckoutItem, setDirectCheckoutItemState] = useState<CartItem | null>(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const stored = sessionStorage.getItem(STORAGE_DIRECT_CHECKOUT_KEY);
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          if (parsed && typeof parsed === "object" && parsed.id) return parsed;
+        }
+      } catch (e) {
+        console.error("Failed to load direct checkout item", e);
+      }
+    }
+    return null;
+  });
+
+  const setDirectCheckoutItem = (item: CartItem | null) => {
+    setDirectCheckoutItemState(item);
+    if (typeof window !== "undefined") {
+      try {
+        if (item) {
+          sessionStorage.setItem(STORAGE_DIRECT_CHECKOUT_KEY, JSON.stringify(item));
+        } else {
+          sessionStorage.removeItem(STORAGE_DIRECT_CHECKOUT_KEY);
+        }
+      } catch (e) {
+        console.error("Failed to persist direct checkout item", e);
+      }
+    }
+  };
+
+  const clearDirectCheckout = () => {
+    setDirectCheckoutItem(null);
+  };
 
   const [isCartOpen, setIsCartOpen] = useState(false);
 
@@ -154,6 +192,9 @@ export function CartProvider({ children }: { children: ReactNode }) {
         removeFromCart,
         updateQuantity,
         clearCart,
+        directCheckoutItem,
+        setDirectCheckoutItem,
+        clearDirectCheckout,
       }}
     >
       {children}

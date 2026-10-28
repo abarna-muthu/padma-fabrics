@@ -2,7 +2,7 @@ import { useState, useMemo, useEffect } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { Breadcrumb } from "@/components/Breadcrumb";
 import { useWishlist } from "@/context/WishlistContext";
-import { useCart } from "@/context/CartContext";
+import { useCart, type CartItem } from "@/context/CartContext";
 import { useStore } from "@/context/StoreContext";
 import {
   products as staticCatalog,
@@ -41,7 +41,7 @@ interface ProductDetailPageProps {
 export function ProductDetailPage({ id }: ProductDetailPageProps) {
   const navigate = useNavigate();
   const { wishlist, toggleWishlist } = useWishlist();
-  const { addToCart } = useCart();
+  const { addToCart, setDirectCheckoutItem } = useCart();
   const { productsList, updateProduct } = useStore();
 
   const allProducts: Product[] = useMemo(() => [
@@ -290,14 +290,23 @@ export function ProductDetailPage({ id }: ProductDetailPageProps) {
 
   const handleBuyNow = () => {
     if (!validateSelection()) return;
-    addToCart(
-      product,
-      selectedSize || "Standard",
+    const chosenSize = selectedSize || "Standard";
+    const chosenColour = selectedColour || activeVariant?.colour || product.colour || "";
+    const cartItemId = `${product.id}-${chosenSize}-${chosenColour || "default"}`;
+    const singleItem: CartItem = {
+      id: String(product.id),
+      cartItemId,
+      name: product.name,
+      price: effectivePrice,
+      originalPrice: product.originalPrice ? Number(product.originalPrice) : undefined,
+      image: currentImage || product.image || "/placeholder.svg",
+      category: product.category,
+      fabric: product.fabric,
+      size: chosenSize,
+      colour: chosenColour,
       quantity,
-      selectedColour || activeVariant?.colour || product.colour,
-      currentImage,
-      effectivePrice,
-    );
+    };
+    setDirectCheckoutItem(singleItem);
     navigate({ to: "/checkout" });
   };
 
