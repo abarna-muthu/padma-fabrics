@@ -112,10 +112,6 @@ export const DEMO_PRODUCT_IDS = new Set([
   "navy-tee",
   "maroon-anarkali",
   "pattu-pavadai",
-  "pf-mvi2hcnc",
-  "pf-mvi2jlu8",
-  "pf-mvp0gyhf",
-  "pf-mvp0jhqa",
 ]);
 
 export function isDemoProduct(p: any): boolean {
@@ -350,13 +346,22 @@ export function StoreProvider({ children }: { children: ReactNode }) {
             const currentMap = new Map(currentList.map((p) => [p.id, p]));
             let changed = false;
             for (const ip of idbProds) {
-              if (ip && ip.id && !currentMap.has(ip.id)) {
-                currentMap.set(ip.id, normalizeProduct(ip));
-                changed = true;
+              if (ip && ip.id) {
+                if (!currentMap.has(ip.id)) {
+                  currentMap.set(ip.id, normalizeProduct(ip));
+                  changed = true;
+                } else {
+                  const existing = currentMap.get(ip.id)!;
+                  if (Array.isArray(ip.variants) && ip.variants.length > (existing.variants?.length || 0)) {
+                    currentMap.set(ip.id, normalizeProduct({ ...existing, variants: ip.variants }));
+                    changed = true;
+                  }
+                }
               }
             }
             if (changed) {
               const merged = Array.from(currentMap.values());
+              saveProducts(merged);
               return merged;
             }
             return currentList;
@@ -755,14 +760,18 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const addProduct = async (newP: Omit<Product, "id"> & { id?: string }) => {
     const id = newP.id || `pf-${Date.now().toString(36)}`;
     const nowIso = new Date().toISOString();
-    // Strict rule: When adding a new product, stock starts at 0.
-    // Stock must only be added manually via Inventory & Stock "+ Add Stock".
+    const parsedStock =
+      typeof newP.stock === "number" && !isNaN(newP.stock)
+        ? newP.stock
+        : typeof newP.stock === "string" && !isNaN(parseInt(newP.stock, 10))
+          ? parseInt(newP.stock, 10)
+          : 10;
     const product: Product = {
       ...newP,
       id,
       isActive: true,
       status: "active",
-      stock: 0,
+      stock: parsedStock,
       sku: newP.sku || `PF-NEW-${Math.floor(100 + Math.random() * 900)}`,
       updatedAt: nowIso,
     };

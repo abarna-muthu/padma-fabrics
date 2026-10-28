@@ -107,14 +107,7 @@ export async function getProducts(req: Request, res: Response) {
     let products = await db.query(sql, params);
 
     const DEMO_IDS_SET = new Set(DEFAULT_PRODUCT_IDS);
-    products = products.filter(
-      (p) =>
-        !DEMO_IDS_SET.has(p.id) &&
-        !p.name?.toLowerCase().includes("wine zari") &&
-        !p.name?.toLowerCase().includes("royal indigo") &&
-        !p.name?.toLowerCase().includes("sage buti") &&
-        !p.name?.toLowerCase().includes("heritage silk"),
-    );
+    products = products.filter((p) => !DEMO_IDS_SET.has(p.id) && !p.id.startsWith("test-"));
 
     if (search && typeof search === "string") {
       const q = search.toLowerCase();
