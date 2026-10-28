@@ -249,17 +249,35 @@ function readPersistedContent() {
       const data = fs.readFileSync(CONTENT_FILE, "utf-8");
       const parsed = JSON.parse(data);
       return {
-        home: { ...DEFAULT_SITE_CONTENT.home, ...(parsed.home || {}) },
+        ...DEFAULT_SITE_CONTENT,
+        ...parsed,
+        home: {
+          ...DEFAULT_SITE_CONTENT.home,
+          ...(parsed.home || {}),
+          heroBanners:
+            Array.isArray(parsed?.home?.heroBanners) && parsed.home.heroBanners.length > 0
+              ? parsed.home.heroBanners
+              : DEFAULT_SITE_CONTENT.home.heroBanners,
+          popularCategories:
+            Array.isArray(parsed?.home?.popularCategories) && parsed.home.popularCategories.length > 0
+              ? parsed.home.popularCategories
+              : DEFAULT_SITE_CONTENT.home.popularCategories,
+          bestsellerTabs:
+            Array.isArray(parsed?.home?.bestsellerTabs) && parsed.home.bestsellerTabs.length > 0
+              ? parsed.home.bestsellerTabs
+              : DEFAULT_SITE_CONTENT.home.bestsellerTabs,
+        },
         about: { ...DEFAULT_SITE_CONTENT.about, ...(parsed.about || {}) },
         contact: { ...DEFAULT_SITE_CONTENT.contact, ...(parsed.contact || {}) },
         terms: { ...DEFAULT_SITE_CONTENT.terms, ...(parsed.terms || {}) },
         refund: { ...DEFAULT_SITE_CONTENT.refund, ...(parsed.refund || {}) },
+        updatedAt: parsed.updatedAt || 0,
       };
     }
   } catch (err) {
     console.error("[ContentRoute] Error reading site content file:", err);
   }
-  return DEFAULT_SITE_CONTENT;
+  return { ...DEFAULT_SITE_CONTENT, updatedAt: 0 };
 }
 
 function writePersistedContent(content: any) {
@@ -285,11 +303,16 @@ router.put("/", (req: Request, res: Response) => {
   const updates = req.body || {};
 
   const updatedContent = {
-    home: { ...current.home, ...(updates.home || {}) },
+    ...current,
+    home: {
+      ...current.home,
+      ...(updates.home || {}),
+    },
     about: { ...current.about, ...(updates.about || {}) },
     contact: { ...current.contact, ...(updates.contact || {}) },
     terms: { ...current.terms, ...(updates.terms || {}) },
     refund: { ...current.refund, ...(updates.refund || {}) },
+    updatedAt: updates.updatedAt || Date.now(),
   };
 
   writePersistedContent(updatedContent);

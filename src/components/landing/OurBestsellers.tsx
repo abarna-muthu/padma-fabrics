@@ -229,9 +229,17 @@ export function OurBestsellers({ onOpenQuickSize }: OurBestsellersProps) {
     return [];
   }, [activeProducts, productsList]);
 
-  // Derive live thumbnail images for tabs from actual store products
+  // Derive live thumbnail images for tabs
   const tabsWithLiveImages = useMemo(() => {
     return categoryTabs.map((tab) => {
+      // Prioritize the category tab image configured in admin / site content
+      if (tab.defaultImage) {
+        return {
+          ...tab,
+          image: tab.defaultImage,
+        };
+      }
+
       if (!tab.categoryKey) {
         // Fallback tab
         const firstWithValidImg = mappedProducts.find(
@@ -239,7 +247,7 @@ export function OurBestsellers({ onOpenQuickSize }: OurBestsellersProps) {
         );
         return {
           ...tab,
-          image: firstWithValidImg?.image || tab.defaultImage,
+          image: firstWithValidImg?.image || "/placeholder.svg",
         };
       }
 
@@ -256,7 +264,7 @@ export function OurBestsellers({ onOpenQuickSize }: OurBestsellersProps) {
 
       return {
         ...tab,
-        image: prodInCat?.image || tab.defaultImage,
+        image: prodInCat?.image || "/placeholder.svg",
       };
     });
   }, [mappedProducts, categoryTabs]);

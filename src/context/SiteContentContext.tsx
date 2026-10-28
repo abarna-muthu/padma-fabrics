@@ -65,6 +65,7 @@ export interface SiteContent {
   home: HomeContent;
   about: AboutContent;
   contact: ContactContent;
+  updatedAt?: number;
 }
 
 export const DEFAULT_HERO_BANNERS: HeroBannerSlide[] = [
@@ -298,15 +299,21 @@ export function SiteContentProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (typeof window === "undefined") return;
 
+    let localUpdatedAt = 0;
+    let localSavedParsed: any = null;
+
     // 1. Initial immediate load from localStorage
     try {
       const saved = localStorage.getItem(STORAGE_KEY);
       if (saved) {
         const parsed = JSON.parse(saved);
+        localSavedParsed = parsed;
+        localUpdatedAt = parsed.updatedAt || 0;
         setContent({
           home: mergeHomeContent(parsed.home),
           about: { ...DEFAULT_ABOUT_CONTENT, ...(parsed.about || {}) },
           contact: { ...DEFAULT_CONTACT_CONTENT, ...(parsed.contact || {}) },
+          updatedAt: localUpdatedAt,
         });
       }
     } catch (err) {
@@ -314,18 +321,30 @@ export function SiteContentProvider({ children }: { children: ReactNode }) {
     }
 
     // 2. Fetch server persisted content
-    contentApi.get().then((res) => {
-      if (res.success && res.data) {
-        setContent({
-          home: mergeHomeContent(res.data.home),
-          about: { ...DEFAULT_ABOUT_CONTENT, ...(res.data.about || {}) },
-          contact: { ...DEFAULT_CONTACT_CONTENT, ...(res.data.contact || {}) },
-        });
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(res.data));
-      }
-    }).catch(() => {
-      // Backend offline or fallback to localStorage
-    });
+    contentApi
+      .get()
+      .then((res) => {
+        if (res.success && res.data) {
+          const serverUpdatedAt = res.data.updatedAt || 0;
+
+          // If local has newer edits that haven't synced to server yet, push local to server!
+          if (localUpdatedAt > 0 && serverUpdatedAt < localUpdatedAt && localSavedParsed) {
+            contentApi.update(localSavedParsed).catch(() => {});
+            return;
+          }
+
+          setContent({
+            home: mergeHomeContent(res.data.home),
+            about: { ...DEFAULT_ABOUT_CONTENT, ...(res.data.about || {}) },
+            contact: { ...DEFAULT_CONTACT_CONTENT, ...(res.data.contact || {}) },
+            updatedAt: serverUpdatedAt,
+          });
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(res.data));
+        }
+      })
+      .catch(() => {
+        // Backend offline or fallback to localStorage
+      });
 
     // 3. Listen for changes in other open tabs
     const handleStorage = (e: StorageEvent) => {
@@ -336,6 +355,7 @@ export function SiteContentProvider({ children }: { children: ReactNode }) {
             home: mergeHomeContent(parsed.home),
             about: { ...DEFAULT_ABOUT_CONTENT, ...(parsed.about || {}) },
             contact: { ...DEFAULT_CONTACT_CONTENT, ...(parsed.contact || {}) },
+            updatedAt: parsed.updatedAt,
           });
         } catch (err) {}
       }
@@ -348,6 +368,7 @@ export function SiteContentProvider({ children }: { children: ReactNode }) {
           home: mergeHomeContent(e.detail.home),
           about: { ...DEFAULT_ABOUT_CONTENT, ...(e.detail.about || {}) },
           contact: { ...DEFAULT_CONTACT_CONTENT, ...(e.detail.contact || {}) },
+          updatedAt: e.detail.updatedAt,
         });
       }
     };
@@ -363,11 +384,15 @@ export function SiteContentProvider({ children }: { children: ReactNode }) {
 
   const saveContent = (updater: (prev: SiteContent) => SiteContent) => {
     setContent((prev) => {
-      const updated = updater(prev);
+      const updated = {
+        ...updater(prev),
+        updatedAt: Date.now(),
+      };
       if (typeof window !== "undefined") {
         try {
           localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
           window.dispatchEvent(new CustomEvent("pf_site_content_updated", { detail: updated }));
+          window.dispatchEvent(new Event("storage"));
         } catch (err) {
           console.warn("Could not save to localStorage:", err);
         }

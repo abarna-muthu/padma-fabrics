@@ -13,6 +13,7 @@ import { useCart } from "@/context/CartContext";
 import { useWishlist } from "@/context/WishlistContext";
 import { useCustomerAuth } from "@/context/CustomerAuthContext";
 import { useStore } from "@/context/StoreContext";
+import { useSiteContent } from "@/context/SiteContentContext";
 import logo from "@/assets/padmanabha-logo.jpg";
 
 export function Header() {
@@ -21,6 +22,11 @@ export function Header() {
   const { wishlistCount } = useWishlist();
   const { customer, isLoggedIn, logoutCustomer } = useCustomerAuth();
   const { setIsCustomerPortalOpen } = useStore();
+  const { content } = useSiteContent();
+
+  const announcementText =
+    content?.home?.announcementText?.trim() ||
+    "Complimentary domestic shipping on orders over ₹999 · Desk: +91 99401 35700";
 
   // Scroll detection for sticky header refinement
   const [isScrolled, setIsScrolled] = useState(false);
@@ -69,10 +75,16 @@ export function Header() {
             Chennai Showroom · Ambattur
           </span>
           <span className="w-full md:w-auto text-white font-light">
-            Complimentary domestic shipping on orders over ₹999 · Desk:{" "}
-            <a href="tel:+919940135700" className="text-[#EDBC3D] hover:underline font-normal">
-              +91 99401 35700
-            </a>
+            {announcementText.includes("+91 99401 35700") ? (
+              <>
+                {announcementText.replace("+91 99401 35700", "").trim()}{" "}
+                <a href="tel:+919940135700" className="text-[#EDBC3D] hover:underline font-normal">
+                  +91 99401 35700
+                </a>
+              </>
+            ) : (
+              announcementText
+            )}
           </span>
           <span className="hidden md:inline text-[#EDBC3D]">
             GST Invoicing Included

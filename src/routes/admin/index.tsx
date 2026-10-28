@@ -858,6 +858,7 @@ function AdminDashboardPage() {
   const handleSaveHomeContent = (e: React.FormEvent) => {
     e.preventDefault();
     updateHomeContent(homeDraft);
+    toast.success("Home page content updated successfully and synced to live website!");
     setContentStatusMsg({ page: "home", text: "Home page content updated successfully!" });
     setTimeout(() => setContentStatusMsg(null), 3500);
   };
