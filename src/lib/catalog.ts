@@ -19,6 +19,8 @@ export const categories = [
   "Chudithar Top",
   "2piece",
   "Combo Dresses",
+  "palazzo",
+  "Western Top",
 ] as const;
 
 export const collections = [
@@ -30,6 +32,7 @@ export const collections = [
   { name: "Chudithar Top", text: "Everyday festive tunics", image: shirt },
   { name: "2piece", text: "Chic two-piece ensembles", image: tee },
   { name: "Combo Dresses", text: "Special curated sets", image: kids },
+  { name: "Western Top", text: "Chic contemporary tops", image: shirt },
 ] as const;
 
 export type ProductVariant = {

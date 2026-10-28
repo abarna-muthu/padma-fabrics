@@ -11,7 +11,6 @@ import { OnlineExclusive } from "@/components/landing/OnlineExclusive";
 import { TrendJournal } from "@/components/landing/TrendJournal";
 import { FindAStoreStrip } from "@/components/landing/FindAStoreStrip";
 import { TrustStrip } from "@/components/landing/TrustStrip";
-import { LandingFooter } from "@/components/landing/LandingFooter";
 import { MobileBottomNav } from "@/components/landing/MobileBottomNav";
 import { LoginModal } from "@/components/landing/LoginModal";
 import { SizeSelectorModal } from "@/components/landing/SizeSelectorModal";
@@ -66,9 +65,6 @@ export function HomePage() {
 
       {/* SECTION 16 - TRUST STRIP (3 pillars with outline SVGs) */}
       <TrustStrip />
-
-      {/* SECTION 17 - FOOTER (soft grey #F2F2F2, compact) */}
-      <LandingFooter />
 
       {/* MOBILE BOTTOM NAV (fixed at bottom on mobile) */}
       <MobileBottomNav onOpenLogin={handleOpenLogin} />

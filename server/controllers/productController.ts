@@ -11,6 +11,8 @@ const CATEGORY_ID_TO_NAME: Record<string, string> = {
   "2piece": "2piece",
   "combo-dresses": "Combo Dresses",
   "palazzo": "palazzo",
+  "western-top": "Western Top",
+  "western-tops": "Western Top",
   // Aliases for backward compatibility
   "sarees": "Saree",
   "fabrics": "Coordset",
@@ -41,6 +43,9 @@ const CATEGORY_NAME_TO_ID: Record<string, string> = {
   "Women's Dresses": "chudithar",
   "Kids Wear": "combo-dresses",
   "Palazzo Pants": "palazzo",
+  "Western Top": "western-top",
+  "Western Tops": "western-top",
+  "western top": "western-top",
 };
 
 function parseSafeSizes(sizesVal: any): string[] {

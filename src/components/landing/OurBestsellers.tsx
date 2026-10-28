@@ -79,6 +79,13 @@ const STORE_CATEGORY_TABS: StoreCategoryTab[] = [
     defaultImage: nightyImg,
   },
   {
+    id: "western-top",
+    label: "WESTERN TOP",
+    categoryKey: "Western Top",
+    defaultImage:
+      "https://res.cloudinary.com/ugzb1wup/image/upload/v1792584958/padma_products/v9quby0cest8zrupfzqc.jpg",
+  },
+  {
     id: "combo-dresses",
     label: "COMBO DRESSES",
     categoryKey: "Combo Dresses",

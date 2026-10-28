@@ -73,6 +73,13 @@ export const INITIAL_CATEGORIES = [
     description: "Special curated sets",
     display_order: 8,
   },
+  {
+    id: "western-top",
+    name: "Western Top",
+    slug: "western-top",
+    description: "Chic contemporary western tops",
+    display_order: 9,
+  },
 ];
 
 export const INITIAL_PRODUCTS = [

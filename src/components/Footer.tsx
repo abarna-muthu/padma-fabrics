@@ -1,12 +1,10 @@
-import { Link, useRouterState } from "@tanstack/react-router";
+import { Link } from "@tanstack/react-router";
 import { ArrowUp, ArrowRight, MapPin, Phone, Mail } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import logo from "@/assets/padmanabha-logo.jpg";
 
 export function Footer() {
-  const pathname = useRouterState({ select: (s) => s.location.pathname });
-  if (pathname === "/") return null;
 
   const [email, setEmail] = useState("");
 
