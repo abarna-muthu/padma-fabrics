@@ -307,43 +307,37 @@ export function SiteContentProvider({ children }: { children: ReactNode }) {
       const saved = localStorage.getItem(STORAGE_KEY);
       if (saved) {
         const parsed = JSON.parse(saved);
-        localSavedParsed = parsed;
-        localUpdatedAt = parsed.updatedAt || 0;
         setContent({
           home: mergeHomeContent(parsed.home),
           about: { ...DEFAULT_ABOUT_CONTENT, ...(parsed.about || {}) },
           contact: { ...DEFAULT_CONTACT_CONTENT, ...(parsed.contact || {}) },
-          updatedAt: localUpdatedAt,
+          updatedAt: parsed.updatedAt || 0,
         });
+
+        // Ensure backend stays synchronized with the user's saved changes
+        contentApi.update(parsed).catch(() => {});
+        return;
       }
     } catch (err) {
       console.warn("Failed to load site content from localStorage:", err);
     }
 
-    // 2. Fetch server persisted content
+    // 2. If localStorage had no saved content, fetch from server API
     contentApi
       .get()
       .then((res) => {
         if (res.success && res.data) {
-          const serverUpdatedAt = res.data.updatedAt || 0;
-
-          // If local has newer edits that haven't synced to server yet, push local to server!
-          if (localUpdatedAt > 0 && serverUpdatedAt < localUpdatedAt && localSavedParsed) {
-            contentApi.update(localSavedParsed).catch(() => {});
-            return;
-          }
-
           setContent({
             home: mergeHomeContent(res.data.home),
             about: { ...DEFAULT_ABOUT_CONTENT, ...(res.data.about || {}) },
             contact: { ...DEFAULT_CONTACT_CONTENT, ...(res.data.contact || {}) },
-            updatedAt: serverUpdatedAt,
+            updatedAt: res.data.updatedAt || 0,
           });
           localStorage.setItem(STORAGE_KEY, JSON.stringify(res.data));
         }
       })
       .catch(() => {
-        // Backend offline or fallback to localStorage
+        // Backend offline or fallback to defaults
       });
 
     // 3. Listen for changes in other open tabs

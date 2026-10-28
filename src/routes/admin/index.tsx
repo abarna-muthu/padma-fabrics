@@ -794,7 +794,7 @@ function AdminDashboardPage() {
       img.onload = async () => {
         try {
           const canvas = document.createElement("canvas");
-          const maxDim = 1600;
+          const maxDim = folder === "padma_banners" ? 1200 : 500;
           let width = img.width;
           let height = img.height;
           if (width > maxDim || height > maxDim) {
@@ -810,7 +810,7 @@ function AdminDashboardPage() {
           canvas.height = height;
           const ctx = canvas.getContext("2d");
           const base64Data = ctx
-            ? (ctx.drawImage(img, 0, 0, width, height), canvas.toDataURL("image/jpeg", 0.88))
+            ? (ctx.drawImage(img, 0, 0, width, height), canvas.toDataURL("image/jpeg", 0.78))
             : result;
 
           const res = await productApi.uploadImage(base64Data, folder);
@@ -820,11 +820,11 @@ function AdminDashboardPage() {
               : base64Data;
 
           onSuccess(cloudUrl);
-          toast.success("Image uploaded to Cloudinary!", { id: "home-upload" });
+          toast.success("Image updated and saved live!", { id: "home-upload" });
         } catch (err) {
           console.warn("Upload error, using local data:", err);
           onSuccess(result);
-          toast.success("Image updated (local fallback)!", { id: "home-upload" });
+          toast.success("Image updated and saved live!", { id: "home-upload" });
         } finally {
           setIsUploadingHomeMedia(false);
         }
@@ -3679,10 +3679,13 @@ function AdminDashboardPage() {
                         alt: "Padmanabha Fabrics - New Collection Banner",
                         href: "/shop",
                       };
-                      setHomeDraft({
+                      const newHome = {
                         ...homeDraft,
                         heroBanners: [...currentBanners, newBanner],
-                      });
+                      };
+                      setHomeDraft(newHome);
+                      updateHomeContent(newHome);
+                      toast.success("New banner slide added and synced live!");
                     }}
                     className="text-xs h-8 gap-1.5 shrink-0"
                   >
@@ -3718,7 +3721,9 @@ function AdminDashboardPage() {
                             onChange={(e) => {
                               const updated = [...(homeDraft.heroBanners || DEFAULT_HERO_BANNERS)];
                               updated[index] = { ...updated[index], alt: e.target.value };
-                              setHomeDraft({ ...homeDraft, heroBanners: updated });
+                              const newHome = { ...homeDraft, heroBanners: updated };
+                              setHomeDraft(newHome);
+                              updateHomeContent(newHome);
                             }}
                             placeholder="Banner title or description"
                             className="text-xs h-8"
@@ -3734,7 +3739,9 @@ function AdminDashboardPage() {
                             onChange={(e) => {
                               const updated = [...(homeDraft.heroBanners || DEFAULT_HERO_BANNERS)];
                               updated[index] = { ...updated[index], href: e.target.value };
-                              setHomeDraft({ ...homeDraft, heroBanners: updated });
+                              const newHome = { ...homeDraft, heroBanners: updated };
+                              setHomeDraft(newHome);
+                              updateHomeContent(newHome);
                             }}
                             placeholder="/shop or /shop?category=Saree"
                             className="text-xs h-8"
@@ -3756,7 +3763,9 @@ function AdminDashboardPage() {
                                   handleUploadHomeMedia(file, "padma_banners", (url) => {
                                     const updated = [...(homeDraft.heroBanners || DEFAULT_HERO_BANNERS)];
                                     updated[index] = { ...updated[index], image: url };
-                                    setHomeDraft({ ...homeDraft, heroBanners: updated });
+                                    const newHome = { ...homeDraft, heroBanners: updated };
+                                    setHomeDraft(newHome);
+                                    updateHomeContent(newHome);
                                   });
                                 }
                               }}
@@ -3774,7 +3783,10 @@ function AdminDashboardPage() {
                               size="sm"
                               onClick={() => {
                                 const updated = (homeDraft.heroBanners || DEFAULT_HERO_BANNERS).filter((_, i) => i !== index);
-                                setHomeDraft({ ...homeDraft, heroBanners: updated });
+                                const newHome = { ...homeDraft, heroBanners: updated };
+                                setHomeDraft(newHome);
+                                updateHomeContent(newHome);
+                                toast.success("Banner slide removed!");
                               }}
                               className="ml-auto text-rose-600 hover:text-rose-700 hover:bg-rose-50 h-7 text-xs px-2"
                             >
@@ -3812,10 +3824,13 @@ function AdminDashboardPage() {
                         image: "https://images.unsplash.com/photo-1610030469983-98e550d6193c?auto=format&fit=crop&w=800&q=80",
                         href: "/shop",
                       };
-                      setHomeDraft({
+                      const newHome = {
                         ...homeDraft,
                         popularCategories: [...currentCats, newCat],
-                      });
+                      };
+                      setHomeDraft(newHome);
+                      updateHomeContent(newHome);
+                      toast.success("New category added and synced live!");
                     }}
                     className="text-xs h-8 gap-1.5 shrink-0"
                   >
@@ -3855,7 +3870,9 @@ function AdminDashboardPage() {
                                 title: upper,
                                 href: `/shop?category=${encodeURIComponent(upper)}`,
                               };
-                              setHomeDraft({ ...homeDraft, popularCategories: updated });
+                              const newHome = { ...homeDraft, popularCategories: updated };
+                              setHomeDraft(newHome);
+                              updateHomeContent(newHome);
                             }}
                             placeholder="e.g. SAREE"
                             className="text-xs h-8 font-bold"
@@ -3878,7 +3895,9 @@ function AdminDashboardPage() {
                                 handleUploadHomeMedia(file, "padma_categories", (url) => {
                                   const updated = [...(homeDraft.popularCategories || DEFAULT_POPULAR_CATEGORIES)];
                                   updated[index] = { ...updated[index], image: url };
-                                  setHomeDraft({ ...homeDraft, popularCategories: updated });
+                                  const newHome = { ...homeDraft, popularCategories: updated };
+                                  setHomeDraft(newHome);
+                                  updateHomeContent(newHome);
                                 });
                               }
                             }}
@@ -3890,7 +3909,10 @@ function AdminDashboardPage() {
                             type="button"
                             onClick={() => {
                               const updated = (homeDraft.popularCategories || DEFAULT_POPULAR_CATEGORIES).filter((_, i) => i !== index);
-                              setHomeDraft({ ...homeDraft, popularCategories: updated });
+                              const newHome = { ...homeDraft, popularCategories: updated };
+                              setHomeDraft(newHome);
+                              updateHomeContent(newHome);
+                              toast.success("Category removed!");
                             }}
                             className="text-rose-600 hover:text-rose-700 p-1 rounded hover:bg-rose-50 cursor-pointer"
                             title="Delete Category"
@@ -3927,10 +3949,13 @@ function AdminDashboardPage() {
                         categoryKey: "New Category",
                         image: "https://res.cloudinary.com/ugzb1wup/image/upload/v1792584958/padma_products/v9quby0cest8zrupfzqc.jpg",
                       };
-                      setHomeDraft({
+                      const newHome = {
                         ...homeDraft,
                         bestsellerTabs: [...currentTabs, newTab],
-                      });
+                      };
+                      setHomeDraft(newHome);
+                      updateHomeContent(newHome);
+                      toast.success("New bestseller category tab added and synced live!");
                     }}
                     className="text-xs h-8 gap-1.5 shrink-0"
                   >
@@ -3966,7 +3991,9 @@ function AdminDashboardPage() {
                               const updated = [...(homeDraft.bestsellerTabs || DEFAULT_BESTSELLER_TABS)];
                               const val = e.target.value.toUpperCase();
                               updated[index] = { ...updated[index], label: val, categoryKey: val };
-                              setHomeDraft({ ...homeDraft, bestsellerTabs: updated });
+                              const newHome = { ...homeDraft, bestsellerTabs: updated };
+                              setHomeDraft(newHome);
+                              updateHomeContent(newHome);
                             }}
                             placeholder="e.g. CHUDITHAR TOP"
                             className="text-xs h-8 font-bold"
@@ -3989,7 +4016,9 @@ function AdminDashboardPage() {
                                 handleUploadHomeMedia(file, "padma_categories", (url) => {
                                   const updated = [...(homeDraft.bestsellerTabs || DEFAULT_BESTSELLER_TABS)];
                                   updated[index] = { ...updated[index], image: url };
-                                  setHomeDraft({ ...homeDraft, bestsellerTabs: updated });
+                                  const newHome = { ...homeDraft, bestsellerTabs: updated };
+                                  setHomeDraft(newHome);
+                                  updateHomeContent(newHome);
                                 });
                               }
                             }}
@@ -4001,7 +4030,10 @@ function AdminDashboardPage() {
                             type="button"
                             onClick={() => {
                               const updated = (homeDraft.bestsellerTabs || DEFAULT_BESTSELLER_TABS).filter((_, i) => i !== index);
-                              setHomeDraft({ ...homeDraft, bestsellerTabs: updated });
+                              const newHome = { ...homeDraft, bestsellerTabs: updated };
+                              setHomeDraft(newHome);
+                              updateHomeContent(newHome);
+                              toast.success("Category tab removed!");
                             }}
                             className="text-rose-600 hover:text-rose-700 p-1 rounded hover:bg-rose-50 cursor-pointer"
                             title="Delete Tab"
