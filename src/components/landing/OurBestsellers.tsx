@@ -21,11 +21,6 @@ interface StoreCategoryTab {
 
 const STORE_CATEGORY_TABS: StoreCategoryTab[] = [
   {
-    id: "all",
-    label: "BESTSELLERS",
-    defaultImage: sareeImg,
-  },
-  {
     id: "chudithar-top",
     label: "CHUDITHAR TOP",
     categoryKey: "Chudithar Top",
@@ -173,7 +168,7 @@ interface OurBestsellersProps {
 
 export function OurBestsellers({ onOpenQuickSize }: OurBestsellersProps) {
   const { productsList, activeProducts } = useStore();
-  const [activeTab, setActiveTab] = useState("all");
+  const [activeTab, setActiveTab] = useState(STORE_CATEGORY_TABS[0]?.id || "chudithar-top");
 
   // Map products from store catalog
   const mappedProducts: LandingProduct[] = useMemo(() => {
@@ -341,10 +336,10 @@ export function OurBestsellers({ onOpenQuickSize }: OurBestsellersProps) {
             </p>
             <button
               type="button"
-              onClick={() => setActiveTab("all")}
+              onClick={() => setActiveTab(STORE_CATEGORY_TABS[0]?.id || "chudithar-top")}
               className="mt-4 px-4 py-2 bg-[#D0202B] text-white text-[11px] font-bold uppercase tracking-wider rounded-[2px] hover:bg-[#B01A24] transition-colors cursor-pointer"
             >
-              View All Bestsellers
+              View Chudithar Top
             </button>
           </div>
         )}
