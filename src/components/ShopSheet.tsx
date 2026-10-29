@@ -68,46 +68,33 @@ export function ShopSheet() {
     return (productsList && productsList.find((p) => String(p.id) === String(selected.id))) || selected;
   }, [selected, productsList]);
 
-  // Find sister products in store with matching title or design (different colours)
-  const sisterProducts = useMemo(() => {
-    if (!currentProduct || !productsList) return [];
-    const clean = (str: string) => str.toLowerCase().replace(/[^a-z0-9]/g, "");
-    const targetName = clean(currentProduct.name);
-    return productsList.filter((p) => {
-      if (String(p.id) === String(currentProduct.id)) return false;
-      const pName = clean(p.name);
-      return (
-        (pName === targetName ||
-          (pName.length > 5 && targetName.includes(pName)) ||
-          (targetName.length > 5 && pName.includes(targetName))) &&
-        p.category === currentProduct.category
-      );
-    });
-  }, [currentProduct, productsList]);
-
-  // Unified colour options (from product variants + catalog sister items)
+  // Colour options: ONLY explicit product variants configured by admin
   const colourOptions: ColourOption[] = useMemo(() => {
     if (!currentProduct) return [];
+
+    // Only show variants if the admin explicitly added variants to this product
+    if (!Array.isArray(currentProduct.variants) || currentProduct.variants.length === 0) {
+      return [];
+    }
+
     const options: ColourOption[] = [];
 
     // 1. Explicit variants configured inside this product (from Admin)
-    if (Array.isArray(currentProduct.variants) && currentProduct.variants.length > 0) {
-      for (const v of currentProduct.variants) {
-        if (!v || !v.colour) continue;
-        const vImg = v.image || (Array.isArray(v.images) && v.images[0]) || currentProduct.image;
-        options.push({
-          id: v.id || `var-${currentProduct.id}-${v.colour.toLowerCase().replace(/\s+/g, "-")}`,
-          colour: v.colour,
-          colourHex: v.colourHex || getColourHex(v.colour),
-          price: v.price || currentProduct.price,
-          image: vImg,
-          stock: v.stock !== undefined ? v.stock : currentProduct.stock,
-          isProductSwitch: false,
-        });
-      }
+    for (const v of currentProduct.variants) {
+      if (!v || !v.colour) continue;
+      const vImg = v.image || (Array.isArray(v.images) && v.images[0]) || currentProduct.image;
+      options.push({
+        id: v.id || `var-${currentProduct.id}-${v.colour.toLowerCase().replace(/\s+/g, "-")}`,
+        colour: v.colour,
+        colourHex: v.colourHex || getColourHex(v.colour),
+        price: v.price || currentProduct.price,
+        image: vImg,
+        stock: v.stock !== undefined ? v.stock : currentProduct.stock,
+        isProductSwitch: false,
+      });
     }
 
-    // 2. Current product primary colour (if not already represented)
+    // 2. Current product primary colour (if not already represented and variants exist)
     if (currentProduct.colour && currentProduct.colour !== "Custom") {
       if (!options.some((o) => o.colour.toLowerCase() === currentProduct.colour.toLowerCase())) {
         options.unshift({
@@ -122,25 +109,8 @@ export function ShopSheet() {
       }
     }
 
-    // 3. Sister colour products in the same catalog
-    for (const sp of sisterProducts) {
-      if (!sp.colour) continue;
-      if (!options.some((o) => o.colour.toLowerCase() === sp.colour.toLowerCase())) {
-        options.push({
-          id: `sister-${sp.id}`,
-          colour: sp.colour,
-          colourHex: getColourHex(sp.colour),
-          price: sp.price,
-          image: sp.image || sp.imageUrl,
-          stock: sp.stock,
-          isProductSwitch: true,
-          productRef: sp,
-        });
-      }
-    }
-
     return options;
-  }, [currentProduct, sisterProducts]);
+  }, [currentProduct]);
 
   // Active colour selection
   const [activeColour, setActiveColour] = useState<string>("");
@@ -273,7 +243,7 @@ export function ShopSheet() {
             </p>
 
             {/* 1. Colour Variants & Multi-Colour Photos */}
-            {colourOptions.length > 0 && (
+            {colourOptions.length > 1 && (
               <div className="mt-5 pt-4 border-t border-border">
                 <div className="flex items-center justify-between mb-2.5">
                   <span className="text-xs font-semibold uppercase tracking-wider text-foreground">

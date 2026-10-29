@@ -79,29 +79,33 @@ export function ProductDetailPage({ id }: ProductDetailPageProps) {
     }).catch(() => {});
   }, [id]);
 
-  // Variants list: combines explicit product.variants, primary colour, and sister items
+  // Variants list: ONLY explicit product.variants configured by admin
   const variants: ProductVariant[] = useMemo(() => {
     if (!product) return [];
+
+    // Only show variants if the admin explicitly added variants to this product
+    if (!Array.isArray(product.variants) || product.variants.length === 0) {
+      return [];
+    }
+
     const list: ProductVariant[] = [];
 
     // 1. Explicit variants configured inside this product (from Admin)
-    if (Array.isArray(product.variants) && product.variants.length > 0) {
-      for (const v of product.variants) {
-        if (!v || !v.colour) continue;
-        const vImg = v.image || (Array.isArray(v.images) && v.images[0]) || product.image;
-        list.push({
-          ...v,
-          id: v.id || `var-${product.id}-${v.colour.toLowerCase().replace(/\s+/g, "-")}`,
-          colourHex: v.colourHex || getColourHex(v.colour),
-          price: v.price || product.price,
-          stock: v.stock !== undefined ? v.stock : product.stock,
-          image: vImg,
-          images: Array.isArray(v.images) && v.images.length > 0 ? v.images : (vImg ? [vImg] : [product.image]),
-        });
-      }
+    for (const v of product.variants) {
+      if (!v || !v.colour) continue;
+      const vImg = v.image || (Array.isArray(v.images) && v.images[0]) || product.image;
+      list.push({
+        ...v,
+        id: v.id || `var-${product.id}-${v.colour.toLowerCase().replace(/\s+/g, "-")}`,
+        colourHex: v.colourHex || getColourHex(v.colour),
+        price: v.price || product.price,
+        stock: v.stock !== undefined ? v.stock : product.stock,
+        image: vImg,
+        images: Array.isArray(v.images) && v.images.length > 0 ? v.images : (vImg ? [vImg] : [product.image]),
+      });
     }
 
-    // 2. Primary colour of current product (if not already represented)
+    // 2. Primary colour of current product (if not already represented and variants exist)
     if (product.colour && product.colour !== "Custom") {
       if (!list.some((existing) => existing.colour.toLowerCase() === product.colour.toLowerCase())) {
         list.unshift({
@@ -116,33 +120,8 @@ export function ProductDetailPage({ id }: ProductDetailPageProps) {
       }
     }
 
-    // 3. Sister colour products in the same catalog
-    const clean = (str: string) => str.toLowerCase().replace(/[^a-z0-9]/g, "");
-    const targetName = clean(product.name);
-    for (const sp of allProducts) {
-      if (String(sp.id) === String(product.id) || !sp.colour) continue;
-      const spName = clean(sp.name);
-      const isSister =
-        (spName === targetName ||
-          (spName.length > 5 && targetName.includes(spName)) ||
-          (targetName.length > 5 && spName.includes(targetName))) &&
-        sp.category === product.category;
-
-      if (isSister && !list.some((existing) => existing.colour.toLowerCase() === sp.colour.toLowerCase())) {
-        list.push({
-          id: `sister-${sp.id}`,
-          colour: sp.colour,
-          colourHex: getColourHex(sp.colour),
-          price: sp.price,
-          stock: sp.stock,
-          image: sp.image,
-          images: sp.images && sp.images.length > 0 ? sp.images : [sp.image],
-        });
-      }
-    }
-
     return list;
-  }, [product, allProducts]);
+  }, [product]);
 
   // Selected colour state
   const [selectedColour, setSelectedColour] = useState<string>(() => {
@@ -480,12 +459,12 @@ export function ProductDetailPage({ id }: ProductDetailPageProps) {
             </button>
           </div>
 
-          {/* Similar Products (Colour Variants as in screenshot) */}
-          {variants.length > 0 && (
+          {/* Colour Variants (Only when explicit variants configured) */}
+          {variants.length > 1 && (
             <div className="mt-6 pt-5 border-t border-[#E5DAC4]/60 dark:border-white/10">
               <div className="flex items-center justify-between mb-2.5">
                 <h3 className="text-sm font-bold text-[#0E0E0E] dark:text-[#FAF6EE]">
-                  {variants.length} Similar Products
+                  Colour Variants ({variants.length})
                 </h3>
                 <span className="text-xs font-semibold text-[#9F160A] dark:text-[#EDBC3D]">
                   Colour: {selectedColour || variants[0]?.colour}
