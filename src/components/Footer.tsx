@@ -169,8 +169,10 @@ export function Footer() {
 
         {/* Bottom Bar: Copyright & Circular Scroll to Top Button */}
         <div className="pt-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs font-light text-[#F4F0E8]/60">
-          <div>
-            © 2026 Padmanabha Fabrics. All rights reserved. Fine Indian Weaves & Ready-to-Wear.
+          <div className="flex flex-wrap items-center justify-center sm:justify-start gap-x-2 text-center sm:text-left">
+            <span>© 2026 Padmanabha Fabrics. All rights reserved. Fine Indian Weaves & Ready-to-Wear.</span>
+            <span className="hidden sm:inline text-[#F4F0E8]/40">·</span>
+            <span className="text-[#F4F0E8]/85 font-medium">Developed by Gen Z Neural-X</span>
           </div>
 
           <div className="flex items-center gap-6">

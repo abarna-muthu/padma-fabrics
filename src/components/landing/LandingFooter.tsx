@@ -131,7 +131,7 @@ export function LandingFooter() {
 
         {/* Copyright 10px grey */}
         <p className="text-[10px] text-[#888888]">
-          © Copyright 2026 PADMANABHA FABRICS. All Rights Reserved.
+          © Copyright 2026 PADMANABHA FABRICS. All Rights Reserved. · Developed by Gen Z Neural-X
         </p>
 
         {/* Small dismissible notice */}
