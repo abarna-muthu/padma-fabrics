@@ -134,7 +134,7 @@ export function OnlineExclusive({ onOpenQuickSize }: OnlineExclusiveProps) {
               {exclusiveProducts.map((prod) => (
                 <div
                   key={prod.id}
-                  className="w-[240px] sm:w-[260px] md:w-[280px] shrink-0 snap-start mr-6"
+                  className="w-[220px] sm:w-[260px] md:w-[280px] shrink-0 snap-start mr-4 sm:mr-6"
                 >
                   <ProductCard
                     product={prod}

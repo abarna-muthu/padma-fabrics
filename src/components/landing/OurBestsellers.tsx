@@ -352,7 +352,7 @@ export function OurBestsellers({ onOpenQuickSize }: OurBestsellersProps) {
             {filteredProducts.map((prod) => (
               <div
                 key={prod.id}
-                className="w-[260px] sm:w-[280px] md:w-[300px] lg:w-[320px] shrink-0 snap-start mr-6"
+                className="w-[220px] sm:w-[260px] md:w-[280px] lg:w-[300px] shrink-0 snap-start mr-4 sm:mr-6"
               >
                 <ProductCard
                   product={prod}

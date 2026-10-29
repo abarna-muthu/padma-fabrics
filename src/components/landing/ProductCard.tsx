@@ -244,11 +244,11 @@ export const ProductCard = memo(function ProductCard({
       </Link>
 
       {/* Below Image: Title, Price and Buy Button */}
-      <div className="pt-2.5 pb-1 flex flex-col justify-between flex-1 text-left">
+      <div className="pt-2.5 pb-2.5 px-1 sm:px-1.5 flex flex-col text-left">
         <Link
           to="/product/$id"
           params={{ id: String(product.id) }}
-          className="text-[13px] font-medium text-[#222222] hover:text-[#9F160A] line-clamp-2 min-h-[36px] leading-[1.35] transition-colors"
+          className="text-[13px] sm:text-[14px] font-medium text-[#111111] hover:text-[#9F160A] line-clamp-2 min-h-[36px] sm:min-h-[38px] leading-[1.3] transition-colors"
           title={product.name}
         >
           {product.name}
@@ -259,17 +259,17 @@ export const ProductCard = memo(function ProductCard({
           {/* Price Block */}
           <div className="flex flex-col min-w-0">
             <div className="flex items-baseline gap-1.5 flex-wrap">
-              <span className="font-bold text-[#111111] text-[15px] sm:text-[16px] leading-tight">
+              <span className="font-bold text-[#111111] text-[15px] sm:text-[16px] tabular-nums tracking-tight leading-none">
                 {formatRs(product.price)}
               </span>
               {hasDiscount && (
-                <span className="line-through text-[#999999] text-[11px] leading-tight">
+                <span className="line-through text-[#888888] text-[11px] sm:text-[12px] leading-none">
                   {formatRs(product.originalPrice!)}
                 </span>
               )}
             </div>
             {hasDiscount && (
-              <span className="text-[#9F160A] font-semibold text-[10px] leading-tight mt-0.5">
+              <span className="text-[#9F160A] font-semibold text-[10px] leading-none mt-1">
                 {discountPercent}% OFF
               </span>
             )}
@@ -279,10 +279,10 @@ export const ProductCard = memo(function ProductCard({
           <button
             type="button"
             onClick={handleBuyClick}
-            className="px-3.5 py-1.5 sm:px-4 sm:py-1.5 bg-[#9F160A] hover:bg-[#7D1107] text-white text-[11px] sm:text-[12px] font-bold uppercase tracking-wider rounded-[6px] shadow-xs hover:shadow transition-all active:scale-95 shrink-0 cursor-pointer"
+            className="h-8 px-3.5 sm:px-4 bg-[#9F160A] hover:bg-[#7D1107] text-white text-[11px] sm:text-[12px] font-bold uppercase tracking-wider rounded-[6px] shadow-xs hover:shadow transition-all active:scale-95 shrink-0 flex items-center justify-center cursor-pointer"
             aria-label={`Buy ${product.name}`}
           >
-            Buy
+            BUY
           </button>
         </div>
       </div>

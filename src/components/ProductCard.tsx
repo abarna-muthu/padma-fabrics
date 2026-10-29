@@ -187,7 +187,7 @@ export function ProductCard({ product, light = false, badgeText, onQuickView }: 
           {/* Name */}
           <h3
             onClick={handleCardClick}
-            className="font-['Manrope'] text-xs sm:text-sm font-medium tracking-tight line-clamp-2 min-h-[2.2rem] sm:min-h-[2.5rem] leading-snug cursor-pointer hover:text-[#D15608] transition-colors"
+            className="font-['Manrope'] text-xs sm:text-sm font-medium tracking-tight line-clamp-2 min-h-[2.2rem] sm:min-h-[2.5rem] leading-snug cursor-pointer hover:text-[#9F160A] transition-colors"
             title={product.name}
           >
             {product.name}
@@ -217,17 +217,17 @@ export function ProductCard({ product, light = false, badgeText, onQuickView }: 
                 title="Add to Bag"
                 aria-label="Add to bag"
               >
-                <ShoppingBag className="size-3.5 text-[#D15608] dark:text-[#EDBC3D]" strokeWidth={1.5} />
+                <ShoppingBag className="size-3.5 text-[#9F160A] dark:text-[#EDBC3D]" strokeWidth={1.5} />
               </button>
 
               {/* Buy Now Button */}
               <button
                 type="button"
                 onClick={handleBuyNow}
-                className="px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-full bg-[#D15608] hover:bg-[#9F160A] text-white text-[10px] sm:text-[11px] font-semibold uppercase tracking-wider transition-all cursor-pointer shadow-xs active:scale-95 border border-[#EDBC3D]/40 shrink-0 inline-flex items-center gap-1 touch-manipulation whitespace-nowrap"
-                title="Buy Now"
+                className="h-7 sm:h-7.5 px-2.5 sm:px-3 rounded-[6px] bg-[#9F160A] hover:bg-[#7D1107] text-white text-[10px] sm:text-[11px] font-bold uppercase tracking-wider transition-all cursor-pointer shadow-xs active:scale-95 shrink-0 inline-flex items-center justify-center touch-manipulation whitespace-nowrap"
+                title="Buy"
               >
-                <span>Buy Now</span>
+                <span>BUY</span>
               </button>
             </div>
           </div>
