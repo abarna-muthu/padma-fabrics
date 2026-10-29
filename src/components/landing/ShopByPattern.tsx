@@ -1,6 +1,10 @@
 import { useState, useRef, useEffect } from "react";
 import { Link } from "@tanstack/react-router";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import sareeImg from "@/assets/saree-collection-showcase.jpg";
+import embroideredImg from "@/assets/embroidered-collection-showcase.jpg";
+import floralPrintsImg from "@/assets/floral-prints-collection-showcase.jpg";
+import festiveWearImg from "@/assets/festive-wear-collection-showcase.jpg";
 
 export interface CollectionCard {
   id: string;
@@ -38,6 +42,7 @@ export const COLLECTION_CARDS: CollectionCard[] = [
     tabs: ["SHOP ALL", "ETHNIC PRINTS", "EMBROIDERED"],
     shopSearch: { category: "Saree" },
     placeholderBg: "from-[#F5EFEB] to-[#EAE0D5]",
+    image: sareeImg,
   },
   {
     id: "embroidered",
@@ -48,6 +53,7 @@ export const COLLECTION_CARDS: CollectionCard[] = [
     tabs: ["SHOP ALL", "EMBROIDERED"],
     shopSearch: { pattern: "embroidery", search: "Embroidered" },
     placeholderBg: "from-[#F0ECE6] to-[#E2DDD5]",
+    image: embroideredImg,
   },
   {
     id: "floral-prints",
@@ -58,6 +64,7 @@ export const COLLECTION_CARDS: CollectionCard[] = [
     tabs: ["SHOP ALL", "FLORAL PRINTS"],
     shopSearch: { pattern: "florals", search: "Floral" },
     placeholderBg: "from-[#F7ECE8] to-[#EAD8D1]",
+    image: floralPrintsImg,
   },
   {
     id: "festive-wear",
@@ -68,6 +75,7 @@ export const COLLECTION_CARDS: CollectionCard[] = [
     tabs: ["SHOP ALL", "EMBROIDERED", "ETHNIC PRINTS"],
     shopSearch: { pattern: "embellished", search: "Festive" },
     placeholderBg: "from-[#F4EFE6] to-[#E6DEC9]",
+    image: festiveWearImg,
   },
   {
     id: "ethnic-prints",
@@ -224,6 +232,7 @@ export function ShopByPattern() {
                     src={card.image}
                     alt={card.name}
                     loading="lazy"
+                    style={{ objectPosition: "top center" }}
                     className="w-full h-full object-cover rounded-[inherit]"
                   />
                 ) : (
