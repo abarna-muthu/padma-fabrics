@@ -5,7 +5,7 @@ import { OurBestsellers } from "@/components/landing/OurBestsellers";
 import { ShopByOccasion } from "@/components/landing/ShopByOccasion";
 import { ShopByPattern } from "@/components/landing/ShopByPattern";
 import { LovedByCelebs } from "@/components/landing/LovedByCelebs";
-import { CustomerReviews } from "@/components/landing/CustomerReviews";
+import { TestimonialsSection } from "@/components/landing/TestimonialsSection";
 import { OnlineExclusive } from "@/components/landing/OnlineExclusive";
 import { FindAStoreStrip } from "@/components/landing/FindAStoreStrip";
 import { TrustStrip } from "@/components/landing/TrustStrip";
@@ -46,8 +46,8 @@ export function HomePage() {
       {/* SECTION 10 - LOVED BY CELEBS (1:2 cards with sparkle) */}
       <LovedByCelebs />
 
-      {/* SECTION 12 - CUSTOMER REVIEWS (black rounded cards) */}
-      <CustomerReviews />
+      {/* TESTIMONIALS SECTION (animated marquee with centered focus card) */}
+      <TestimonialsSection />
 
       {/* SECTION 13 - ONLINE EXCLUSIVE (split layout) */}
       <OnlineExclusive onOpenQuickSize={handleOpenQuickSize} />
