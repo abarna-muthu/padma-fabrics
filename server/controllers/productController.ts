@@ -978,3 +978,66 @@ export async function bulkSyncProducts(req: Request, res: Response) {
   }
 }
 
+export async function getProductReviews(req: Request, res: Response) {
+  const { id } = req.params;
+  try {
+    const database = await getDb();
+    const rows: any = await database.query(
+      "SELECT id, product_id, customer_name, rating, comment, created_at FROM product_reviews WHERE product_id = ? ORDER BY created_at DESC",
+      [id]
+    );
+    return res.status(200).json({
+      success: true,
+      data: rows || [],
+    });
+  } catch (err: any) {
+    return res.status(200).json({
+      success: true,
+      data: [],
+    });
+  }
+}
+
+export async function addProductReview(req: Request, res: Response) {
+  const { id } = req.params;
+  const { customer_name, rating, comment } = req.body || {};
+  const cleanComment = String(comment || "").trim();
+
+  if (!cleanComment) {
+    return res.status(400).json({
+      success: false,
+      error: "Please provide a review comment.",
+    });
+  }
+
+  const reviewId = `rev-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+  const cleanName = String(customer_name || "Verified Customer").trim();
+  const cleanRating = Math.max(1, Math.min(5, Number(rating) || 5));
+
+  try {
+    const database = await getDb();
+    await database.execute(
+      "INSERT INTO product_reviews (id, product_id, customer_name, rating, comment, created_at) VALUES (?, ?, ?, ?, ?, NOW())",
+      [reviewId, id, cleanName, cleanRating, cleanComment]
+    );
+
+    return res.status(201).json({
+      success: true,
+      data: {
+        id: reviewId,
+        product_id: id,
+        customer_name: cleanName,
+        rating: cleanRating,
+        comment: cleanComment,
+        created_at: new Date().toISOString(),
+      },
+    });
+  } catch (err: any) {
+    console.error("[ProductController] addProductReview error:", err);
+    return res.status(500).json({
+      success: false,
+      error: "Failed to submit review.",
+    });
+  }
+}
+

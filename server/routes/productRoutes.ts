@@ -8,6 +8,8 @@ import {
   deleteProduct,
   toggleProductStatus,
   createCategory,
+  getProductReviews,
+  addProductReview,
 } from "../controllers/productController";
 
 const router = Router();
@@ -15,6 +17,8 @@ const router = Router();
 router.get("/", getProducts);
 router.get("/categories", getCategories);
 router.post("/categories", createCategory);
+router.get("/:id/reviews", getProductReviews);
+router.post("/:id/reviews", addProductReview);
 router.get("/:id", getProductById);
 router.post("/", createProduct);
 router.put("/:id", updateProduct);

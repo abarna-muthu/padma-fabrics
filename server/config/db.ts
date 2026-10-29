@@ -173,6 +173,7 @@ class MemoryDatabase {
   payments: any[] = [];
   contact_enquiries: any[] = [];
   site_settings: any[] = [];
+  product_reviews: any[] = [];
 
   constructor() {
     // Seed categories and load persisted products so catalog additions are permanent
@@ -454,6 +455,7 @@ async function runMigrations(pool: mysql.Pool) {
       await pool.query("ALTER TABLE cart_items ADD COLUMN colour VARCHAR(100)").catch(() => {});
       await pool.query("ALTER TABLE cart_items ADD COLUMN image_url TEXT").catch(() => {});
       await pool.query("CREATE TABLE IF NOT EXISTS site_settings (setting_key VARCHAR(50) PRIMARY KEY, setting_value LONGTEXT NOT NULL, updated_at BIGINT NOT NULL)").catch(() => {});
+      await pool.query("CREATE TABLE IF NOT EXISTS product_reviews (id VARCHAR(36) PRIMARY KEY, product_id VARCHAR(50) NOT NULL, customer_name VARCHAR(150) NOT NULL, rating INT NOT NULL DEFAULT 5, comment TEXT NOT NULL, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, INDEX idx_review_product (product_id))").catch(() => {});
 
       console.log("[Database] Schema migrations applied successfully.");
 
@@ -599,6 +601,17 @@ function executeMemoryQuery<T = any>(sql: string, params: any[] = []): T[] {
       return (item ? [item] : []) as any;
     }
     return [...memoryDb.site_settings] as any;
+  }
+
+  // product_reviews
+  if (normalized.includes("from product_reviews")) {
+    if (normalized.includes("product_id =")) {
+      const targetPid = String(params[0] || "").toLowerCase();
+      return memoryDb.product_reviews
+        .filter((r) => String(r.product_id).toLowerCase() === targetPid)
+        .reverse() as any;
+    }
+    return [...memoryDb.product_reviews].reverse() as any;
   }
 
   return [] as any;
@@ -967,6 +980,20 @@ function executeMemoryCommand(sql: string, params: any[] = []): any {
       memoryDb.site_settings = [];
     }
     return { affectedRows: 1 };
+  }
+
+  // Product reviews insert
+  if (normalized.startsWith("insert into product_reviews")) {
+    const rev = {
+      id: params[0],
+      product_id: params[1],
+      customer_name: params[2],
+      rating: Number(params[3]) || 5,
+      comment: params[4] || "",
+      created_at: new Date().toISOString(),
+    };
+    memoryDb.product_reviews.unshift(rev);
+    return { insertId: rev.id, affectedRows: 1 };
   }
 
   return { affectedRows: 0 };

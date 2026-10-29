@@ -195,6 +195,16 @@ CREATE TABLE IF NOT EXISTS site_settings (
   updated_at BIGINT NOT NULL
 );
 
+CREATE TABLE IF NOT EXISTS product_reviews (
+  id VARCHAR(36) PRIMARY KEY,
+  product_id VARCHAR(50) NOT NULL,
+  customer_name VARCHAR(150) NOT NULL,
+  rating INT NOT NULL DEFAULT 5,
+  comment TEXT NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  INDEX idx_review_product (product_id)
+);
+
 CREATE TABLE IF NOT EXISTS payment_webhooks (
   id VARCHAR(36) PRIMARY KEY,
   event_id VARCHAR(100) UNIQUE NOT NULL,
