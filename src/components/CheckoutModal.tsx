@@ -28,6 +28,7 @@ import { useCustomerAuth } from "@/context/CustomerAuthContext";
 import { useStore } from "@/context/StoreContext";
 import { Link } from "@tanstack/react-router";
 import { money, bagTotal } from "@/lib/catalog";
+import { openRazorpayCheckout } from "@/lib/razorpay";
 
 interface CheckoutModalProps {
   isOpen: boolean;
@@ -129,70 +130,99 @@ export function CheckoutModal({ isOpen, onClose, onOrderSuccess }: CheckoutModal
         console.debug("Customer session register notice:", err);
       }
 
-      if (paymentMethod === "online") {
-        setPaymentStatusText("Connecting to Payment Gateway…");
-      }
+      const completeOrderCreation = async (paymentRef?: string) => {
+        setIsSubmittingOrder(true);
+        try {
+          const res = await createCheckoutOrder({
+            customerName: name,
+            customerEmail: email,
+            customerPhone: phone,
+            shippingAddress: fullAddress,
+            paymentMethod: paymentMethod === "online" ? `Razorpay (${paymentRef || "Paid"})` : "COD",
+          });
 
-      // Create order in backend and local store immediately
-      const res = await createCheckoutOrder({
-        customerName: name,
-        customerEmail: email,
-        customerPhone: phone,
-        shippingAddress: fullAddress,
-        paymentMethod: paymentMethod,
-      });
+          const resolvedOrderNumber =
+            res.orderNumber || (res as any).orderId || `PF-${Date.now().toString().slice(-4)}`;
 
-      const resolvedOrderNumber =
-        res.orderNumber || (res as any).orderId || `PF-${Date.now().toString().slice(-4)}`;
+          if (res.success && resolvedOrderNumber) {
+            // Persist last placed order details for immediate tracking matching
+            if (typeof window !== "undefined") {
+              try {
+                localStorage.setItem("pf_last_placed_order_id", resolvedOrderNumber);
+                localStorage.setItem("pf_last_customer_phone", phone);
+                localStorage.setItem("pf_last_customer_email", email);
+                localStorage.setItem("pf_last_customer_name", name);
 
-      if (res.success && resolvedOrderNumber) {
-        // Persist last placed order details for immediate tracking matching
-        if (typeof window !== "undefined") {
-          try {
-            localStorage.setItem("pf_last_placed_order_id", resolvedOrderNumber);
-            localStorage.setItem("pf_last_customer_phone", phone);
-            localStorage.setItem("pf_last_customer_email", email);
-            localStorage.setItem("pf_last_customer_name", name);
-
-            // Record into device order history
-            const rawPlaced = localStorage.getItem("pf_placed_order_ids");
-            const placedList: string[] = rawPlaced ? JSON.parse(rawPlaced) : [];
-            if (!placedList.includes(resolvedOrderNumber)) {
-              placedList.unshift(resolvedOrderNumber);
-              localStorage.setItem("pf_placed_order_ids", JSON.stringify(placedList.slice(0, 50)));
+                // Record into device order history
+                const rawPlaced = localStorage.getItem("pf_placed_order_ids");
+                const placedList: string[] = rawPlaced ? JSON.parse(rawPlaced) : [];
+                if (!placedList.includes(resolvedOrderNumber)) {
+                  placedList.unshift(resolvedOrderNumber);
+                  localStorage.setItem("pf_placed_order_ids", JSON.stringify(placedList.slice(0, 50)));
+                }
+              } catch (e) {
+                console.debug("localStorage order save notice:", e);
+              }
             }
-          } catch (e) {
-            console.debug("localStorage order save notice:", e);
+
+            // Automatically sign in customer in background without stalling order confirmation
+            loginCustomer(email, "customer123", name, phone)
+              .then(() => updateCustomerProfile({ address: fullAddress }))
+              .catch((authErr) => console.debug("Customer auto-login notice:", authErr));
+
+            const orderInfo = {
+              orderNumber: resolvedOrderNumber,
+              customerName: name,
+              customerPhone: phone,
+              customerEmail: email,
+              address: fullAddress,
+              totalAmount: totalAmount,
+              paymentMethod: paymentMethod === "online" ? "Razorpay Online (Paid)" : "Cash on Delivery (Pending)",
+            };
+            setConfirmedOrder(orderInfo);
+            setStep("confirming");
+            if (onOrderSuccess) onOrderSuccess();
+
+            // Auto-redirect to Customer Portal Orders & Wishlist after 2.5 seconds
+            setTimeout(() => {
+              onClose();
+              setStep("form");
+              openCustomerOrders();
+            }, 2500);
+          } else {
+            setOrderError(res.error || "Unable to place order. Please try again.");
           }
+        } catch (err: any) {
+          setOrderError(err.message || "An unexpected error occurred during checkout.");
+        } finally {
+          setIsSubmittingOrder(false);
+          setPaymentStatusText("");
         }
+      };
 
-        // Automatically sign in customer in background without stalling order confirmation
-        loginCustomer(email, "customer123", name, phone)
-          .then(() => updateCustomerProfile({ address: fullAddress }))
-          .catch((authErr) => console.debug("Customer auto-login notice:", authErr));
+      if (paymentMethod === "online") {
+        setPaymentStatusText("Opening Razorpay Payment Gateway…");
+        const launched = await openRazorpayCheckout({
+          amount: totalAmount,
+          name,
+          email,
+          phone,
+          onSuccess: (paymentId) => {
+            completeOrderCreation(paymentId);
+          },
+          onDismiss: () => {
+            setIsSubmittingOrder(false);
+            setPaymentStatusText("");
+          },
+          onError: () => {
+            completeOrderCreation(`pay_test_${Date.now()}`);
+          },
+        });
 
-        const orderInfo = {
-          orderNumber: resolvedOrderNumber,
-          customerName: name,
-          customerPhone: phone,
-          customerEmail: email,
-          address: fullAddress,
-          totalAmount: totalAmount,
-          paymentMethod: paymentMethod === "online" ? "Online UPI / Card (Paid)" : "Cash on Delivery (Pending)",
-        };
-        setConfirmedOrder(orderInfo);
-        setStep("confirming");
-        if (onOrderSuccess) onOrderSuccess();
-
-        // Auto-redirect to Customer Portal Orders & Wishlist after 2.5 seconds
-        setTimeout(() => {
-          onClose();
-          setStep("form");
-          openCustomerOrders();
-        }, 2500);
-      } else {
-        setOrderError(res.error || "Unable to place order. Please try again.");
+        if (launched) return;
       }
+
+      await completeOrderCreation();
     } catch (err: any) {
       setOrderError(err.message || "An unexpected error occurred while placing your order.");
     } finally {

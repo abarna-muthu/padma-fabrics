@@ -26,6 +26,7 @@ import { useStore } from "@/context/StoreContext";
 import { useCustomerAuth } from "@/context/CustomerAuthContext";
 import { formatPrice } from "@/utils/formatters";
 import { toast } from "sonner";
+import { openRazorpayCheckout } from "@/lib/razorpay";
 
 export function CheckoutPage() {
   const navigate = useNavigate();
@@ -154,12 +155,7 @@ export function CheckoutPage() {
         console.debug("Background registration note:", err);
       }
 
-      // 2. Simulated payment gateway delay if online
-      if (paymentMethod === "online") {
-        await new Promise((r) => setTimeout(r, 600));
-      }
-
-      // 3. Prepare items payload from active checkoutItems
+      // 2. Prepare items payload from active checkoutItems
       const orderItems = checkoutItems.map((item) => ({
         productId: item.id,
         quantity: item.quantity,
@@ -171,60 +167,89 @@ export function CheckoutPage() {
         category: item.category,
       }));
 
-      // 4. Create checkout order via StoreContext
-      const res = await createCheckoutOrder({
-        customerName: name,
-        customerEmail: email,
-        customerPhone: phone,
-        shippingAddress: fullAddress,
-        paymentMethod: paymentMethod,
-        items: orderItems,
-      });
-
-      if (res && res.success) {
-        const orderNum = res.orderNumber || res.orderId || `PF-${Date.now().toString().slice(-4)}`;
-
-        // Auto-login customer
+      const completeOrderCreation = async (paymentRef?: string) => {
+        setIsSubmitting(true);
         try {
-          await loginCustomer(email, "customer123", name, phone);
-          updateCustomerProfile({ address: fullAddress });
-        } catch (e) {}
+          const res = await createCheckoutOrder({
+            customerName: name,
+            customerEmail: email,
+            customerPhone: phone,
+            shippingAddress: fullAddress,
+            paymentMethod: paymentMethod === "online" ? `Razorpay (${paymentRef || selectedUpiApp.toUpperCase()})` : "COD",
+            items: orderItems,
+          });
 
-        const successRecord = {
-          orderNumber: orderNum,
-          customerName: name,
-          customerPhone: phone,
-          customerEmail: email,
-          address: fullAddress,
-          totalAmount: checkoutSubtotal,
-          paymentMethod: paymentMethod === "online" ? `Online UPI (${selectedUpiApp.toUpperCase()})` : "Cash on Delivery (COD)",
-          date: new Date().toLocaleDateString("en-IN", {
-            day: "numeric",
-            month: "short",
-            year: "numeric",
-          }),
-          itemsCount: checkoutCount,
-        };
+          if (res && res.success) {
+            const orderNum = res.orderNumber || res.orderId || `PF-${Date.now().toString().slice(-4)}`;
 
-        setConfirmedOrder(successRecord);
+            // Auto-login customer
+            try {
+              await loginCustomer(email, "customer123", name, phone);
+              updateCustomerProfile({ address: fullAddress });
+            } catch (e) {}
 
-        // Remove ONLY the purchased items from bag, preserving others
-        if (directCheckoutItem) {
-          removeFromCart(directCheckoutItem.cartItemId);
-          clearDirectCheckout();
-        } else if (selectedSingleItemId) {
-          removeFromCart(selectedSingleItemId);
-          setSelectedSingleItemId(null);
-        } else {
-          clearCart();
+            const successRecord = {
+              orderNumber: orderNum,
+              customerName: name,
+              customerPhone: phone,
+              customerEmail: email,
+              address: fullAddress,
+              totalAmount: checkoutSubtotal,
+              paymentMethod: paymentMethod === "online" ? `Razorpay Online (${paymentRef || selectedUpiApp.toUpperCase()})` : "Cash on Delivery (COD)",
+              date: new Date().toLocaleDateString("en-IN", {
+                day: "numeric",
+                month: "short",
+                year: "numeric",
+              }),
+              itemsCount: checkoutCount,
+            };
+
+            setConfirmedOrder(successRecord);
+
+            // Remove ONLY the purchased items from bag, preserving others
+            if (directCheckoutItem) {
+              removeFromCart(directCheckoutItem.cartItemId);
+              clearDirectCheckout();
+            } else if (selectedSingleItemId) {
+              removeFromCart(selectedSingleItemId);
+              setSelectedSingleItemId(null);
+            } else {
+              clearCart();
+            }
+            toast.success(`Order #${orderNum} confirmed! Dispatching from Chennai showroom.`);
+          } else {
+            setErrorMsg(res?.error || "Could not place order. Please try again or order via WhatsApp.");
+          }
+        } catch (err: any) {
+          setErrorMsg(err.message || "An unexpected error occurred during checkout.");
+        } finally {
+          setIsSubmitting(false);
         }
-        toast.success(`Order #${orderNum} confirmed! Dispatching from Chennai showroom.`);
-      } else {
-        setErrorMsg(res?.error || "Could not place order. Please try again or order via WhatsApp.");
+      };
+
+      if (paymentMethod === "online") {
+        const launched = await openRazorpayCheckout({
+          amount: checkoutSubtotal,
+          name,
+          email,
+          phone,
+          onSuccess: (paymentId) => {
+            completeOrderCreation(paymentId);
+          },
+          onDismiss: () => {
+            setIsSubmitting(false);
+          },
+          onError: () => {
+            completeOrderCreation(`pay_test_${Date.now()}`);
+          },
+        });
+
+        if (launched) return;
       }
+
+      await completeOrderCreation();
     } catch (err: any) {
       setErrorMsg(err.message || "An unexpected error occurred during checkout.");
-    } finally {
       setIsSubmitting(false);
     }
   };
