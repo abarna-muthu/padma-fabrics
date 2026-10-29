@@ -4,7 +4,7 @@
 
 export const RAZORPAY_KEY_ID =
   (typeof import.meta !== "undefined" && import.meta.env?.VITE_RAZORPAY_KEY_ID) ||
-  "rzp_test_Ttiz5NWxe4DV4R";
+  "rzp_live_Ttjb3tAGOIsgWY";
 
 export function loadRazorpayScript(): Promise<boolean> {
   return new Promise((resolve) => {
@@ -90,3 +90,4 @@ export async function openRazorpayCheckout({
     return false;
   }
 }
+
