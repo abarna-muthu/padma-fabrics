@@ -110,6 +110,34 @@ export const ProductCard = memo(function ProductCard({
     }
   };
 
+  const handleBuyClick = (e: MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (selectedSize) {
+      addToCart(
+        product as any,
+        selectedSize,
+        1,
+        product.colour || "Standard",
+        product.image,
+        product.price
+      );
+      toast.success(`Added ${product.name} (${selectedSize}) to bag.`);
+    } else if (onOpenQuickSize) {
+      onOpenQuickSize(product);
+    } else {
+      addToCart(
+        product as any,
+        inStockSizes[0] || "M",
+        1,
+        product.colour || "Standard",
+        product.image,
+        product.price
+      );
+      toast.success(`Added ${product.name} to bag.`);
+    }
+  };
+
   return (
     <div
       className={`group/card relative flex flex-col font-['Poppins'] text-left bg-white select-none ${className}`}
@@ -215,36 +243,47 @@ export const ProductCard = memo(function ProductCard({
         </button>
       </Link>
 
-      {/* Below Image: Title (left-aligned, 12px, #555, 2-line clamp) */}
-      <div className="pt-2.5 pb-1 flex flex-col text-left">
+      {/* Below Image: Title, Price and Buy Button */}
+      <div className="pt-2.5 pb-1 flex flex-col justify-between flex-1 text-left">
         <Link
           to="/product/$id"
           params={{ id: String(product.id) }}
-          className="text-[12px] text-[#555555] hover:text-[#111111] line-clamp-2 leading-[1.35] transition-colors"
+          className="text-[13px] font-medium text-[#222222] hover:text-[#9F160A] line-clamp-2 min-h-[36px] leading-[1.35] transition-colors"
           title={product.name}
         >
           {product.name}
         </Link>
 
-        {/* Price Row */}
-        <div className="mt-1 flex flex-wrap items-baseline gap-1.5 text-[12px] leading-tight">
-          {hasDiscount ? (
-            <>
-              <span className="line-through text-[#999999] text-[11px]">
-                {formatRs(product.originalPrice!)}
-              </span>
-              <span className="font-bold text-[#111111] text-[13px]">
+        {/* Price & Buy Button Row */}
+        <div className="mt-2 flex items-center justify-between gap-2">
+          {/* Price Block */}
+          <div className="flex flex-col min-w-0">
+            <div className="flex items-baseline gap-1.5 flex-wrap">
+              <span className="font-bold text-[#111111] text-[15px] sm:text-[16px] leading-tight">
                 {formatRs(product.price)}
               </span>
-              <span className="text-[#D0202B] font-semibold text-[11px]">
-                - {discountPercent}% (Save - {formatRs(savings)})
+              {hasDiscount && (
+                <span className="line-through text-[#999999] text-[11px] leading-tight">
+                  {formatRs(product.originalPrice!)}
+                </span>
+              )}
+            </div>
+            {hasDiscount && (
+              <span className="text-[#9F160A] font-semibold text-[10px] leading-tight mt-0.5">
+                {discountPercent}% OFF
               </span>
-            </>
-          ) : (
-            <span className="font-bold text-[#111111] text-[13px]">
-              {formatRs(product.price)}
-            </span>
-          )}
+            )}
+          </div>
+
+          {/* Buy Button on Right Side */}
+          <button
+            type="button"
+            onClick={handleBuyClick}
+            className="px-3.5 py-1.5 sm:px-4 sm:py-1.5 bg-[#9F160A] hover:bg-[#7D1107] text-white text-[11px] sm:text-[12px] font-bold uppercase tracking-wider rounded-[6px] shadow-xs hover:shadow transition-all active:scale-95 shrink-0 cursor-pointer"
+            aria-label={`Buy ${product.name}`}
+          >
+            Buy
+          </button>
         </div>
       </div>
     </div>
