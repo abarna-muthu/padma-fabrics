@@ -5,10 +5,8 @@ import { OurBestsellers } from "@/components/landing/OurBestsellers";
 import { ShopByOccasion } from "@/components/landing/ShopByOccasion";
 import { ShopByPattern } from "@/components/landing/ShopByPattern";
 import { LovedByCelebs } from "@/components/landing/LovedByCelebs";
-import { BrandColourPalette } from "@/components/landing/BrandColourPalette";
 import { CustomerReviews } from "@/components/landing/CustomerReviews";
 import { OnlineExclusive } from "@/components/landing/OnlineExclusive";
-import { TrendJournal } from "@/components/landing/TrendJournal";
 import { FindAStoreStrip } from "@/components/landing/FindAStoreStrip";
 import { TrustStrip } from "@/components/landing/TrustStrip";
 import { MobileBottomNav } from "@/components/landing/MobileBottomNav";
@@ -48,17 +46,11 @@ export function HomePage() {
       {/* SECTION 10 - LOVED BY CELEBS (1:2 cards with sparkle) */}
       <LovedByCelebs />
 
-      {/* SECTION 11 - THE BRAND COLOUR PALETTE (~330px lifestyle cards) */}
-      <BrandColourPalette />
-
       {/* SECTION 12 - CUSTOMER REVIEWS (black rounded cards) */}
       <CustomerReviews />
 
       {/* SECTION 13 - ONLINE EXCLUSIVE (split layout) */}
       <OnlineExclusive onOpenQuickSize={handleOpenQuickSize} />
-
-      {/* SECTION 14 - TREND JOURNAL (3 blog articles) */}
-      <TrendJournal />
 
       {/* SECTION 15 - FIND A STORE STRIP (red pin + gold watermark) */}
       <FindAStoreStrip />
