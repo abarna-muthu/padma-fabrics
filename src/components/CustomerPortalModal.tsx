@@ -63,6 +63,19 @@ export function CustomerPortalModal() {
   const lastPlacedPhone = typeof window !== "undefined" ? localStorage.getItem("pf_last_customer_phone") : null;
   const lastPlacedEmail = typeof window !== "undefined" ? localStorage.getItem("pf_last_customer_email") : null;
 
+  const placedOrderIds: string[] = (() => {
+    if (typeof window === "undefined") return [];
+    try {
+      const raw = localStorage.getItem("pf_placed_order_ids");
+      const list = raw ? JSON.parse(raw) : [];
+      return Array.isArray(list) ? list : [];
+    } catch {
+      return [];
+    }
+  })();
+
+  const DUMMY_ORDER_IDS = ["PF-1081", "PF-1082", "PF-1083"];
+
   const normalizePhone = (p?: string) => (p ? String(p).replace(/\D/g, "").slice(-10) : "");
 
   const getOrderItems = (o: any): any[] => {
@@ -81,11 +94,15 @@ export function CustomerPortalModal() {
 
   const customerOrders = (orders || []).filter((o) => {
     if (!o) return false;
+    if (DUMMY_ORDER_IDS.includes(o.id) || (o.orderNumber && DUMMY_ORDER_IDS.includes(o.orderNumber))) {
+      return false;
+    }
     try {
       if (customer) {
         if (customer.email && o.customerEmail && typeof o.customerEmail === "string" && o.customerEmail.trim().toLowerCase() === customer.email.trim().toLowerCase()) return true;
         if (customer.phone && o.customerPhone && typeof o.customerPhone === "string" && normalizePhone(o.customerPhone) === normalizePhone(customer.phone)) return true;
       }
+      if (placedOrderIds.includes(o.id) || ((o as any).orderNumber && placedOrderIds.includes((o as any).orderNumber))) return true;
       if (lastPlacedOrderId && (o.id === lastPlacedOrderId || (o as any).orderNumber === lastPlacedOrderId)) return true;
       if (lastPlacedPhone && o.customerPhone && typeof o.customerPhone === "string" && normalizePhone(o.customerPhone) === normalizePhone(lastPlacedPhone)) return true;
       if (lastPlacedEmail && o.customerEmail && typeof o.customerEmail === "string" && o.customerEmail.trim().toLowerCase() === lastPlacedEmail.trim().toLowerCase()) return true;

@@ -153,6 +153,14 @@ export function CheckoutModal({ isOpen, onClose, onOrderSuccess }: CheckoutModal
             localStorage.setItem("pf_last_customer_phone", phone);
             localStorage.setItem("pf_last_customer_email", email);
             localStorage.setItem("pf_last_customer_name", name);
+
+            // Record into device order history
+            const rawPlaced = localStorage.getItem("pf_placed_order_ids");
+            const placedList: string[] = rawPlaced ? JSON.parse(rawPlaced) : [];
+            if (!placedList.includes(resolvedOrderNumber)) {
+              placedList.unshift(resolvedOrderNumber);
+              localStorage.setItem("pf_placed_order_ids", JSON.stringify(placedList.slice(0, 50)));
+            }
           } catch (e) {
             console.debug("localStorage order save notice:", e);
           }

@@ -45,13 +45,27 @@ export function OrdersPage() {
   const [timeframe, setTimeframe] = useState<"1-year" | "6-months" | "3-months" | "all">("1-year");
   const [dismissedBanners, setDismissedBanners] = useState<Record<string, boolean>>({});
 
-  // Match orders for customer via:
+  // Match orders for customer strictly when placed via:
   // 1. Logged in customer email / phone
-  // 2. localStorage last placed order ID, phone, or email
-  // 3. Fallback to recent store orders
+  // 2. Placed order IDs stored in localStorage on this device
+  // 3. localStorage last placed order ID, phone, or email
   const lastPlacedOrderId = typeof window !== "undefined" ? localStorage.getItem("pf_last_placed_order_id") : null;
   const lastPlacedPhone = typeof window !== "undefined" ? localStorage.getItem("pf_last_customer_phone") : null;
   const lastPlacedEmail = typeof window !== "undefined" ? localStorage.getItem("pf_last_customer_email") : null;
+
+  // Stored order IDs placed on this device
+  const placedOrderIds: string[] = (() => {
+    if (typeof window === "undefined") return [];
+    try {
+      const raw = localStorage.getItem("pf_placed_order_ids");
+      const list = raw ? JSON.parse(raw) : [];
+      return Array.isArray(list) ? list : [];
+    } catch {
+      return [];
+    }
+  })();
+
+  const DUMMY_ORDER_IDS = ["PF-1081", "PF-1082", "PF-1083"];
 
   const normalizePhone = (p?: string) => (p ? String(p).replace(/\D/g, "").slice(-10) : "");
 
@@ -71,11 +85,17 @@ export function OrdersPage() {
 
   const matchedOrders = (orders || []).filter((o) => {
     if (!o) return false;
+    // Strictly never display dummy sample orders to customers
+    if (DUMMY_ORDER_IDS.includes(o.id) || (o.orderNumber && DUMMY_ORDER_IDS.includes(o.orderNumber))) {
+      return false;
+    }
+
     try {
       if (customer) {
         if (customer.email && o.customerEmail && typeof o.customerEmail === "string" && o.customerEmail.trim().toLowerCase() === customer.email.trim().toLowerCase()) return true;
         if (customer.phone && o.customerPhone && typeof o.customerPhone === "string" && normalizePhone(o.customerPhone) === normalizePhone(customer.phone)) return true;
       }
+      if (placedOrderIds.includes(o.id) || ((o as any).orderNumber && placedOrderIds.includes((o as any).orderNumber))) return true;
       if (lastPlacedOrderId && (o.id === lastPlacedOrderId || (o as any).orderNumber === lastPlacedOrderId)) return true;
       if (lastPlacedPhone && o.customerPhone && typeof o.customerPhone === "string" && normalizePhone(o.customerPhone) === normalizePhone(lastPlacedPhone)) return true;
       if (lastPlacedEmail && o.customerEmail && typeof o.customerEmail === "string" && o.customerEmail.trim().toLowerCase() === lastPlacedEmail.trim().toLowerCase()) return true;
@@ -85,7 +105,8 @@ export function OrdersPage() {
     return false;
   });
 
-  const baseOrders = matchedOrders.length > 0 ? matchedOrders : (orders || []).slice(0, 6);
+  // Display only real placed customer orders (no dummy fallback)
+  const baseOrders = matchedOrders;
 
   // Apply tab & timeframe filters
   const filteredOrders = baseOrders.filter((order) => {
@@ -117,10 +138,11 @@ export function OrdersPage() {
 
     const found = orders.find(
       (o) =>
-        o.id.toLowerCase() === q ||
-        o.id.toLowerCase().includes(q) ||
-        (o.orderNumber && o.orderNumber.toLowerCase().includes(q)) ||
-        (o.customerPhone && o.customerPhone.replace(/\D/g, "").includes(q.replace(/\D/g, ""))),
+        !DUMMY_ORDER_IDS.includes(o.id) &&
+        (o.id.toLowerCase() === q ||
+          o.id.toLowerCase().includes(q) ||
+          (o.orderNumber && o.orderNumber.toLowerCase().includes(q)) ||
+          (o.customerPhone && o.customerPhone.replace(/\D/g, "").includes(q.replace(/\D/g, "")))),
     );
 
     if (found) {
@@ -347,7 +369,7 @@ export function OrdersPage() {
               <Search className="size-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
               <Input
                 type="text"
-                placeholder="Enter Order ID (e.g. PF-1081) or phone number..."
+                placeholder="Enter Order ID (e.g. PF-9842) or phone number..."
                 value={orderQuery}
                 onChange={(e) => setOrderQuery(e.target.value)}
                 className="pl-9 text-xs h-9 bg-background"
