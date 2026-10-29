@@ -3,6 +3,7 @@ import { CarouselShell } from "./CarouselShell";
 import { ProductCard, type LandingProduct } from "./ProductCard";
 import { ImageSkeleton } from "./ImageSkeleton";
 import { useStore } from "@/context/StoreContext";
+import onlineExclusiveBanner from "@/assets/online-exclusive-banner.jpg";
 
 const EXCLUSIVE_PRODUCTS: LandingProduct[] = [
   {
@@ -98,10 +99,11 @@ export function OnlineExclusive({ onOpenQuickSize }: OnlineExclusiveProps) {
       <div className="max-w-7xl mx-auto px-0 sm:px-4 flex flex-col lg:flex-row items-stretch gap-8 lg:gap-10">
         {/* LEFT ~30%: One tall portrait image (~430x700) */}
         <div className="w-full lg:w-[32%] shrink-0">
-          <div className="w-full h-[380px] lg:h-[640px] rounded-[14px] overflow-hidden bg-[#EDEDED] relative group shadow-sm isolate">
+          <div className="w-full h-[480px] sm:h-[540px] md:h-[580px] lg:h-[640px] rounded-[14px] overflow-hidden bg-[#EDEDED] relative group shadow-sm isolate">
             <ImageSkeleton
-              src="https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=900&q=85"
-              alt="Online Exclusive Model in Floral Dupatta"
+              src={onlineExclusiveBanner}
+              alt="Online Exclusive New Styles Collection"
+              style={{ objectPosition: "top center" }}
               className="w-full h-full rounded-[inherit]"
             />
             <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-transparent to-transparent flex flex-col justify-end p-6 text-white text-left rounded-[inherit]">
