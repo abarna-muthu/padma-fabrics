@@ -2,7 +2,7 @@ import { useMemo } from "react";
 import { Link } from "@tanstack/react-router";
 import { SectionTitle } from "./SectionTitle";
 import { ImageSkeleton } from "./ImageSkeleton";
-import { useSiteContent } from "@/context/SiteContentContext";
+import { useSiteContent, DEFAULT_POPULAR_CATEGORIES } from "@/context/SiteContentContext";
 
 // Bundled high-res category imagery
 import sareeImg from "@/assets/silk-sarees-category.jpg";
@@ -82,7 +82,7 @@ export function PopularCategories() {
     if (content.home.popularCategories && content.home.popularCategories.length > 0) {
       return content.home.popularCategories;
     }
-    return CATEGORIES;
+    return DEFAULT_POPULAR_CATEGORIES;
   }, [content.home.popularCategories]);
 
   return (
@@ -93,7 +93,7 @@ export function PopularCategories() {
       <div className="max-w-7xl mx-auto px-0 sm:px-4 grid grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4 md:gap-5">
         {categories.map((cat, idx) => (
           <Link
-            key={cat.id || idx}
+            key={`${cat.id || idx}-${cat.image}`}
             to={cat.href || `/shop?category=${encodeURIComponent(cat.title)}`}
             className={`group flex flex-col items-center ${
               idx === categories.length - 1 && categories.length % 2 !== 0 ? "col-span-2 md:col-span-1" : ""
@@ -103,6 +103,7 @@ export function PopularCategories() {
             <div className="w-full overflow-hidden bg-[#EDEDED] aspect-[340/370] rounded-[14px] isolate">
               <div className="w-full h-full transition-transform duration-300 ease-out group-hover:scale-[1.04] rounded-[inherit]">
                 <ImageSkeleton
+                  key={cat.image}
                   src={cat.image}
                   alt={cat.title}
                   aspectRatio="340/370"

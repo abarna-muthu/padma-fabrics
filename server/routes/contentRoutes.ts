@@ -58,7 +58,7 @@ export const DEFAULT_SITE_CONTENT = {
       {
         id: "saree",
         title: "SAREE",
-        image: "https://images.unsplash.com/photo-1610030469983-98e550d6193c?auto=format&fit=crop&w=800&q=80",
+        image: "/assets/silk-sarees-category.jpg",
         href: "/shop?category=Saree",
       },
       {
@@ -76,7 +76,7 @@ export const DEFAULT_SITE_CONTENT = {
       {
         id: "maxi",
         title: "MAXI",
-        image: "https://images.unsplash.com/photo-1572804013309-59a88b7e92f1?auto=format&fit=crop&w=800&q=80",
+        image: "/assets/flowing-maxis-category.jpg",
         href: "/shop?category=Maxi",
       },
       {
@@ -100,7 +100,7 @@ export const DEFAULT_SITE_CONTENT = {
       {
         id: "combo-dresses",
         title: "COMBO DRESSES",
-        image: "https://images.unsplash.com/photo-1518831959646-742c3a14ebf7?auto=format&fit=crop&w=800&q=80",
+        image: "/assets/girls-party-frock.jpg",
         href: "/shop?category=Combo Dresses",
       },
       {
@@ -145,13 +145,13 @@ export const DEFAULT_SITE_CONTENT = {
         id: "saree",
         label: "SAREE",
         categoryKey: "Saree",
-        image: "https://images.unsplash.com/photo-1610030469983-98e550d6193c?auto=format&fit=crop&w=800&q=80",
+        image: "/assets/silk-sarees-category.jpg",
       },
       {
         id: "maxi",
         label: "MAXI",
         categoryKey: "Maxi",
-        image: "https://images.unsplash.com/photo-1572804013309-59a88b7e92f1?auto=format&fit=crop&w=800&q=80",
+        image: "/assets/flowing-maxis-category.jpg",
       },
       {
         id: "nighty",
@@ -169,7 +169,7 @@ export const DEFAULT_SITE_CONTENT = {
         id: "combo-dresses",
         label: "COMBO DRESSES",
         categoryKey: "Combo Dresses",
-        image: "https://images.unsplash.com/photo-1518831959646-742c3a14ebf7?auto=format&fit=crop&w=800&q=80",
+        image: "/assets/girls-party-frock.jpg",
       },
     ],
   },
@@ -290,6 +290,9 @@ function writePersistedContent(content: any) {
 
 // GET /api/content
 router.get("/", (req: Request, res: Response) => {
+  res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
+  res.setHeader("Pragma", "no-cache");
+  res.setHeader("Expires", "0");
   const content = readPersistedContent();
   return res.status(200).json({
     success: true,

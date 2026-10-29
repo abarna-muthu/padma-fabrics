@@ -352,7 +352,13 @@ export const contactApi = {
 // ----------------------------------------------------
 export const contentApi = {
   async get() {
-    return apiRequest<any>("/api/content");
+    return apiRequest<any>(`/api/content?t=${Date.now()}`, {
+      cache: "no-store",
+      headers: {
+        "Cache-Control": "no-cache, no-store, must-revalidate",
+        "Pragma": "no-cache",
+      },
+    });
   },
   async update(updates: any) {
     return apiRequest<any>("/api/content", {

@@ -33,7 +33,7 @@
       {
         "id": "saree",
         "title": "SAREE",
-        "image": "https://images.unsplash.com/photo-1610030469983-98e550d6193c?auto=format&fit=crop&w=800&q=80",
+        "image": "/assets/silk-sarees-category.jpg",
         "href": "/shop?category=Saree"
       },
       {
@@ -51,7 +51,7 @@
       {
         "id": "maxi",
         "title": "MAXI",
-        "image": "https://images.unsplash.com/photo-1572804013309-59a88b7e92f1?auto=format&fit=crop&w=800&q=80",
+        "image": "/assets/flowing-maxis-category.jpg",
         "href": "/shop?category=Maxi"
       },
       {
@@ -75,7 +75,7 @@
       {
         "id": "combo-dresses",
         "title": "COMBO DRESSES",
-        "image": "https://images.unsplash.com/photo-1518831959646-742c3a14ebf7?auto=format&fit=crop&w=800&q=80",
+        "image": "/assets/girls-party-frock.jpg",
         "href": "/shop?category=Combo Dresses"
       },
       {
@@ -120,13 +120,13 @@
         "id": "saree",
         "label": "SAREE",
         "categoryKey": "Saree",
-        "image": "https://images.unsplash.com/photo-1610030469983-98e550d6193c?auto=format&fit=crop&w=800&q=80"
+        "image": "/assets/silk-sarees-category.jpg"
       },
       {
         "id": "maxi",
         "label": "MAXI",
         "categoryKey": "Maxi",
-        "image": "https://images.unsplash.com/photo-1572804013309-59a88b7e92f1?auto=format&fit=crop&w=800&q=80"
+        "image": "/assets/flowing-maxis-category.jpg"
       },
       {
         "id": "nighty",
@@ -144,7 +144,7 @@
         "id": "combo-dresses",
         "label": "COMBO DRESSES",
         "categoryKey": "Combo Dresses",
-        "image": "https://images.unsplash.com/photo-1518831959646-742c3a14ebf7?auto=format&fit=crop&w=800&q=80"
+        "image": "/assets/girls-party-frock.jpg"
       }
     ]
   },
@@ -200,5 +200,5 @@
     "section5Text": "Approved refunds are processed within 24 to 48 business hours of inspection. Online payments (UPI, Card, Net Banking) are refunded directly to the original payment source (takes 3 to 5 banking days). Cash on Delivery orders are refunded via direct UPI transfer or NEFT bank transfer as requested by the buyer.",
     "supportNote": "WhatsApp our team at +91 99401 45700 or call us anytime."
   },
-  "updatedAt": 1793191667469
+  "updatedAt": 1793261365113
 }

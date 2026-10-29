@@ -24,7 +24,12 @@ export function ImageSkeleton({
   useEffect(() => {
     setCurrentSrc(src);
     setHasError(false);
-    if (imgRef.current && imgRef.current.complete && imgRef.current.naturalWidth > 0) {
+    if (
+      imgRef.current &&
+      imgRef.current.complete &&
+      imgRef.current.naturalWidth > 0 &&
+      (imgRef.current.currentSrc === src || imgRef.current.src.includes(src))
+    ) {
       setIsLoaded(true);
     } else {
       setIsLoaded(false);
@@ -49,12 +54,16 @@ export function ImageSkeleton({
         onError={() => {
           if (!hasError) {
             setHasError(true);
-            const filename = src.split("/").pop()?.split("?")[0];
-            if (filename && !filename.includes("placeholder")) {
-              const baseName = filename.replace(/-[A-Za-z0-9_-]{8,}\.(jpg|png|webp|svg)$/, ".$1");
-              setCurrentSrc(`/assets/${baseName}`);
-            } else {
+            if (src.startsWith("http")) {
               setCurrentSrc("/placeholder.svg");
+            } else {
+              const filename = src.split("/").pop()?.split("?")[0];
+              if (filename && !filename.includes("placeholder")) {
+                const baseName = filename.replace(/-[A-Za-z0-9_-]{8,}\.(jpg|png|webp|svg)$/, ".$1");
+                setCurrentSrc(`/assets/${baseName}`);
+              } else {
+                setCurrentSrc("/placeholder.svg");
+              }
             }
           } else {
             setIsLoaded(true);

@@ -299,7 +299,7 @@ export function OurBestsellers({ onOpenQuickSize }: OurBestsellersProps) {
             const isActive = activeTab === tab.id;
             return (
               <button
-                key={tab.id}
+                key={`${tab.id}-${tab.image}`}
                 type="button"
                 onClick={() => setActiveTab(tab.id)}
                 className="flex flex-col items-center group cursor-pointer focus:outline-none"
@@ -313,8 +313,10 @@ export function OurBestsellers({ onOpenQuickSize }: OurBestsellersProps) {
                   }`}
                 >
                   <img
+                    key={tab.image}
                     src={tab.image}
                     alt={tab.label}
+                    loading="eager"
                     className="w-full h-full object-cover rounded-full"
                     onError={(e) => {
                       (e.currentTarget as HTMLImageElement).src = tab.defaultImage || "/placeholder.svg";

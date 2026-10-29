@@ -1,6 +1,13 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import { contentApi } from "@/lib/api";
 
+// Bundled high-res category imagery for authentic instant defaults
+import sareeImg from "@/assets/silk-sarees-category.jpg";
+import chuditharImg from "@/assets/chudithar-ensembles-category.jpg";
+import coordsetImg from "@/assets/artisanal-coordsets-category.jpg";
+import maxiImg from "@/assets/flowing-maxis-category.jpg";
+import comboDressesImg from "@/assets/girls-party-frock.jpg";
+
 export interface HeroBannerSlide {
   id: string | number;
   image: string;
@@ -93,25 +100,25 @@ export const DEFAULT_POPULAR_CATEGORIES: PopularCategoryItem[] = [
   {
     id: "saree",
     title: "SAREE",
-    image: "https://images.unsplash.com/photo-1610030469983-98e550d6193c?auto=format&fit=crop&w=800&q=80",
+    image: sareeImg,
     href: "/shop?category=Saree",
   },
   {
     id: "chudithar",
     title: "CHUDITHAR",
-    image: "https://res.cloudinary.com/ugzb1wup/image/upload/v1792662337/padma_products/lb5ccdoexcapbuhze89r.jpg",
+    image: chuditharImg,
     href: "/shop?category=Chudithar",
   },
   {
     id: "coordset",
     title: "COORDSET",
-    image: "https://res.cloudinary.com/ugzb1wup/image/upload/v1792659785/padma_products/ikle3vv4bhgmbv1aj3pu.jpg",
+    image: coordsetImg,
     href: "/shop?category=Coordset",
   },
   {
     id: "maxi",
     title: "MAXI",
-    image: "https://images.unsplash.com/photo-1572804013309-59a88b7e92f1?auto=format&fit=crop&w=800&q=80",
+    image: maxiImg,
     href: "/shop?category=Maxi",
   },
   {
@@ -135,7 +142,7 @@ export const DEFAULT_POPULAR_CATEGORIES: PopularCategoryItem[] = [
   {
     id: "combo-dresses",
     title: "COMBO DRESSES",
-    image: "https://images.unsplash.com/photo-1518831959646-742c3a14ebf7?auto=format&fit=crop&w=800&q=80",
+    image: comboDressesImg,
     href: "/shop?category=Combo Dresses",
   },
   {
@@ -181,13 +188,13 @@ export const DEFAULT_BESTSELLER_TABS: BestsellerCategoryTabItem[] = [
     id: "saree",
     label: "SAREE",
     categoryKey: "Saree",
-    image: "https://images.unsplash.com/photo-1610030469983-98e550d6193c?auto=format&fit=crop&w=800&q=80",
+    image: sareeImg,
   },
   {
     id: "maxi",
     label: "MAXI",
     categoryKey: "Maxi",
-    image: "https://images.unsplash.com/photo-1572804013309-59a88b7e92f1?auto=format&fit=crop&w=800&q=80",
+    image: maxiImg,
   },
   {
     id: "nighty",
@@ -205,7 +212,7 @@ export const DEFAULT_BESTSELLER_TABS: BestsellerCategoryTabItem[] = [
     id: "combo-dresses",
     label: "COMBO DRESSES",
     categoryKey: "Combo Dresses",
-    image: "https://images.unsplash.com/photo-1518831959646-742c3a14ebf7?auto=format&fit=crop&w=800&q=80",
+    image: comboDressesImg,
   },
 ];
 
@@ -300,79 +307,134 @@ export function SiteContentProvider({ children }: { children: ReactNode }) {
     if (typeof window === "undefined") return;
 
     let localUpdatedAt = 0;
-    let localSavedParsed: any = null;
 
-    // 1. Initial immediate load from localStorage
+    // 1. Initial immediate optimistic load from localStorage (instant rendering)
     try {
       const saved = localStorage.getItem(STORAGE_KEY);
       if (saved) {
         const parsed = JSON.parse(saved);
+        localUpdatedAt = Number(parsed.updatedAt) || 0;
         setContent({
           home: mergeHomeContent(parsed.home),
           about: { ...DEFAULT_ABOUT_CONTENT, ...(parsed.about || {}) },
           contact: { ...DEFAULT_CONTACT_CONTENT, ...(parsed.contact || {}) },
-          updatedAt: parsed.updatedAt || 0,
+          updatedAt: localUpdatedAt,
         });
-
-        // Ensure backend stays synchronized with the user's saved changes
-        contentApi.update(parsed).catch(() => {});
-        return;
       }
     } catch (err) {
       console.warn("Failed to load site content from localStorage:", err);
     }
 
-    // 2. If localStorage had no saved content, fetch from server API
-    contentApi
-      .get()
-      .then((res) => {
-        if (res.success && res.data) {
-          setContent({
-            home: mergeHomeContent(res.data.home),
-            about: { ...DEFAULT_ABOUT_CONTENT, ...(res.data.about || {}) },
-            contact: { ...DEFAULT_CONTACT_CONTENT, ...(res.data.contact || {}) },
-            updatedAt: res.data.updatedAt || 0,
-          });
-          localStorage.setItem(STORAGE_KEY, JSON.stringify(res.data));
-        }
-      })
-      .catch(() => {
-        // Backend offline or fallback to defaults
-      });
+    // 2. Fetch the latest content from the server API to ensure mobile & desktop stay synced
+    const fetchLatestFromServer = async () => {
+      try {
+        const res = await contentApi.get();
+        if (res && res.success && res.data) {
+          const serverUpdated = Number(res.data.updatedAt) || 0;
 
-    // 3. Listen for changes in other open tabs
+          // Check current local saved timestamp
+          let currentLocalTime = localUpdatedAt;
+          try {
+            const currentSaved = localStorage.getItem(STORAGE_KEY);
+            if (currentSaved) {
+              currentLocalTime = Number(JSON.parse(currentSaved).updatedAt) || 0;
+            }
+          } catch {}
+
+          // If server data is newer, equal, or local has no timestamp, accept server content
+          if (serverUpdated >= currentLocalTime || !currentLocalTime) {
+            localUpdatedAt = serverUpdated;
+            setContent({
+              home: mergeHomeContent(res.data.home),
+              about: { ...DEFAULT_ABOUT_CONTENT, ...(res.data.about || {}) },
+              contact: { ...DEFAULT_CONTACT_CONTENT, ...(res.data.contact || {}) },
+              updatedAt: serverUpdated,
+            });
+            try {
+              localStorage.setItem(STORAGE_KEY, JSON.stringify(res.data));
+            } catch {}
+          }
+        }
+      } catch (err) {
+        // Network unavailable or offline
+      }
+    };
+
+    // Always fetch latest on initial load
+    fetchLatestFromServer();
+
+    // 3. Revalidate when tab becomes visible or focused (critical for mobile switches)
+    const handleVisibility = () => {
+      if (typeof document !== "undefined" && document.visibilityState === "visible") {
+        fetchLatestFromServer();
+      }
+    };
+    window.addEventListener("visibilitychange", handleVisibility);
+    window.addEventListener("focus", fetchLatestFromServer);
+
+    // 4. Background polling (every 10 seconds) to keep mobile view automatically in sync with admin
+    const pollInterval = window.setInterval(fetchLatestFromServer, 10000);
+
+    // 5. Cross-tab storage listener
     const handleStorage = (e: StorageEvent) => {
       if (e.key === STORAGE_KEY && e.newValue) {
         try {
           const parsed = JSON.parse(e.newValue);
+          localUpdatedAt = Number(parsed.updatedAt) || Date.now();
           setContent({
             home: mergeHomeContent(parsed.home),
             about: { ...DEFAULT_ABOUT_CONTENT, ...(parsed.about || {}) },
             contact: { ...DEFAULT_CONTACT_CONTENT, ...(parsed.contact || {}) },
-            updatedAt: parsed.updatedAt,
+            updatedAt: localUpdatedAt,
           });
         } catch (err) {}
       }
     };
 
-    // 4. Custom event for instantaneous updates in same window
+    // 6. Custom event in same window
     const handleCustom = (e: any) => {
       if (e.detail) {
+        localUpdatedAt = Number(e.detail.updatedAt) || Date.now();
         setContent({
           home: mergeHomeContent(e.detail.home),
           about: { ...DEFAULT_ABOUT_CONTENT, ...(e.detail.about || {}) },
           contact: { ...DEFAULT_CONTACT_CONTENT, ...(e.detail.contact || {}) },
-          updatedAt: e.detail.updatedAt,
+          updatedAt: localUpdatedAt,
         });
       }
     };
+
+    // 7. BroadcastChannel for instant cross-tab & cross-window updates
+    let broadcast: BroadcastChannel | null = null;
+    try {
+      if (typeof BroadcastChannel !== "undefined") {
+        broadcast = new BroadcastChannel("pf_site_content_sync");
+        broadcast.onmessage = (event) => {
+          if (event.data) {
+            localUpdatedAt = Number(event.data.updatedAt) || Date.now();
+            setContent({
+              home: mergeHomeContent(event.data.home),
+              about: { ...DEFAULT_ABOUT_CONTENT, ...(event.data.about || {}) },
+              contact: { ...DEFAULT_CONTACT_CONTENT, ...(event.data.contact || {}) },
+              updatedAt: localUpdatedAt,
+            });
+          }
+        };
+      }
+    } catch {}
 
     window.addEventListener("storage", handleStorage);
     window.addEventListener("pf_site_content_updated", handleCustom);
 
     return () => {
+      window.removeEventListener("visibilitychange", handleVisibility);
+      window.removeEventListener("focus", fetchLatestFromServer);
       window.removeEventListener("storage", handleStorage);
       window.removeEventListener("pf_site_content_updated", handleCustom);
+      window.clearInterval(pollInterval);
+      if (broadcast) {
+        broadcast.close();
+      }
     };
   }, []);
 
@@ -387,6 +449,13 @@ export function SiteContentProvider({ children }: { children: ReactNode }) {
           localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
           window.dispatchEvent(new CustomEvent("pf_site_content_updated", { detail: updated }));
           window.dispatchEvent(new Event("storage"));
+          if (typeof BroadcastChannel !== "undefined") {
+            try {
+              const ch = new BroadcastChannel("pf_site_content_sync");
+              ch.postMessage(updated);
+              ch.close();
+            } catch {}
+          }
         } catch (err) {
           console.warn("Could not save to localStorage:", err);
         }
