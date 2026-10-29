@@ -182,7 +182,7 @@ export function ProductCard({ product, light = false, badgeText, onQuickView }: 
       </div>
 
       {/* Product Details Below Image */}
-      <div className="p-2.5 sm:p-4 flex flex-col flex-1 justify-between gap-2">
+      <div className="p-2 sm:p-3.5 flex flex-col flex-1 justify-between gap-1.5 sm:gap-2">
         <div>
           {/* Name */}
           <h3
@@ -195,12 +195,12 @@ export function ProductCard({ product, light = false, badgeText, onQuickView }: 
 
           {/* Price with Tabular Numerals on left, Action Buttons on right */}
           <div className="flex items-center justify-between gap-1 sm:gap-2 mt-2 pt-1.5 border-t border-[rgba(14,14,14,0.06)]">
-            <div className="flex items-baseline gap-0.5 sm:gap-1 min-w-0">
-              <span className="font-['Manrope'] text-xs sm:text-[15px] font-bold tabular-nums text-foreground truncate">
+            <div className="flex items-baseline gap-0.5 sm:gap-1 shrink-0">
+              <span className="font-['Manrope'] text-[13px] sm:text-[15px] font-bold tabular-nums text-foreground whitespace-nowrap shrink-0">
                 {formatPrice(salePrice)}
               </span>
               <span
-                className={`text-[9px] sm:text-xs font-light shrink-0 ${
+                className={`text-[9px] sm:text-xs font-light hidden sm:inline shrink-0 ${
                   light ? "text-[#F4F0E8]/60" : "text-[#0E0E0E]/60"
                 }`}
               >
@@ -213,18 +213,18 @@ export function ProductCard({ product, light = false, badgeText, onQuickView }: 
               <button
                 type="button"
                 onClick={handleAddToCart}
-                className="size-7 sm:size-7.5 rounded-full bg-black/5 hover:bg-black/10 dark:bg-white/10 dark:hover:bg-white/20 text-[#0E0E0E] dark:text-[#FAF6EE] flex items-center justify-center transition-all cursor-pointer active:scale-90 touch-manipulation border border-[rgba(14,14,14,0.1)]"
+                className="size-6.5 sm:size-7.5 rounded-full bg-black/5 hover:bg-black/10 dark:bg-white/10 dark:hover:bg-white/20 text-[#0E0E0E] dark:text-[#FAF6EE] flex items-center justify-center transition-all cursor-pointer active:scale-90 touch-manipulation border border-[rgba(14,14,14,0.1)] shrink-0"
                 title="Add to Bag"
                 aria-label="Add to bag"
               >
-                <ShoppingBag className="size-3.5 text-[#9F160A] dark:text-[#EDBC3D]" strokeWidth={1.5} />
+                <ShoppingBag className="size-3 sm:size-3.5 text-[#9F160A] dark:text-[#EDBC3D]" strokeWidth={1.5} />
               </button>
 
               {/* Buy Now Button */}
               <button
                 type="button"
                 onClick={handleBuyNow}
-                className="h-7 sm:h-7.5 px-2.5 sm:px-3 rounded-[6px] bg-[#9F160A] hover:bg-[#7D1107] text-white text-[10px] sm:text-[11px] font-bold uppercase tracking-wider transition-all cursor-pointer shadow-xs active:scale-95 shrink-0 inline-flex items-center justify-center touch-manipulation whitespace-nowrap"
+                className="h-6.5 sm:h-7.5 px-2 sm:px-3 rounded-[6px] bg-[#9F160A] hover:bg-[#7D1107] text-white text-[10px] sm:text-[11px] font-bold uppercase tracking-wider transition-all cursor-pointer shadow-xs active:scale-95 shrink-0 inline-flex items-center justify-center touch-manipulation whitespace-nowrap"
                 title="Buy"
               >
                 <span>BUY</span>
