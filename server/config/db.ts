@@ -172,6 +172,7 @@ class MemoryDatabase {
   order_items: any[] = [];
   payments: any[] = [];
   contact_enquiries: any[] = [];
+  site_settings: any[] = [];
 
   constructor() {
     // Seed categories and load persisted products so catalog additions are permanent
@@ -452,6 +453,7 @@ async function runMigrations(pool: mysql.Pool) {
       await pool.query("ALTER TABLE order_items ADD COLUMN image_url TEXT").catch(() => {});
       await pool.query("ALTER TABLE cart_items ADD COLUMN colour VARCHAR(100)").catch(() => {});
       await pool.query("ALTER TABLE cart_items ADD COLUMN image_url TEXT").catch(() => {});
+      await pool.query("CREATE TABLE IF NOT EXISTS site_settings (setting_key VARCHAR(50) PRIMARY KEY, setting_value LONGTEXT NOT NULL, updated_at BIGINT NOT NULL)").catch(() => {});
 
       console.log("[Database] Schema migrations applied successfully.");
 
@@ -587,6 +589,16 @@ function executeMemoryQuery<T = any>(sql: string, params: any[] = []): T[] {
   }
   if (normalized.includes("from customer_addresses")) {
     return [...memoryDb.customer_addresses] as any;
+  }
+
+  // site_settings
+  if (normalized.includes("from site_settings")) {
+    if (normalized.includes("setting_key = 'site_content'") || normalized.includes("setting_key = ?")) {
+      const targetKey = normalized.includes("setting_key = ?") ? params[0] : "site_content";
+      const item = memoryDb.site_settings.find((s) => s.setting_key === targetKey);
+      return (item ? [item] : []) as any;
+    }
+    return [...memoryDb.site_settings] as any;
   }
 
   return [] as any;
@@ -926,6 +938,35 @@ function executeMemoryCommand(sql: string, params: any[] = []): any {
     };
     memoryDb.customer_addresses.push(addr);
     return { insertId: addr.id, affectedRows: 1 };
+  }
+
+  // Site settings insert/update
+  if (normalized.startsWith("insert into site_settings")) {
+    const key = params[0];
+    const val = params[1];
+    const updated = Number(params[2]) || Date.now();
+    const existing = memoryDb.site_settings.find((s) => s.setting_key === key);
+    if (existing) {
+      existing.setting_value = val;
+      existing.updated_at = updated;
+    } else {
+      memoryDb.site_settings.push({
+        setting_key: key,
+        setting_value: val,
+        updated_at: updated,
+      });
+    }
+    return { affectedRows: 1 };
+  }
+
+  if (normalized.startsWith("delete from site_settings")) {
+    const key = params[0];
+    if (key) {
+      memoryDb.site_settings = memoryDb.site_settings.filter((s) => s.setting_key !== key);
+    } else {
+      memoryDb.site_settings = [];
+    }
+    return { affectedRows: 1 };
   }
 
   return { affectedRows: 0 };

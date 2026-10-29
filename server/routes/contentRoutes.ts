@@ -2,6 +2,7 @@ import { Router, Request, Response } from "express";
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
+import { getDb } from "../config/db";
 
 const router = Router();
 
@@ -58,55 +59,55 @@ export const DEFAULT_SITE_CONTENT = {
       {
         id: "saree",
         title: "SAREE",
-        image: "/assets/silk-sarees-category.jpg",
+        image: "https://res.cloudinary.com/ugzb1wup/image/upload/v1793207105/padma_categories/p5pjfcwp74z22buj17zk.jpg",
         href: "/shop?category=Saree",
       },
       {
         id: "chudithar",
         title: "CHUDITHAR",
-        image: "https://res.cloudinary.com/ugzb1wup/image/upload/v1792662337/padma_products/lb5ccdoexcapbuhze89r.jpg",
+        image: "https://res.cloudinary.com/ugzb1wup/image/upload/v1793207146/padma_categories/hldl0tzbrvgdb05mjmpl.jpg",
         href: "/shop?category=Chudithar",
       },
       {
         id: "coordset",
         title: "COORDSET",
-        image: "https://res.cloudinary.com/ugzb1wup/image/upload/v1792659785/padma_products/ikle3vv4bhgmbv1aj3pu.jpg",
+        image: "https://res.cloudinary.com/ugzb1wup/image/upload/v1793207181/padma_categories/o41bdu5v3onqbxh0o1sh.jpg",
         href: "/shop?category=Coordset",
       },
       {
         id: "maxi",
         title: "MAXI",
-        image: "/assets/flowing-maxis-category.jpg",
+        image: "https://res.cloudinary.com/ugzb1wup/image/upload/v1793207257/padma_categories/la5hitoxfylu0xevoeqv.jpg",
         href: "/shop?category=Maxi",
       },
       {
         id: "nighty",
         title: "NIGHTY",
-        image: "https://images.unsplash.com/photo-1596755094514-f87e34085b2c?auto=format&fit=crop&w=800&q=80",
+        image: "https://res.cloudinary.com/ugzb1wup/image/upload/v1793207301/padma_categories/bi6ccssdb2b8gblqmo03.jpg",
         href: "/shop?category=Nighty",
       },
       {
         id: "chudithar-top",
         title: "CHUDITHAR TOP",
-        image: "https://res.cloudinary.com/ugzb1wup/image/upload/v1792584958/padma_products/v9quby0cest8zrupfzqc.jpg",
+        image: "https://res.cloudinary.com/ugzb1wup/image/upload/v1793207330/padma_categories/kwupakpq240fuhjbxvbx.jpg",
         href: "/shop?category=Chudithar Top",
       },
       {
         id: "2piece",
         title: "2 PIECE",
-        image: "https://res.cloudinary.com/ugzb1wup/image/upload/v1792647721/padma_products/xkgskhhlfb7jhekh9rq6.jpg",
+        image: "https://res.cloudinary.com/ugzb1wup/image/upload/v1793207410/padma_categories/yeavgte3wqqxiidrx921.jpg",
         href: "/shop?category=2piece",
       },
       {
         id: "combo-dresses",
         title: "COMBO DRESSES",
-        image: "/assets/girls-party-frock.jpg",
+        image: "https://res.cloudinary.com/ugzb1wup/image/upload/v1793207440/padma_categories/tysvr2pz2dttrsnubnf7.jpg",
         href: "/shop?category=Combo Dresses",
       },
       {
         id: "palazzo",
         title: "PALAZZO",
-        image: "https://res.cloudinary.com/ugzb1wup/image/upload/v1792664369/padma_products/nb32h1yqb7bhl2xuvsr5.jpg",
+        image: "https://res.cloudinary.com/ugzb1wup/image/upload/v1793207461/padma_categories/mdmtbankwfema3fcodrd.jpg",
         href: "/shop?category=palazzo",
       },
     ],
@@ -115,61 +116,61 @@ export const DEFAULT_SITE_CONTENT = {
         id: "chudithar-top",
         label: "CHUDITHAR TOP",
         categoryKey: "Chudithar Top",
-        image: "https://res.cloudinary.com/ugzb1wup/image/upload/v1792584958/padma_products/v9quby0cest8zrupfzqc.jpg",
+        image: "https://res.cloudinary.com/ugzb1wup/image/upload/v1793207330/padma_categories/kwupakpq240fuhjbxvbx.jpg",
       },
       {
         id: "palazzo",
         label: "PALAZZO",
         categoryKey: "palazzo",
-        image: "https://res.cloudinary.com/ugzb1wup/image/upload/v1792664369/padma_products/nb32h1yqb7bhl2xuvsr5.jpg",
+        image: "https://res.cloudinary.com/ugzb1wup/image/upload/v1793207461/padma_categories/mdmtbankwfema3fcodrd.jpg",
       },
       {
         id: "coordset",
         label: "COORDSET",
         categoryKey: "Coordset",
-        image: "https://res.cloudinary.com/ugzb1wup/image/upload/v1792659785/padma_products/ikle3vv4bhgmbv1aj3pu.jpg",
+        image: "https://res.cloudinary.com/ugzb1wup/image/upload/v1793207181/padma_categories/o41bdu5v3onqbxh0o1sh.jpg",
       },
       {
         id: "2piece",
         label: "2 PIECE",
         categoryKey: "2piece",
-        image: "https://res.cloudinary.com/ugzb1wup/image/upload/v1792647721/padma_products/xkgskhhlfb7jhekh9rq6.jpg",
+        image: "https://res.cloudinary.com/ugzb1wup/image/upload/v1793207410/padma_categories/yeavgte3wqqxiidrx921.jpg",
       },
       {
         id: "chudithar",
         label: "CHUDITHAR",
         categoryKey: "Chudithar",
-        image: "https://res.cloudinary.com/ugzb1wup/image/upload/v1792662337/padma_products/lb5ccdoexcapbuhze89r.jpg",
+        image: "https://res.cloudinary.com/ugzb1wup/image/upload/v1793207146/padma_categories/hldl0tzbrvgdb05mjmpl.jpg",
       },
       {
         id: "saree",
         label: "SAREE",
         categoryKey: "Saree",
-        image: "/assets/silk-sarees-category.jpg",
+        image: "https://res.cloudinary.com/ugzb1wup/image/upload/v1793207105/padma_categories/p5pjfcwp74z22buj17zk.jpg",
       },
       {
         id: "maxi",
         label: "MAXI",
         categoryKey: "Maxi",
-        image: "/assets/flowing-maxis-category.jpg",
+        image: "https://res.cloudinary.com/ugzb1wup/image/upload/v1793207257/padma_categories/la5hitoxfylu0xevoeqv.jpg",
       },
       {
         id: "nighty",
         label: "NIGHTY",
         categoryKey: "Nighty",
-        image: "https://images.unsplash.com/photo-1596755094514-f87e34085b2c?auto=format&fit=crop&w=800&q=80",
+        image: "https://res.cloudinary.com/ugzb1wup/image/upload/v1793207301/padma_categories/bi6ccssdb2b8gblqmo03.jpg",
       },
       {
         id: "western-top",
         label: "WESTERN TOP",
         categoryKey: "Western Top",
-        image: "https://res.cloudinary.com/ugzb1wup/image/upload/v1792584958/padma_products/v9quby0cest8zrupfzqc.jpg",
+        image: "https://res.cloudinary.com/ugzb1wup/image/upload/v1793207484/padma_categories/r5i5xo0ovi2ld3kuj5sn.jpg",
       },
       {
         id: "combo-dresses",
         label: "COMBO DRESSES",
         categoryKey: "Combo Dresses",
-        image: "/assets/girls-party-frock.jpg",
+        image: "https://res.cloudinary.com/ugzb1wup/image/upload/v1793207440/padma_categories/tysvr2pz2dttrsnubnf7.jpg",
       },
     ],
   },
@@ -289,10 +290,53 @@ function writePersistedContent(content: any) {
 }
 
 // GET /api/content
-router.get("/", (req: Request, res: Response) => {
+router.get("/", async (req: Request, res: Response) => {
   res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
   res.setHeader("Pragma", "no-cache");
   res.setHeader("Expires", "0");
+
+  try {
+    const database = await getDb();
+    const rows: any = await database.query(
+      "SELECT setting_value, updated_at FROM site_settings WHERE setting_key = 'site_content' LIMIT 1"
+    );
+    if (rows && rows.length > 0 && rows[0].setting_value) {
+      const parsed = typeof rows[0].setting_value === "string" ? JSON.parse(rows[0].setting_value) : rows[0].setting_value;
+      const dbUpdatedAt = Number(rows[0].updated_at) || parsed.updatedAt || 0;
+      const merged = {
+        ...DEFAULT_SITE_CONTENT,
+        ...parsed,
+        home: {
+          ...DEFAULT_SITE_CONTENT.home,
+          ...(parsed.home || {}),
+          heroBanners:
+            Array.isArray(parsed?.home?.heroBanners) && parsed.home.heroBanners.length > 0
+              ? parsed.home.heroBanners
+              : DEFAULT_SITE_CONTENT.home.heroBanners,
+          popularCategories:
+            Array.isArray(parsed?.home?.popularCategories) && parsed.home.popularCategories.length > 0
+              ? parsed.home.popularCategories
+              : DEFAULT_SITE_CONTENT.home.popularCategories,
+          bestsellerTabs:
+            Array.isArray(parsed?.home?.bestsellerTabs) && parsed.home.bestsellerTabs.length > 0
+              ? parsed.home.bestsellerTabs
+              : DEFAULT_SITE_CONTENT.home.bestsellerTabs,
+        },
+        about: { ...DEFAULT_SITE_CONTENT.about, ...(parsed.about || {}) },
+        contact: { ...DEFAULT_SITE_CONTENT.contact, ...(parsed.contact || {}) },
+        terms: { ...DEFAULT_SITE_CONTENT.terms, ...(parsed.terms || {}) },
+        refund: { ...DEFAULT_SITE_CONTENT.refund, ...(parsed.refund || {}) },
+        updatedAt: dbUpdatedAt,
+      };
+      return res.status(200).json({
+        success: true,
+        data: merged,
+      });
+    }
+  } catch (dbErr) {
+    console.warn("[ContentRoute] Database query failed, falling back to file/defaults:", dbErr);
+  }
+
   const content = readPersistedContent();
   return res.status(200).json({
     success: true,
@@ -301,9 +345,10 @@ router.get("/", (req: Request, res: Response) => {
 });
 
 // PUT /api/content
-router.put("/", (req: Request, res: Response) => {
+router.put("/", async (req: Request, res: Response) => {
   const current = readPersistedContent();
   const updates = req.body || {};
+  const newUpdatedAt = updates.updatedAt || Date.now();
 
   const updatedContent = {
     ...current,
@@ -315,10 +360,22 @@ router.put("/", (req: Request, res: Response) => {
     contact: { ...current.contact, ...(updates.contact || {}) },
     terms: { ...current.terms, ...(updates.terms || {}) },
     refund: { ...current.refund, ...(updates.refund || {}) },
-    updatedAt: updates.updatedAt || Date.now(),
+    updatedAt: newUpdatedAt,
   };
 
   writePersistedContent(updatedContent);
+
+  try {
+    const database = await getDb();
+    await database.execute(
+      `INSERT INTO site_settings (setting_key, setting_value, updated_at) 
+       VALUES ('site_content', ?, ?) 
+       ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value), updated_at = VALUES(updated_at)`,
+      [JSON.stringify(updatedContent), newUpdatedAt]
+    );
+  } catch (dbErr) {
+    console.warn("[ContentRoute] Error persisting content to database:", dbErr);
+  }
 
   return res.status(200).json({
     success: true,
@@ -327,8 +384,21 @@ router.put("/", (req: Request, res: Response) => {
 });
 
 // POST /api/content/reset
-router.post("/reset", (req: Request, res: Response) => {
+router.post("/reset", async (req: Request, res: Response) => {
   writePersistedContent(DEFAULT_SITE_CONTENT);
+
+  try {
+    const database = await getDb();
+    await database.execute(
+      `INSERT INTO site_settings (setting_key, setting_value, updated_at) 
+       VALUES ('site_content', ?, ?) 
+       ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value), updated_at = VALUES(updated_at)`,
+      [JSON.stringify(DEFAULT_SITE_CONTENT), Date.now()]
+    );
+  } catch (dbErr) {
+    console.warn("[ContentRoute] Error resetting content in database:", dbErr);
+  }
+
   return res.status(200).json({
     success: true,
     data: DEFAULT_SITE_CONTENT,

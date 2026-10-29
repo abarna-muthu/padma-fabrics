@@ -26,66 +26,70 @@ const STORE_CATEGORY_TABS: StoreCategoryTab[] = [
     label: "CHUDITHAR TOP",
     categoryKey: "Chudithar Top",
     defaultImage:
-      "https://res.cloudinary.com/ugzb1wup/image/upload/v1792584958/padma_products/v9quby0cest8zrupfzqc.jpg",
+      "https://res.cloudinary.com/ugzb1wup/image/upload/v1793207330/padma_categories/kwupakpq240fuhjbxvbx.jpg",
   },
   {
     id: "palazzo",
     label: "PALAZZO",
     categoryKey: "palazzo",
     defaultImage:
-      "https://res.cloudinary.com/ugzb1wup/image/upload/v1792664369/padma_products/nb32h1yqb7bhl2xuvsr5.jpg",
+      "https://res.cloudinary.com/ugzb1wup/image/upload/v1793207461/padma_categories/mdmtbankwfema3fcodrd.jpg",
   },
   {
     id: "coordset",
     label: "COORDSET",
     categoryKey: "Coordset",
     defaultImage:
-      "https://res.cloudinary.com/ugzb1wup/image/upload/v1792659785/padma_products/ikle3vv4bhgmbv1aj3pu.jpg",
+      "https://res.cloudinary.com/ugzb1wup/image/upload/v1793207181/padma_categories/o41bdu5v3onqbxh0o1sh.jpg",
   },
   {
     id: "2piece",
     label: "2 PIECE",
     categoryKey: "2piece",
     defaultImage:
-      "https://res.cloudinary.com/ugzb1wup/image/upload/v1792647721/padma_products/xkgskhhlfb7jhekh9rq6.jpg",
+      "https://res.cloudinary.com/ugzb1wup/image/upload/v1793207410/padma_categories/yeavgte3wqqxiidrx921.jpg",
   },
   {
     id: "chudithar",
     label: "CHUDITHAR",
     categoryKey: "Chudithar",
     defaultImage:
-      "https://res.cloudinary.com/ugzb1wup/image/upload/v1792662337/padma_products/lb5ccdoexcapbuhze89r.jpg",
+      "https://res.cloudinary.com/ugzb1wup/image/upload/v1793207146/padma_categories/hldl0tzbrvgdb05mjmpl.jpg",
   },
   {
     id: "saree",
     label: "SAREE",
     categoryKey: "Saree",
-    defaultImage: sareeImg,
+    defaultImage:
+      "https://res.cloudinary.com/ugzb1wup/image/upload/v1793207105/padma_categories/p5pjfcwp74z22buj17zk.jpg",
   },
   {
     id: "maxi",
     label: "MAXI",
     categoryKey: "Maxi",
-    defaultImage: maxiImg,
+    defaultImage:
+      "https://res.cloudinary.com/ugzb1wup/image/upload/v1793207257/padma_categories/la5hitoxfylu0xevoeqv.jpg",
   },
   {
     id: "nighty",
     label: "NIGHTY",
     categoryKey: "Nighty",
-    defaultImage: nightyImg,
+    defaultImage:
+      "https://res.cloudinary.com/ugzb1wup/image/upload/v1793207301/padma_categories/bi6ccssdb2b8gblqmo03.jpg",
   },
   {
     id: "western-top",
     label: "WESTERN TOP",
     categoryKey: "Western Top",
     defaultImage:
-      "https://res.cloudinary.com/ugzb1wup/image/upload/v1792584958/padma_products/v9quby0cest8zrupfzqc.jpg",
+      "https://res.cloudinary.com/ugzb1wup/image/upload/v1793207484/padma_categories/r5i5xo0ovi2ld3kuj5sn.jpg",
   },
   {
     id: "combo-dresses",
     label: "COMBO DRESSES",
     categoryKey: "Combo Dresses",
-    defaultImage: comboDressesImg,
+    defaultImage:
+      "https://res.cloudinary.com/ugzb1wup/image/upload/v1793207440/padma_categories/tysvr2pz2dttrsnubnf7.jpg",
   },
 ];
 

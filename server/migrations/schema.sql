@@ -189,6 +189,12 @@ CREATE TABLE IF NOT EXISTS contact_enquiries (
   INDEX idx_enquiry_created (created_at)
 );
 
+CREATE TABLE IF NOT EXISTS site_settings (
+  setting_key VARCHAR(50) PRIMARY KEY,
+  setting_value LONGTEXT NOT NULL,
+  updated_at BIGINT NOT NULL
+);
+
 CREATE TABLE IF NOT EXISTS payment_webhooks (
   id VARCHAR(36) PRIMARY KEY,
   event_id VARCHAR(100) UNIQUE NOT NULL,

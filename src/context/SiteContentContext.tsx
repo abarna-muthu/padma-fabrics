@@ -100,55 +100,55 @@ export const DEFAULT_POPULAR_CATEGORIES: PopularCategoryItem[] = [
   {
     id: "saree",
     title: "SAREE",
-    image: sareeImg,
+    image: "https://res.cloudinary.com/ugzb1wup/image/upload/v1793207105/padma_categories/p5pjfcwp74z22buj17zk.jpg",
     href: "/shop?category=Saree",
   },
   {
     id: "chudithar",
     title: "CHUDITHAR",
-    image: chuditharImg,
+    image: "https://res.cloudinary.com/ugzb1wup/image/upload/v1793207146/padma_categories/hldl0tzbrvgdb05mjmpl.jpg",
     href: "/shop?category=Chudithar",
   },
   {
     id: "coordset",
     title: "COORDSET",
-    image: coordsetImg,
+    image: "https://res.cloudinary.com/ugzb1wup/image/upload/v1793207181/padma_categories/o41bdu5v3onqbxh0o1sh.jpg",
     href: "/shop?category=Coordset",
   },
   {
     id: "maxi",
     title: "MAXI",
-    image: maxiImg,
+    image: "https://res.cloudinary.com/ugzb1wup/image/upload/v1793207257/padma_categories/la5hitoxfylu0xevoeqv.jpg",
     href: "/shop?category=Maxi",
   },
   {
     id: "nighty",
     title: "NIGHTY",
-    image: "https://images.unsplash.com/photo-1596755094514-f87e34085b2c?auto=format&fit=crop&w=800&q=80",
+    image: "https://res.cloudinary.com/ugzb1wup/image/upload/v1793207301/padma_categories/bi6ccssdb2b8gblqmo03.jpg",
     href: "/shop?category=Nighty",
   },
   {
     id: "chudithar-top",
     title: "CHUDITHAR TOP",
-    image: "https://res.cloudinary.com/ugzb1wup/image/upload/v1792584958/padma_products/v9quby0cest8zrupfzqc.jpg",
+    image: "https://res.cloudinary.com/ugzb1wup/image/upload/v1793207330/padma_categories/kwupakpq240fuhjbxvbx.jpg",
     href: "/shop?category=Chudithar Top",
   },
   {
     id: "2piece",
     title: "2 PIECE",
-    image: "https://res.cloudinary.com/ugzb1wup/image/upload/v1792647721/padma_products/xkgskhhlfb7jhekh9rq6.jpg",
+    image: "https://res.cloudinary.com/ugzb1wup/image/upload/v1793207410/padma_categories/yeavgte3wqqxiidrx921.jpg",
     href: "/shop?category=2piece",
   },
   {
     id: "combo-dresses",
     title: "COMBO DRESSES",
-    image: comboDressesImg,
+    image: "https://res.cloudinary.com/ugzb1wup/image/upload/v1793207440/padma_categories/tysvr2pz2dttrsnubnf7.jpg",
     href: "/shop?category=Combo Dresses",
   },
   {
     id: "palazzo",
     title: "PALAZZO",
-    image: "https://res.cloudinary.com/ugzb1wup/image/upload/v1792664369/padma_products/nb32h1yqb7bhl2xuvsr5.jpg",
+    image: "https://res.cloudinary.com/ugzb1wup/image/upload/v1793207461/padma_categories/mdmtbankwfema3fcodrd.jpg",
     href: "/shop?category=palazzo",
   },
 ];
@@ -158,61 +158,61 @@ export const DEFAULT_BESTSELLER_TABS: BestsellerCategoryTabItem[] = [
     id: "chudithar-top",
     label: "CHUDITHAR TOP",
     categoryKey: "Chudithar Top",
-    image: "https://res.cloudinary.com/ugzb1wup/image/upload/v1792584958/padma_products/v9quby0cest8zrupfzqc.jpg",
+    image: "https://res.cloudinary.com/ugzb1wup/image/upload/v1793207330/padma_categories/kwupakpq240fuhjbxvbx.jpg",
   },
   {
     id: "palazzo",
     label: "PALAZZO",
     categoryKey: "palazzo",
-    image: "https://res.cloudinary.com/ugzb1wup/image/upload/v1792664369/padma_products/nb32h1yqb7bhl2xuvsr5.jpg",
+    image: "https://res.cloudinary.com/ugzb1wup/image/upload/v1793207461/padma_categories/mdmtbankwfema3fcodrd.jpg",
   },
   {
     id: "coordset",
     label: "COORDSET",
     categoryKey: "Coordset",
-    image: "https://res.cloudinary.com/ugzb1wup/image/upload/v1792659785/padma_products/ikle3vv4bhgmbv1aj3pu.jpg",
+    image: "https://res.cloudinary.com/ugzb1wup/image/upload/v1793207181/padma_categories/o41bdu5v3onqbxh0o1sh.jpg",
   },
   {
     id: "2piece",
     label: "2 PIECE",
     categoryKey: "2piece",
-    image: "https://res.cloudinary.com/ugzb1wup/image/upload/v1792647721/padma_products/xkgskhhlfb7jhekh9rq6.jpg",
+    image: "https://res.cloudinary.com/ugzb1wup/image/upload/v1793207410/padma_categories/yeavgte3wqqxiidrx921.jpg",
   },
   {
     id: "chudithar",
     label: "CHUDITHAR",
     categoryKey: "Chudithar",
-    image: "https://res.cloudinary.com/ugzb1wup/image/upload/v1792662337/padma_products/lb5ccdoexcapbuhze89r.jpg",
+    image: "https://res.cloudinary.com/ugzb1wup/image/upload/v1793207146/padma_categories/hldl0tzbrvgdb05mjmpl.jpg",
   },
   {
     id: "saree",
     label: "SAREE",
     categoryKey: "Saree",
-    image: sareeImg,
+    image: "https://res.cloudinary.com/ugzb1wup/image/upload/v1793207105/padma_categories/p5pjfcwp74z22buj17zk.jpg",
   },
   {
     id: "maxi",
     label: "MAXI",
     categoryKey: "Maxi",
-    image: maxiImg,
+    image: "https://res.cloudinary.com/ugzb1wup/image/upload/v1793207257/padma_categories/la5hitoxfylu0xevoeqv.jpg",
   },
   {
     id: "nighty",
     label: "NIGHTY",
     categoryKey: "Nighty",
-    image: "https://images.unsplash.com/photo-1596755094514-f87e34085b2c?auto=format&fit=crop&w=800&q=80",
+    image: "https://res.cloudinary.com/ugzb1wup/image/upload/v1793207301/padma_categories/bi6ccssdb2b8gblqmo03.jpg",
   },
   {
     id: "western-top",
     label: "WESTERN TOP",
     categoryKey: "Western Top",
-    image: "https://res.cloudinary.com/ugzb1wup/image/upload/v1792584958/padma_products/v9quby0cest8zrupfzqc.jpg",
+    image: "https://res.cloudinary.com/ugzb1wup/image/upload/v1793207484/padma_categories/r5i5xo0ovi2ld3kuj5sn.jpg",
   },
   {
     id: "combo-dresses",
     label: "COMBO DRESSES",
     categoryKey: "Combo Dresses",
-    image: comboDressesImg,
+    image: "https://res.cloudinary.com/ugzb1wup/image/upload/v1793207440/padma_categories/tysvr2pz2dttrsnubnf7.jpg",
   },
 ];
 
@@ -334,15 +334,23 @@ export function SiteContentProvider({ children }: { children: ReactNode }) {
 
           // Check current local saved timestamp
           let currentLocalTime = localUpdatedAt;
+          let currentSavedObj: any = null;
           try {
             const currentSaved = localStorage.getItem(STORAGE_KEY);
             if (currentSaved) {
-              currentLocalTime = Number(JSON.parse(currentSaved).updatedAt) || 0;
+              currentSavedObj = JSON.parse(currentSaved);
+              currentLocalTime = Number(currentSavedObj.updatedAt) || 0;
             }
           } catch {}
 
-          // If server data is newer, equal, or local has no timestamp, accept server content
-          if (serverUpdated >= currentLocalTime || !currentLocalTime) {
+          // If local has newer edits that haven't reached server yet, auto-sync to server
+          if (currentLocalTime > serverUpdated && currentSavedObj) {
+            try {
+              await contentApi.update(currentSavedObj);
+            } catch (syncErr) {
+              console.warn("Failed to auto-sync local edits to server:", syncErr);
+            }
+          } else if (serverUpdated >= currentLocalTime || !currentLocalTime) {
             localUpdatedAt = serverUpdated;
             setContent({
               home: mergeHomeContent(res.data.home),
