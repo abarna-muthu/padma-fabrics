@@ -5,9 +5,9 @@ import sareeImg from "@/assets/saree-collection-showcase.jpg";
 import embroideredImg from "@/assets/embroidered-collection-showcase.jpg";
 import floralPrintsImg from "@/assets/floral-prints-collection-showcase.jpg";
 import festiveWearImg from "@/assets/festive-wear-collection-showcase.jpg";
-import ethnicPrintsImg from "@/assets/maxi-occasion.jpg";
-import everydayWearImg from "@/assets/palazzo-occasion.jpg";
-import kurtiSetsImg from "@/assets/chudithar-occasion.jpg";
+import ethnicPrintsImg from "@/assets/ethnic-prints-collection-showcase.jpg";
+import everydayWearImg from "@/assets/everyday-wear-collection-showcase.jpg";
+import kurtiSetsImg from "@/assets/kurti-sets-collection-showcase.jpg";
 
 export interface CollectionCard {
   id: string;
