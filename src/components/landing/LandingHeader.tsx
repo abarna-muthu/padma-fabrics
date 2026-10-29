@@ -479,9 +479,8 @@ export function LandingHeader({ onOpenLogin }: LandingHeaderProps) {
           </Link>
 
           {/* Cart Bag with count badge */}
-          <button
-            type="button"
-            onClick={() => setIsCartOpen(true)}
+          <Link
+            to="/cart"
             aria-label="Cart"
             className="relative p-1 hover:text-[#D0202B] transition-colors cursor-pointer"
           >
@@ -491,7 +490,7 @@ export function LandingHeader({ onOpenLogin }: LandingHeaderProps) {
                 {cartCount}
               </span>
             )}
-          </button>
+          </Link>
 
           {/* Far-right small rounded-square red loyalty badge */}
           <button

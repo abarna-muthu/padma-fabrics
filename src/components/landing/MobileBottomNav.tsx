@@ -60,9 +60,8 @@ export function MobileBottomNav({ onOpenLogin }: MobileBottomNavProps = {}) {
       </Link>
 
       {/* Cart with badge */}
-      <button
-        type="button"
-        onClick={() => setIsCartOpen(true)}
+      <Link
+        to="/cart"
         className={`flex flex-col items-center text-[9px] font-bold uppercase tracking-wider transition-colors relative cursor-pointer ${
           isCartActive ? "text-[#D0202B]" : "text-[#555555] hover:text-[#D0202B]"
         }`}
@@ -77,7 +76,7 @@ export function MobileBottomNav({ onOpenLogin }: MobileBottomNavProps = {}) {
           )}
         </div>
         <span>Cart</span>
-      </button>
+      </Link>
 
       {/* Offers */}
       <Link
