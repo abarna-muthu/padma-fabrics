@@ -15,12 +15,14 @@ export const Route = createFileRoute("/shop")({
     pattern?: string | undefined;
     search?: string | undefined;
     filter?: string | undefined;
+    sale?: boolean | string | undefined;
   } => {
     return {
       category: typeof search?.["category"] === "string" ? search["category"] : undefined,
       pattern: typeof search?.["pattern"] === "string" ? search["pattern"] : undefined,
       search: typeof search?.["search"] === "string" ? search["search"] : undefined,
       filter: typeof search?.["filter"] === "string" ? search["filter"] : undefined,
+      sale: search?.["sale"] === true || search?.["sale"] === "true" ? true : undefined,
     };
   },
   head: () => ({
@@ -59,6 +61,7 @@ function ShopPage() {
         pattern: sp.get("pattern") || undefined,
         search: sp.get("search") || undefined,
         filter: sp.get("filter") || undefined,
+        sale: sp.get("sale") === "true" || undefined,
       };
     }
   }
@@ -67,6 +70,7 @@ function ShopPage() {
   const queryPattern = searchParams?.pattern;
   const querySearch = searchParams?.search;
   const queryFilter = searchParams?.filter;
+  const querySale = searchParams?.sale;
 
   const { filter, setFilter, activeProducts = [], categoriesList = [] } = useStore();
   const rawCats = categoriesList && categoriesList.length > 0 ? categoriesList : (categories as readonly string[]);
@@ -120,6 +124,23 @@ function ShopPage() {
       const b = typeof p.badge === "string" ? p.badge.toLowerCase() : (p.badge ? String(p.badge).toLowerCase() : "");
       const isNew = b.includes("new") || Boolean((p as any).isNew);
       if (p.badge && !isNew) return false;
+    }
+
+    // Filter by special offers / discounts
+    if (querySale) {
+      const hasDiscount = Boolean(
+        (p.originalPrice && Number(p.originalPrice) > Number(p.price)) ||
+        (p.discount && Number(p.discount) > 0) ||
+        (p.badge && /sale|offer|deal|discount|save/i.test(String(p.badge)))
+      );
+      // Only exclude if there are products with discounts in the catalog
+      const anyDiscountsExist = activeProducts.some(
+        (prod) =>
+          (prod.originalPrice && Number(prod.originalPrice) > Number(prod.price)) ||
+          (prod.discount && Number(prod.discount) > 0) ||
+          (prod.badge && /sale|offer|deal|discount|save/i.test(String(prod.badge)))
+      );
+      if (anyDiscountsExist && !hasDiscount) return false;
     }
 
     // Category match - case-insensitive and partial-match resilient

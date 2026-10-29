@@ -25,6 +25,7 @@ import { Footer } from "../components/Footer";
 import { ShopSheet } from "../components/ShopSheet";
 import { CheckoutModal } from "../components/CheckoutModal";
 import { CustomerPortalModal } from "../components/CustomerPortalModal";
+import { MobileBottomNav } from "../components/landing/MobileBottomNav";
 import { Toaster } from "@/components/ui/sonner";
 
 function NotFoundComponent() {
@@ -190,13 +191,14 @@ function RootComponent() {
                     ) : (
                       <div className="min-h-screen flex flex-col bg-background text-foreground">
                         {!isPolicyPage && <Header />}
-                        <div className="flex-1">
+                        <div className="flex-1 pb-16 md:pb-0">
                           <Outlet />
                         </div>
                         <Footer />
                         <ShopSheet />
                         <GlobalCheckoutModal />
                         <CustomerPortalModal />
+                        <MobileBottomNav />
                       </div>
                     )}
                     <Toaster position="top-right" richColors />

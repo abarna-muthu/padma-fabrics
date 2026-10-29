@@ -460,7 +460,7 @@ export function ProductDetailPage({ id }: ProductDetailPageProps) {
   }, [product, selectedColour, selectedSize, effectivePrice]);
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 pb-32 sm:pb-8">
       <Breadcrumb
         items={[
           { label: "Home", href: "/" },
@@ -1184,7 +1184,7 @@ export function ProductDetailPage({ id }: ProductDetailPageProps) {
       )}
 
       {/* Sticky Mobile Bottom Purchase Bar */}
-      <div className="fixed bottom-0 inset-x-0 sm:hidden z-40 bg-white/95 dark:bg-[#1E191A]/95 backdrop-blur-md p-3 border-t border-[#E5DAC4] dark:border-white/10 shadow-[0_-4px_16px_rgba(0,0,0,0.08)] flex items-center gap-2.5">
+      <div className="fixed bottom-[52px] inset-x-0 sm:hidden z-40 bg-white/95 dark:bg-[#1E191A]/95 backdrop-blur-md p-3 border-t border-[#E5DAC4] dark:border-white/10 shadow-[0_-4px_16px_rgba(0,0,0,0.08)] flex items-center gap-2.5">
         <button
           type="button"
           onClick={handleAddToCart}

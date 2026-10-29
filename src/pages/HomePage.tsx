@@ -8,7 +8,6 @@ import { TestimonialsSection } from "@/components/landing/TestimonialsSection";
 import { OnlineExclusive } from "@/components/landing/OnlineExclusive";
 import { FindAStoreStrip } from "@/components/landing/FindAStoreStrip";
 import { TrustStrip } from "@/components/landing/TrustStrip";
-import { MobileBottomNav } from "@/components/landing/MobileBottomNav";
 import { LoginModal } from "@/components/landing/LoginModal";
 import { SizeSelectorModal } from "@/components/landing/SizeSelectorModal";
 import type { LandingProduct } from "@/components/landing/ProductCard";
@@ -54,8 +53,6 @@ export function HomePage() {
       {/* SECTION 16 - TRUST STRIP (3 pillars with outline SVGs) */}
       <TrustStrip />
 
-      {/* MOBILE BOTTOM NAV (fixed at bottom on mobile) */}
-      <MobileBottomNav onOpenLogin={handleOpenLogin} />
 
       {/* UI-ONLY OVERLAYS */}
       <LoginModal
