@@ -4,7 +4,6 @@ import { PopularCategories } from "@/components/landing/PopularCategories";
 import { OurBestsellers } from "@/components/landing/OurBestsellers";
 import { ShopByOccasion } from "@/components/landing/ShopByOccasion";
 import { ShopByPattern } from "@/components/landing/ShopByPattern";
-import { LovedByCelebs } from "@/components/landing/LovedByCelebs";
 import { TestimonialsSection } from "@/components/landing/TestimonialsSection";
 import { OnlineExclusive } from "@/components/landing/OnlineExclusive";
 import { FindAStoreStrip } from "@/components/landing/FindAStoreStrip";
@@ -42,9 +41,6 @@ export function HomePage() {
 
       {/* SECTION 9 - SHOP BY PATTERN (progress bar + tall portrait cards) */}
       <ShopByPattern />
-
-      {/* SECTION 10 - LOVED BY CELEBS (1:2 cards with sparkle) */}
-      <LovedByCelebs />
 
       {/* TESTIMONIALS SECTION (animated marquee with centered focus card) */}
       <TestimonialsSection />
