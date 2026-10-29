@@ -11,6 +11,7 @@ import comboDressesImg from "@/assets/girls-party-frock.jpg";
 export interface HeroBannerSlide {
   id: string | number;
   image: string;
+  mobileImage?: string;
   alt: string;
   href: string;
 }
@@ -79,18 +80,21 @@ export const DEFAULT_HERO_BANNERS: HeroBannerSlide[] = [
   {
     id: 1,
     image: "/hero-banner-3.jpg",
-    alt: "Padmanabha Fabrics - Timeless Elegance in Every Thread, Premium Sarees",
+    mobileImage: "/hero-banner-mobile.jpg",
+    alt: "Padmanabha Fabrics - Diwali Edit, Silhouettes to Host, Shine & Celebrate In",
     href: "/shop",
   },
   {
     id: 2,
     image: "/hero-banner-2.png",
+    mobileImage: "/hero-banner-mobile.jpg",
     alt: "Padmanabha Fabrics - Timeless Ethnic Elegance, Explore Collection",
     href: "/shop",
   },
   {
     id: 3,
     image: "/hero-banner-1.jpg",
+    mobileImage: "/hero-banner-mobile.jpg",
     alt: "Padmanabha Fabrics - Timeless Ethnic Elegance, Style Woven With Tradition",
     href: "/shop",
   },

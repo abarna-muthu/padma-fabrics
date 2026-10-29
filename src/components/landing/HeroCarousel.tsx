@@ -5,6 +5,7 @@ import { useSiteContent } from "@/context/SiteContentContext";
 interface HeroBanner {
   id: string | number;
   image: string;
+  mobileImage?: string;
   alt: string;
   href: string;
 }
@@ -13,18 +14,21 @@ const HERO_BANNERS: HeroBanner[] = [
   {
     id: 1,
     image: "/hero-banner-3.jpg",
-    alt: "Padmanabha Fabrics - Timeless Elegance in Every Thread, Premium Sarees",
+    mobileImage: "/hero-banner-mobile.jpg",
+    alt: "Padmanabha Fabrics - Diwali Edit, Silhouettes to Host, Shine & Celebrate In",
     href: "/shop",
   },
   {
     id: 2,
     image: "/hero-banner-2.png",
+    mobileImage: "/hero-banner-mobile.jpg",
     alt: "Padmanabha Fabrics - Timeless Ethnic Elegance, Explore Collection",
     href: "/shop",
   },
   {
     id: 3,
     image: "/hero-banner-1.jpg",
+    mobileImage: "/hero-banner-mobile.jpg",
     alt: "Padmanabha Fabrics - Timeless Ethnic Elegance, Style Woven With Tradition",
     href: "/shop",
   },
@@ -83,9 +87,10 @@ export function HeroCarousel() {
       onTouchEnd={handleTouchEnd}
       className="relative w-full bg-[#FAF7F2] overflow-hidden select-none border-b border-[rgba(14,14,14,0.06)]"
     >
-      <div className="relative w-full aspect-[2/1] max-h-[640px] overflow-hidden bg-[#FAF7F2]">
+      <div className="relative w-full aspect-[637/890] sm:aspect-[2/1] max-h-[85vh] sm:max-h-[640px] overflow-hidden bg-[#FAF7F2]">
         {banners.map((banner, index) => {
           const isActive = index === currentSlide;
+          const mobileSrc = (banner as any).mobileImage || "/hero-banner-mobile.jpg";
           return (
             <div
               key={banner.id}
@@ -98,12 +103,15 @@ export function HeroCarousel() {
                 className="block w-full h-full relative cursor-pointer"
                 aria-label={banner.alt}
               >
-                <img
-                  src={banner.image}
-                  alt={banner.alt}
-                  className="w-full h-full object-cover object-center"
-                  loading={index === 0 ? "eager" : "lazy"}
-                />
+                <picture className="w-full h-full block">
+                  <source media="(max-width: 639px)" srcSet={mobileSrc} />
+                  <img
+                    src={banner.image}
+                    alt={banner.alt}
+                    className="w-full h-full object-cover object-center"
+                    loading={index === 0 ? "eager" : "lazy"}
+                  />
+                </picture>
               </Link>
             </div>
           );
@@ -111,7 +119,7 @@ export function HeroCarousel() {
 
         {/* Minimal dot indicators centered at bottom */}
         {banners.length > 1 && (
-          <div className="absolute bottom-3 sm:bottom-5 left-1/2 -translate-x-1/2 z-20 flex items-center justify-center gap-2 pointer-events-auto">
+          <div className="absolute bottom-2 sm:bottom-5 left-1/2 -translate-x-1/2 z-20 flex items-center justify-center gap-1.5 sm:gap-2 pointer-events-auto">
             {banners.map((_, i) => (
               <button
                 key={i}
@@ -123,7 +131,7 @@ export function HeroCarousel() {
                 aria-label={`Go to slide ${i + 1}`}
                 className={`h-1.5 sm:h-2 rounded-full transition-all duration-300 cursor-pointer ${
                   i === currentSlide
-                    ? "w-6 sm:w-8 bg-[#EDBC3D] shadow-xs"
+                    ? "w-5 sm:w-8 bg-[#EDBC3D] shadow-xs"
                     : "w-1.5 sm:w-2 bg-white/70 hover:bg-white shadow-xs"
                 }`}
               />
