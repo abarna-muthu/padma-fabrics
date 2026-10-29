@@ -5,6 +5,9 @@ import sareeImg from "@/assets/saree-collection-showcase.jpg";
 import embroideredImg from "@/assets/embroidered-collection-showcase.jpg";
 import floralPrintsImg from "@/assets/floral-prints-collection-showcase.jpg";
 import festiveWearImg from "@/assets/festive-wear-collection-showcase.jpg";
+import ethnicPrintsImg from "@/assets/maxi-occasion.jpg";
+import everydayWearImg from "@/assets/palazzo-occasion.jpg";
+import kurtiSetsImg from "@/assets/chudithar-occasion.jpg";
 
 export interface CollectionCard {
   id: string;
@@ -86,6 +89,7 @@ export const COLLECTION_CARDS: CollectionCard[] = [
     tabs: ["SHOP ALL", "ETHNIC PRINTS"],
     shopSearch: { pattern: "prints", search: "Print" },
     placeholderBg: "from-[#F3EDE3] to-[#E5DDD0]",
+    image: ethnicPrintsImg,
   },
   {
     id: "everyday-wear",
@@ -96,6 +100,7 @@ export const COLLECTION_CARDS: CollectionCard[] = [
     tabs: ["SHOP ALL", "EVERYDAY WEAR", "FLORAL PRINTS"],
     shopSearch: { pattern: "solids", search: "Everyday" },
     placeholderBg: "from-[#EDEBE6] to-[#DDD9D0]",
+    image: everydayWearImg,
   },
   {
     id: "kurti-sets",
@@ -106,6 +111,7 @@ export const COLLECTION_CARDS: CollectionCard[] = [
     tabs: ["SHOP ALL", "EVERYDAY WEAR", "ETHNIC PRINTS", "EMBROIDERED"],
     shopSearch: { category: "Chudithar", search: "Kurti" },
     placeholderBg: "from-[#F2EDE7] to-[#E2D8CF]",
+    image: kurtiSetsImg,
   },
 ];
 
@@ -231,7 +237,16 @@ export function ShopByPattern() {
                   <img
                     src={card.image}
                     alt={card.name}
-                    loading="lazy"
+                    loading="eager"
+                    decoding="async"
+                    onError={(e) => {
+                      const target = e.currentTarget;
+                      const filename = card.image?.split("/").pop()?.split("?")[0];
+                      if (filename && !target.src.includes("/assets/")) {
+                        const baseName = filename.replace(/-[A-Za-z0-9_-]{8,}\.(jpg|png|webp|svg)$/, ".$1");
+                        target.src = `/assets/${baseName}`;
+                      }
+                    }}
                     style={{ objectPosition: "top center" }}
                     className="w-full h-full object-cover rounded-[inherit]"
                   />

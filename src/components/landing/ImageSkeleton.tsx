@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 
 interface ImageSkeletonProps extends React.ImgHTMLAttributes<HTMLImageElement> {
   src: string;
@@ -12,8 +12,11 @@ export function ImageSkeleton({
   alt,
   className = "",
   aspectRatio,
+  loading = "eager",
+  style,
   ...props
 }: ImageSkeletonProps) {
+  const imgRef = useRef<HTMLImageElement>(null);
   const [isLoaded, setIsLoaded] = useState(false);
   const [hasError, setHasError] = useState(false);
   const [currentSrc, setCurrentSrc] = useState(src);
@@ -21,7 +24,11 @@ export function ImageSkeleton({
   useEffect(() => {
     setCurrentSrc(src);
     setHasError(false);
-    setIsLoaded(false);
+    if (imgRef.current && imgRef.current.complete && imgRef.current.naturalWidth > 0) {
+      setIsLoaded(true);
+    } else {
+      setIsLoaded(false);
+    }
   }, [src]);
 
   return (
@@ -30,24 +37,35 @@ export function ImageSkeleton({
       style={aspectRatio ? { aspectRatio } : undefined}
     >
       {!isLoaded && (
-        <div className="absolute inset-0 bg-[#EDEDED] animate-pulse rounded-[inherit]" />
+        <div className="absolute inset-0 bg-[#EDEDED] animate-pulse rounded-[inherit] pointer-events-none z-[1]" />
       )}
       <img
+        ref={imgRef}
         src={currentSrc}
         alt={alt}
-        loading="lazy"
+        loading={loading}
+        decoding="async"
         onLoad={() => setIsLoaded(true)}
         onError={() => {
           if (!hasError) {
             setHasError(true);
-            setCurrentSrc("/placeholder.svg");
+            const filename = src.split("/").pop()?.split("?")[0];
+            if (filename && !filename.includes("placeholder")) {
+              const baseName = filename.replace(/-[A-Za-z0-9_-]{8,}\.(jpg|png|webp|svg)$/, ".$1");
+              setCurrentSrc(`/assets/${baseName}`);
+            } else {
+              setCurrentSrc("/placeholder.svg");
+            }
           } else {
             setIsLoaded(true);
           }
         }}
-        style={{ color: "transparent", fontSize: 0, ...(props.style || {}) }}
+        style={{
+          objectPosition: style?.objectPosition || "top center",
+          ...style,
+        }}
         className={`w-full h-full object-cover transition-opacity duration-300 rounded-[inherit] ${
-          isLoaded ? "opacity-100" : "opacity-0"
+          isLoaded ? "opacity-100" : "opacity-90"
         }`}
         {...props}
       />

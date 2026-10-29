@@ -15,21 +15,19 @@ export function ShopByOccasion() {
       {/* Bento Grid: 3 columns desktop, 2 columns mobile, sizing explicitly to content */}
       <div
         className="max-w-7xl mx-auto grid grid-cols-2 auto-rows-[220px] md:auto-rows-auto md:grid-cols-3 md:grid-rows-2 gap-2.5 h-auto md:h-[clamp(520px,48vw,700px)]"
-        style={{
-          gridTemplateRows: undefined,
-        }}
       >
-        {/* 1. Western Dress (Col 1, Row 1 on desktop) */}
+        {/* 1. Western Dress (Col 1, Row 1 on desktop; Col 1, Row 1 on mobile) */}
         <Link
           to="/shop"
           search={{ category: "Western Top" } as any}
-          className="relative block w-full h-full min-h-0 overflow-hidden rounded-[14px] bg-[#EDEDED] group md:col-start-1 md:row-start-1 isolate"
+          className="relative block w-full h-full min-h-0 overflow-hidden rounded-[14px] bg-[#EDEDED] group col-start-1 row-start-1 md:col-start-1 md:row-start-1 isolate"
         >
           <div className="absolute inset-0 w-full h-full transition-transform duration-500 ease-out group-hover:scale-105 rounded-[inherit]">
             <ImageSkeleton
               src={palazzoImg}
               alt="Western Dress"
-              style={{ objectPosition: "top" }}
+              loading="eager"
+              style={{ objectPosition: "top center" }}
               className="w-full h-full rounded-[inherit]"
             />
           </div>
@@ -43,17 +41,18 @@ export function ShopByOccasion() {
           </div>
         </Link>
 
-        {/* 2. Chudithar (Col 1, Row 2 on desktop) */}
+        {/* 2. Chudithar (Col 1, Row 2 on desktop; Col 2, Row 1 on mobile) */}
         <Link
           to="/shop"
           search={{ category: "Chudithar" } as any}
-          className="relative block w-full h-full min-h-0 overflow-hidden rounded-[14px] bg-[#EDEDED] group md:col-start-1 md:row-start-2 isolate"
+          className="relative block w-full h-full min-h-0 overflow-hidden rounded-[14px] bg-[#EDEDED] group col-start-2 row-start-1 md:col-start-1 md:row-start-2 isolate"
         >
           <div className="absolute inset-0 w-full h-full transition-transform duration-500 ease-out group-hover:scale-105 rounded-[inherit]">
             <ImageSkeleton
               src={chuditharImg}
               alt="Chudithar"
-              style={{ objectPosition: "top" }}
+              loading="eager"
+              style={{ objectPosition: "top center" }}
               className="w-full h-full rounded-[inherit]"
             />
           </div>
@@ -71,13 +70,14 @@ export function ShopByOccasion() {
         <Link
           to="/shop"
           search={{ category: "Saree" } as any}
-          className="relative block w-full h-full min-h-0 overflow-hidden rounded-[14px] bg-[#EDEDED] group col-span-2 row-span-2 md:col-span-1 md:col-start-2 md:row-start-1 md:row-span-2 isolate"
+          className="relative block w-full h-full min-h-0 overflow-hidden rounded-[14px] bg-[#EDEDED] group col-start-1 col-span-2 row-start-2 row-span-2 md:col-span-1 md:col-start-2 md:row-start-1 md:row-span-2 isolate"
         >
           <div className="absolute inset-0 w-full h-full transition-transform duration-500 ease-out group-hover:scale-105 rounded-[inherit]">
             <ImageSkeleton
               src={sareeImg}
               alt="Saree"
-              style={{ objectPosition: "top" }}
+              loading="eager"
+              style={{ objectPosition: "top center" }}
               className="w-full h-full rounded-[inherit]"
             />
           </div>
@@ -96,17 +96,18 @@ export function ShopByOccasion() {
           </div>
         </Link>
 
-        {/* 4. 2pcs Dress (Col 3, Row 1 on desktop) */}
+        {/* 4. 2pcs Dress (Col 3, Row 1 on desktop; Col 1, Row 4 on mobile) */}
         <Link
           to="/shop"
           search={{ category: "2piece" } as any}
-          className="relative block w-full h-full min-h-0 overflow-hidden rounded-[14px] bg-[#EDEDED] group md:col-start-3 md:row-start-1 isolate"
+          className="relative block w-full h-full min-h-0 overflow-hidden rounded-[14px] bg-[#EDEDED] group col-start-1 row-start-4 md:col-start-3 md:row-start-1 isolate"
         >
           <div className="absolute inset-0 w-full h-full transition-transform duration-500 ease-out group-hover:scale-105 rounded-[inherit]">
             <ImageSkeleton
               src={twoPieceImg}
               alt="2pcs Dress"
-              style={{ objectPosition: "top" }}
+              loading="eager"
+              style={{ objectPosition: "top center" }}
               className="w-full h-full rounded-[inherit]"
             />
           </div>
@@ -120,17 +121,18 @@ export function ShopByOccasion() {
           </div>
         </Link>
 
-        {/* 5. Maxi (Col 3, Row 2 on desktop) */}
+        {/* 5. Maxi (Col 3, Row 2 on desktop; Col 2, Row 4 on mobile) */}
         <Link
           to="/shop"
           search={{ category: "Maxi" } as any}
-          className="relative block w-full h-full min-h-0 overflow-hidden rounded-[14px] bg-[#EDEDED] group md:col-start-3 md:row-start-2 isolate"
+          className="relative block w-full h-full min-h-0 overflow-hidden rounded-[14px] bg-[#EDEDED] group col-start-2 row-start-4 md:col-start-3 md:row-start-2 isolate"
         >
           <div className="absolute inset-0 w-full h-full transition-transform duration-500 ease-out group-hover:scale-105 rounded-[inherit]">
             <ImageSkeleton
               src={maxiImg}
               alt="Maxi"
-              style={{ objectPosition: "top" }}
+              loading="eager"
+              style={{ objectPosition: "top center" }}
               className="w-full h-full rounded-[inherit]"
             />
           </div>

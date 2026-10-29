@@ -103,6 +103,7 @@ export function OnlineExclusive({ onOpenQuickSize }: OnlineExclusiveProps) {
             <ImageSkeleton
               src={onlineExclusiveBanner}
               alt="Online Exclusive New Styles Collection"
+              loading="eager"
               style={{ objectPosition: "top center" }}
               className="w-full h-full rounded-[inherit]"
             />
