@@ -323,6 +323,17 @@ export const customerApi = {
   async getAll() {
     return apiRequest<any[]>("/api/admin/customers");
   },
+  async update(id: string, data: { name?: string; email?: string; phone?: string; address?: string }) {
+    return apiRequest<any>(`/api/admin/customers/${id}`, {
+      method: "PUT",
+      body: JSON.stringify(data),
+    });
+  },
+  async delete(id: string) {
+    return apiRequest<any>(`/api/admin/customers/${id}`, {
+      method: "DELETE",
+    });
+  },
 };
 
 // ----------------------------------------------------

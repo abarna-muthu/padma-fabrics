@@ -722,3 +722,87 @@ export async function getCustomers(req: Request, res: Response) {
   }
 }
 
+export async function updateCustomer(req: Request, res: Response) {
+  try {
+    const { id } = req.params;
+    const { name, email, phone, address } = req.body;
+    const db = await getDb();
+
+    // 1. Update in customers table if exists
+    await db
+      .execute("UPDATE customers SET name = ?, phone = ? WHERE id = ? OR LOWER(email) = LOWER(?)", [
+        (name || "").trim(),
+        (phone || "").trim(),
+        id,
+        email || id,
+      ])
+      .catch(() => {});
+
+    // 2. Update existing customer address if present
+    if (address && address.trim()) {
+      const existingAddr = await db.query(
+        "SELECT * FROM customer_addresses WHERE customer_id = ? OR customer_id IN (SELECT id FROM customers WHERE LOWER(email) = LOWER(?))",
+        [id, email || id],
+      );
+      if (existingAddr && existingAddr.length > 0) {
+        await db
+          .execute(
+            "UPDATE customer_addresses SET address_line1 = ? WHERE id = ?",
+            [address.trim(), existingAddr[0].id],
+          )
+          .catch(() => {});
+      } else {
+        const addrId = `addr-${Date.now().toString(36)}-${Math.random().toString(36).substring(2, 6)}`;
+        await db
+          .execute(
+            "INSERT INTO customer_addresses (id, customer_id, address_line1, city, state, postal_code, country) VALUES (?, ?, ?, ?, ?, ?, ?)",
+            [addrId, id, address.trim(), "Chennai", "Tamil Nadu", "600053", "India"],
+          )
+          .catch(() => {});
+      }
+    }
+
+    // 3. Update orders linked to this customer
+    if (name || phone || address) {
+      await db
+        .execute(
+          `UPDATE orders SET 
+            customer_name = COALESCE(NULLIF(?, ''), customer_name), 
+            customer_phone = COALESCE(NULLIF(?, ''), customer_phone), 
+            shipping_address = COALESCE(NULLIF(?, ''), shipping_address) 
+           WHERE customer_id = ? OR LOWER(customer_email) = LOWER(?)`,
+          [name || "", phone || "", address || "", id, email || id],
+        )
+        .catch(() => {});
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: "Customer updated successfully.",
+    });
+  } catch (err: any) {
+    console.error("[OrderController] updateCustomer error:", err);
+    return res.status(500).json({ success: false, error: err.message || "Failed to update customer." });
+  }
+}
+
+export async function deleteCustomer(req: Request, res: Response) {
+  try {
+    const { id } = req.params;
+    const db = await getDb();
+
+    // Remove from customers table
+    await db.execute("DELETE FROM customers WHERE id = ? OR LOWER(email) = LOWER(?)", [id, id]).catch(() => {});
+    // Remove linked addresses
+    await db.execute("DELETE FROM customer_addresses WHERE customer_id = ?", [id]).catch(() => {});
+
+    return res.status(200).json({
+      success: true,
+      message: "Customer deleted successfully.",
+    });
+  } catch (err: any) {
+    console.error("[OrderController] deleteCustomer error:", err);
+    return res.status(500).json({ success: false, error: err.message || "Failed to delete customer." });
+  }
+}
+

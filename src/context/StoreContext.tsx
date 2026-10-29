@@ -615,9 +615,27 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         }
 
         const ordersRes = await orderApi.getAll();
-        if (ordersRes.success && Array.isArray(ordersRes.data) && ordersRes.data.length > 0) {
-          setOrders(ordersRes.data);
-          localStorage.setItem(STORAGE_ORDERS_KEY, JSON.stringify(ordersRes.data));
+        const serverOrders = (ordersRes as any)?.orders || ordersRes.data;
+        if (ordersRes.success && Array.isArray(serverOrders) && serverOrders.length > 0) {
+          // Merge with any local orders so nothing is lost
+          const existingLocalOrders = (() => {
+            try {
+              const raw = localStorage.getItem(STORAGE_ORDERS_KEY);
+              return raw ? JSON.parse(raw) : [];
+            } catch {
+              return [];
+            }
+          })();
+          const orderMap = new Map<string, any>();
+          for (const o of existingLocalOrders) {
+            if (o?.id) orderMap.set(o.id, o);
+          }
+          for (const o of serverOrders) {
+            if (o?.id) orderMap.set(o.id, o);
+          }
+          const mergedOrders = Array.from(orderMap.values());
+          setOrders(mergedOrders);
+          localStorage.setItem(STORAGE_ORDERS_KEY, JSON.stringify(mergedOrders));
         }
 
         const invRes = await inventoryApi.getAll();
@@ -1243,9 +1261,26 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const refreshOrders = async () => {
     try {
       const ordersRes = await orderApi.getAll();
-      if (ordersRes.success && Array.isArray(ordersRes.data)) {
-        setOrders(ordersRes.data);
-        localStorage.setItem(STORAGE_ORDERS_KEY, JSON.stringify(ordersRes.data));
+      const serverOrders = (ordersRes as any)?.orders || ordersRes.data;
+      if (ordersRes.success && Array.isArray(serverOrders)) {
+        const existingLocalOrders = (() => {
+          try {
+            const raw = localStorage.getItem(STORAGE_ORDERS_KEY);
+            return raw ? JSON.parse(raw) : [];
+          } catch {
+            return [];
+          }
+        })();
+        const orderMap = new Map<string, any>();
+        for (const o of existingLocalOrders) {
+          if (o?.id) orderMap.set(o.id, o);
+        }
+        for (const o of serverOrders) {
+          if (o?.id) orderMap.set(o.id, o);
+        }
+        const merged = Array.from(orderMap.values());
+        setOrders(merged);
+        localStorage.setItem(STORAGE_ORDERS_KEY, JSON.stringify(merged));
       }
     } catch (err) {
       console.warn("Could not refresh orders:", err);
@@ -1367,14 +1402,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         saveOrders([newAdminOrder, ...orders.filter((o) => o.id !== resolvedOrderId)]);
 
         // Refresh orders list from backend asynchronously in background without blocking
-        orderApi
-          .getAll()
-          .then((refreshedOrders) => {
-            if (refreshedOrders.success && Array.isArray(refreshedOrders.data)) {
-              saveOrders(refreshedOrders.data);
-            }
-          })
-          .catch(() => {});
+        refreshOrders().catch(() => {});
 
         return {
           success: true,

@@ -18,6 +18,8 @@ import {
   updateOrderStatus,
   updatePaymentStatus,
   getCustomers,
+  updateCustomer,
+  deleteCustomer,
 } from "../controllers/orderController";
 import { getEnquiries } from "../controllers/contactController";
 import { adminUpdateCredentials, getAdminProfile } from "../controllers/authController";
@@ -33,6 +35,8 @@ router.get("/dashboard", getDashboardStats);
 
 // Customers
 router.get("/customers", getCustomers);
+router.put("/customers/:id", updateCustomer);
+router.delete("/customers/:id", deleteCustomer);
 
 // Products catalog management
 router.get("/products", (req, res) => {

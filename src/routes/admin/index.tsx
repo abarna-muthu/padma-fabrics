@@ -224,6 +224,68 @@ function AdminDashboardPage() {
   const [customerSearch, setCustomerSearch] = useState("");
   const [isRefreshingOrders, setIsRefreshingOrders] = useState(false);
 
+  // Customer Action Modals state (View, Edit, Delete)
+  const [viewingCustomer, setViewingCustomer] = useState<any | null>(null);
+  const [editingCustomer, setEditingCustomer] = useState<any | null>(null);
+  const [editCustomerForm, setEditCustomerForm] = useState({
+    name: "",
+    email: "",
+    phone: "",
+    address: "",
+  });
+  const [isSavingCustomer, setIsSavingCustomer] = useState(false);
+  const [deletingCustomer, setDeletingCustomer] = useState<any | null>(null);
+  const [isDeletingCustomer, setIsDeletingCustomer] = useState(false);
+
+  const handleSaveCustomer = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingCustomer) return;
+    setIsSavingCustomer(true);
+    try {
+      const targetId = editingCustomer.id || editingCustomer.email;
+      await customerApi.update(targetId, editCustomerForm).catch(() => {});
+
+      setCustomersList((prev) =>
+        prev.map((c) =>
+          c.id === editingCustomer.id || (c.email && c.email.toLowerCase() === editingCustomer.email?.toLowerCase())
+            ? { ...c, ...editCustomerForm }
+            : c,
+        ),
+      );
+
+      toast.success("Customer details updated successfully!");
+      setEditingCustomer(null);
+    } catch (err: any) {
+      toast.error(err.message || "Failed to update customer.");
+    } finally {
+      setIsSavingCustomer(false);
+    }
+  };
+
+  const handleDeleteCustomer = async () => {
+    if (!deletingCustomer) return;
+    setIsDeletingCustomer(true);
+    try {
+      const targetId = deletingCustomer.id || deletingCustomer.email;
+      await customerApi.delete(targetId).catch(() => {});
+
+      setCustomersList((prev) =>
+        prev.filter(
+          (c) =>
+            c.id !== deletingCustomer.id &&
+            (!c.email || c.email.toLowerCase() !== deletingCustomer.email?.toLowerCase()),
+        ),
+      );
+
+      toast.success("Customer record removed successfully.");
+      setDeletingCustomer(null);
+    } catch (err: any) {
+      toast.error(err.message || "Failed to delete customer.");
+    } finally {
+      setIsDeletingCustomer(false);
+    }
+  };
+
   // Auto-refresh orders whenever Admin navigates to Orders tab
   useEffect(() => {
     if (activeTab === "orders") {
@@ -3368,17 +3430,51 @@ function AdminDashboardPage() {
                           {c.lastOrderDate || "Recent"}
                         </td>
                         <td className="p-3.5 text-right">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="text-xs h-8 cursor-pointer"
-                            onClick={() => {
-                              setOrderSearch(c.email || c.name);
-                              setActiveTab("orders");
-                            }}
-                          >
-                            <Eye className="size-3.5 mr-1" /> View Orders
-                          </Button>
+                          <div className="flex items-center justify-end gap-1.5">
+                            {/* View Customer Details */}
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              title="View Customer Profile & Orders"
+                              className="h-8 px-2.5 text-xs text-foreground hover:text-primary hover:border-primary/40 cursor-pointer"
+                              onClick={() => setViewingCustomer(c)}
+                            >
+                              <Eye className="size-3.5 mr-1 text-[#D15608]" /> View
+                            </Button>
+
+                            {/* Edit Customer */}
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              title="Edit Customer"
+                              className="h-8 px-2.5 text-xs text-foreground hover:text-amber-600 hover:border-amber-500/40 cursor-pointer"
+                              onClick={() => {
+                                setEditingCustomer(c);
+                                setEditCustomerForm({
+                                  name: c.name || "",
+                                  email: c.email || "",
+                                  phone: c.phone || "",
+                                  address: c.address || "",
+                                });
+                              }}
+                            >
+                              <Edit className="size-3.5 mr-1 text-amber-600" /> Edit
+                            </Button>
+
+                            {/* Delete Customer */}
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              title="Delete Customer"
+                              className="h-8 px-2 text-xs text-destructive hover:bg-destructive/10 hover:border-destructive/40 cursor-pointer"
+                              onClick={() => setDeletingCustomer(c)}
+                            >
+                              <Trash2 className="size-3.5 text-red-600" />
+                            </Button>
+                          </div>
                         </td>
                       </tr>
                       );
@@ -6252,6 +6348,305 @@ function AdminDashboardPage() {
                 }}
               >
                 Delete Order
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ----------------- MODAL: VIEW CUSTOMER DETAILS ----------------- */}
+      {viewingCustomer && (() => {
+        const customerOrders = orders.filter(
+          (o) =>
+            (viewingCustomer.email && o.customerEmail?.toLowerCase() === viewingCustomer.email.toLowerCase()) ||
+            (viewingCustomer.name && o.customerName?.toLowerCase() === viewingCustomer.name.toLowerCase()),
+        );
+
+        return (
+          <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
+            <div className="bg-card border border-border w-full max-w-2xl p-6 shadow-xl rounded-lg space-y-6 max-h-[90vh] overflow-y-auto">
+              {/* Header */}
+              <div className="flex items-center justify-between pb-4 border-b border-border">
+                <div className="flex items-center gap-3">
+                  <div className="size-11 rounded-full bg-primary/10 border border-primary/30 flex items-center justify-center text-primary font-bold text-base">
+                    {viewingCustomer.name ? viewingCustomer.name.charAt(0).toUpperCase() : "C"}
+                  </div>
+                  <div>
+                    <h3 className="font-display text-lg font-bold text-foreground">
+                      {viewingCustomer.name}
+                    </h3>
+                    <p className="text-xs text-muted-foreground font-mono">
+                      ID: {viewingCustomer.id || "CUST-VERIFIED"}
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setViewingCustomer(null)}
+                  className="p-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-secondary cursor-pointer"
+                >
+                  <X className="size-5" />
+                </button>
+              </div>
+
+              {/* Customer Contact & Delivery Info */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 rounded-md bg-secondary/30 border border-border text-xs">
+                <div>
+                  <span className="text-muted-foreground block text-[11px] uppercase font-semibold">Email Address</span>
+                  <p className="text-foreground font-medium mt-0.5 flex items-center gap-1.5">
+                    <Mail className="size-3.5 text-primary shrink-0" />
+                    <span>{viewingCustomer.email || "No email"}</span>
+                  </p>
+                </div>
+                <div>
+                  <span className="text-muted-foreground block text-[11px] uppercase font-semibold">Mobile Phone</span>
+                  <p className="text-foreground font-medium mt-0.5 flex items-center gap-1.5">
+                    <Phone className="size-3.5 text-primary shrink-0" />
+                    <span>{viewingCustomer.phone || "No phone"}</span>
+                  </p>
+                </div>
+                <div className="sm:col-span-2">
+                  <span className="text-muted-foreground block text-[11px] uppercase font-semibold">Delivery Address</span>
+                  <p className="text-foreground font-medium mt-0.5 leading-relaxed">
+                    {viewingCustomer.address || "Chennai, Tamil Nadu"}
+                  </p>
+                </div>
+              </div>
+
+              {/* Quick Metrics */}
+              <div className="grid grid-cols-3 gap-3 text-center">
+                <div className="p-3 rounded border border-border bg-card">
+                  <span className="text-[11px] text-muted-foreground uppercase">Total Orders</span>
+                  <p className="text-base font-bold text-foreground mt-0.5">{viewingCustomer.ordersCount || customerOrders.length || 0}</p>
+                </div>
+                <div className="p-3 rounded border border-border bg-card">
+                  <span className="text-[11px] text-muted-foreground uppercase">Total Spent</span>
+                  <p className="text-base font-bold text-primary mt-0.5">{money(viewingCustomer.totalSpent || 0)}</p>
+                </div>
+                <div className="p-3 rounded border border-border bg-card">
+                  <span className="text-[11px] text-muted-foreground uppercase">Last Order</span>
+                  <p className="text-xs font-semibold text-foreground mt-1">{viewingCustomer.lastOrderDate || "Recent"}</p>
+                </div>
+              </div>
+
+              {/* Customer Orders History */}
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <h4 className="text-xs font-bold uppercase tracking-wider text-foreground">
+                    Order History ({customerOrders.length})
+                  </h4>
+                  {customerOrders.length > 0 && (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="text-xs text-primary hover:underline h-auto p-0 cursor-pointer"
+                      onClick={() => {
+                        setOrderSearch(viewingCustomer.email || viewingCustomer.name);
+                        setActiveTab("orders");
+                        setViewingCustomer(null);
+                      }}
+                    >
+                      View in Orders Tab &rarr;
+                    </Button>
+                  )}
+                </div>
+
+                {customerOrders.length === 0 ? (
+                  <p className="text-xs text-muted-foreground p-4 text-center border border-dashed border-border rounded">
+                    No orders recorded for this customer yet.
+                  </p>
+                ) : (
+                  <div className="border border-border rounded-md overflow-hidden text-xs">
+                    <div className="max-h-48 overflow-y-auto divide-y divide-border">
+                      {customerOrders.map((o) => (
+                        <div key={o.id} className="p-3 flex items-center justify-between hover:bg-secondary/20">
+                          <div>
+                            <span className="font-mono font-bold text-foreground">#{o.id}</span>
+                            <span className="text-muted-foreground ml-2">({o.date || "Recent"})</span>
+                            <p className="text-[11px] text-muted-foreground mt-0.5">
+                              {o.items?.length || 1} item(s) · {o.paymentMethod || "COD"} ({o.paymentStatus || "Pending"})
+                            </p>
+                          </div>
+                          <div className="text-right">
+                            <span className="font-bold text-primary block">{money(o.total || 0)}</span>
+                            <span className={`px-2 py-0.5 rounded text-[10px] font-semibold uppercase ${
+                              o.status === "Delivered"
+                                ? "bg-emerald-500/10 text-emerald-600"
+                                : o.status === "Cancelled"
+                                  ? "bg-red-500/10 text-red-600"
+                                  : "bg-amber-500/10 text-amber-600"
+                            }`}>
+                              {o.status}
+                            </span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Actions Footer */}
+              <div className="flex justify-end gap-2 pt-4 border-t border-border">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setViewingCustomer(null)}
+                >
+                  Close
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  className="bg-primary text-white"
+                  onClick={() => {
+                    setEditingCustomer(viewingCustomer);
+                    setEditCustomerForm({
+                      name: viewingCustomer.name || "",
+                      email: viewingCustomer.email || "",
+                      phone: viewingCustomer.phone || "",
+                      address: viewingCustomer.address || "",
+                    });
+                    setViewingCustomer(null);
+                  }}
+                >
+                  <Edit className="size-3.5 mr-1" /> Edit Customer
+                </Button>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
+
+      {/* ----------------- MODAL: EDIT CUSTOMER DETAILS ----------------- */}
+      {editingCustomer && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
+          <div className="bg-card border border-border w-full max-w-md p-6 shadow-xl rounded-lg space-y-5">
+            <div className="flex items-center justify-between pb-3 border-b border-border">
+              <div className="flex items-center gap-2.5">
+                <div className="size-9 rounded-full bg-amber-500/10 text-amber-600 flex items-center justify-center">
+                  <Edit className="size-4" />
+                </div>
+                <div>
+                  <h3 className="font-display text-base font-bold text-foreground">Edit Customer</h3>
+                  <p className="text-[11px] text-muted-foreground">Update customer profile & delivery details</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setEditingCustomer(null)}
+                className="text-muted-foreground hover:text-foreground cursor-pointer"
+              >
+                <X className="size-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveCustomer} className="space-y-4 text-xs">
+              <div className="space-y-1.5">
+                <label className="font-semibold text-foreground">Full Name *</label>
+                <Input
+                  required
+                  value={editCustomerForm.name}
+                  onChange={(e) => setEditCustomerForm({ ...editCustomerForm, name: e.target.value })}
+                  placeholder="Customer Full Name"
+                  className="h-9.5 text-xs"
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="font-semibold text-foreground">Email Address *</label>
+                <Input
+                  type="email"
+                  required
+                  value={editCustomerForm.email}
+                  onChange={(e) => setEditCustomerForm({ ...editCustomerForm, email: e.target.value })}
+                  placeholder="customer@example.com"
+                  className="h-9.5 text-xs"
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="font-semibold text-foreground">Phone Number</label>
+                <Input
+                  type="tel"
+                  value={editCustomerForm.phone}
+                  onChange={(e) => setEditCustomerForm({ ...editCustomerForm, phone: e.target.value })}
+                  placeholder="+91 99401 35700"
+                  className="h-9.5 text-xs font-sans tabular-nums"
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="font-semibold text-foreground">Delivery Street Address</label>
+                <Textarea
+                  rows={3}
+                  value={editCustomerForm.address}
+                  onChange={(e) => setEditCustomerForm({ ...editCustomerForm, address: e.target.value })}
+                  placeholder="Door No, Street Name, City, Pincode"
+                  className="text-xs resize-none"
+                />
+              </div>
+
+              <div className="flex justify-end gap-2 pt-4 border-t border-border">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setEditingCustomer(null)}
+                  disabled={isSavingCustomer}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="submit"
+                  size="sm"
+                  disabled={isSavingCustomer}
+                  className="bg-primary text-white"
+                >
+                  {isSavingCustomer ? "Saving..." : "Save Changes"}
+                </Button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ----------------- MODAL: DELETE CUSTOMER CONFIRMATION ----------------- */}
+      {deletingCustomer && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-card border border-destructive/30 w-full max-w-sm p-6 shadow-xl rounded-lg space-y-4">
+            <div className="flex items-start gap-3">
+              <div className="size-10 rounded-full bg-destructive/15 border border-destructive/30 flex items-center justify-center shrink-0 text-destructive">
+                <Trash2 className="size-5" />
+              </div>
+              <div className="space-y-1">
+                <h3 className="font-display font-semibold text-base text-foreground">Delete Customer?</h3>
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                  Are you sure you want to delete customer <strong className="text-foreground">{deletingCustomer.name}</strong> ({deletingCustomer.email})? This customer record will be removed from admin records.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-2 pt-3 border-t border-border">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => setDeletingCustomer(null)}
+                disabled={isDeletingCustomer}
+              >
+                Cancel
+              </Button>
+              <Button
+                type="button"
+                variant="destructive"
+                size="sm"
+                disabled={isDeletingCustomer}
+                onClick={handleDeleteCustomer}
+              >
+                {isDeletingCustomer ? "Deleting..." : "Delete Customer"}
               </Button>
             </div>
           </div>

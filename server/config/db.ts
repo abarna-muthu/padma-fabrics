@@ -928,13 +928,25 @@ function executeMemoryCommand(sql: string, params: any[] = []): any {
     const name = params[0];
     const phone = params[1];
     const id = params[2];
-    const cust = memoryDb.customers.find((c) => c.id === id);
+    const email = params[3] || id;
+    const cust = memoryDb.customers.find(
+      (c) => c.id === id || (c.email && c.email.toLowerCase() === String(email).toLowerCase()),
+    );
     if (cust) {
       if (name) cust.name = name;
       if (phone) cust.phone = phone;
       cust.updated_at = new Date().toISOString();
       return { affectedRows: 1 };
     }
+  }
+
+  if (normalized.startsWith("delete from customers")) {
+    const id = params[0];
+    const initialLen = memoryDb.customers.length;
+    memoryDb.customers = memoryDb.customers.filter(
+      (c) => c.id !== id && c.email?.toLowerCase() !== String(id).toLowerCase(),
+    );
+    return { affectedRows: initialLen - memoryDb.customers.length };
   }
 
   // Customer addresses insert
