@@ -58,23 +58,25 @@ export function TrustStrip() {
 
   return (
     <section className="w-full bg-[#FAF6EE]/80 border-b border-[#E6E6E6] py-6 sm:py-8 select-none">
-      <div className="max-w-7xl mx-auto px-4 grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-4">
-        {pillars.map((p, idx) => (
-          <div
-            key={idx}
-            className="flex items-center justify-center md:justify-center gap-3 text-left"
-          >
-            <div className="shrink-0">{p.icon}</div>
-            <div>
-              <h4 className="font-['Poppins'] font-bold text-[13px] text-[#111111] leading-tight">
-                {p.title}
-              </h4>
-              <p className="font-['Poppins'] text-[11px] text-[#777777] mt-0.5">
-                {p.subtext}
-              </p>
+      <div className="max-w-7xl mx-auto px-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-5 md:gap-4 max-w-[290px] sm:max-w-[320px] md:max-w-none mx-auto">
+          {pillars.map((p, idx) => (
+            <div
+              key={idx}
+              className="flex items-center justify-start md:justify-center gap-3.5 text-left"
+            >
+              <div className="shrink-0 size-8 flex items-center justify-center">{p.icon}</div>
+              <div>
+                <h4 className="font-['Poppins'] font-bold text-[13px] sm:text-[14px] text-[#111111] leading-tight">
+                  {p.title}
+                </h4>
+                <p className="font-['Poppins'] text-[11px] sm:text-[12px] text-[#777777] mt-0.5">
+                  {p.subtext}
+                </p>
+              </div>
             </div>
-          </div>
-        ))}
+          ))}
+        </div>
       </div>
     </section>
   );
