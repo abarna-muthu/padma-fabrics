@@ -48,9 +48,9 @@ export function CheckoutModal({ isOpen, onClose, onOrderSuccess }: CheckoutModal
   const [customerEmail, setCustomerEmail] = useState("");
   const [customerPhone, setCustomerPhone] = useState("");
   const [streetAddress, setStreetAddress] = useState("");
-  const [city, setCity] = useState("Chennai");
+  const [city, setCity] = useState("");
   const [stateName, setStateName] = useState("Tamil Nadu");
-  const [pincode, setPincode] = useState("600053");
+  const [pincode, setPincode] = useState("");
 
   // Payment Selection State
   const [paymentMethod, setPaymentMethod] = useState<"online" | "cod">("online");
@@ -332,7 +332,7 @@ export function CheckoutModal({ isOpen, onClose, onOrderSuccess }: CheckoutModal
                     required
                     value={customerName}
                     onChange={(e) => setCustomerName(e.target.value)}
-                    placeholder="e.g. Priya Sundaram"
+                    placeholder="Full Name"
                     className="h-9.5 text-xs rounded-none border-border"
                   />
                 </div>
@@ -348,7 +348,7 @@ export function CheckoutModal({ isOpen, onClose, onOrderSuccess }: CheckoutModal
                       required
                       value={customerEmail}
                       onChange={(e) => setCustomerEmail(e.target.value)}
-                      placeholder="priya.sundaram@gmail.com"
+                      placeholder="Email Address"
                       className="h-9.5 text-xs rounded-none border-border"
                     />
                   </div>
@@ -363,7 +363,7 @@ export function CheckoutModal({ isOpen, onClose, onOrderSuccess }: CheckoutModal
                       required
                       value={customerPhone}
                       onChange={(e) => setCustomerPhone(e.target.value)}
-                      placeholder="+91 98401 23456"
+                      placeholder="Phone Number (10 Digits)"
                       className="h-9.5 text-xs rounded-none border-border font-sans tabular-nums"
                     />
                   </div>
@@ -387,7 +387,7 @@ export function CheckoutModal({ isOpen, onClose, onOrderSuccess }: CheckoutModal
                     rows={2}
                     value={streetAddress}
                     onChange={(e) => setStreetAddress(e.target.value)}
-                    placeholder="e.g. Old No 14, New No 32, CTH Road, Ambattur"
+                    placeholder="Address (Door / Flat No, Street, Locality)"
                     className="text-xs rounded-none border-border resize-none"
                   />
                 </div>
@@ -402,6 +402,7 @@ export function CheckoutModal({ isOpen, onClose, onOrderSuccess }: CheckoutModal
                       required
                       value={city}
                       onChange={(e) => setCity(e.target.value)}
+                      placeholder="City"
                       className="h-9 text-xs rounded-none border-border"
                     />
                   </div>
@@ -414,6 +415,7 @@ export function CheckoutModal({ isOpen, onClose, onOrderSuccess }: CheckoutModal
                       required
                       value={stateName}
                       onChange={(e) => setStateName(e.target.value)}
+                      placeholder="State"
                       className="h-9 text-xs rounded-none border-border"
                     />
                   </div>
@@ -426,7 +428,7 @@ export function CheckoutModal({ isOpen, onClose, onOrderSuccess }: CheckoutModal
                       required
                       value={pincode}
                       onChange={(e) => setPincode(e.target.value)}
-                      placeholder="600053"
+                      placeholder="Pincode (6 Digits)"
                       className="h-9 text-xs rounded-none border-border font-sans tabular-nums"
                     />
                   </div>

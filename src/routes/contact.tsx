@@ -292,7 +292,7 @@ function ContactPage() {
                         required
                         value={name}
                         onChange={(e) => setName(e.target.value)}
-                        placeholder="e.g. Ramesh Kumar"
+                        placeholder="Full Name"
                         className="rounded-none border-border focus-visible:ring-primary text-xs"
                       />
                     </div>
@@ -306,7 +306,7 @@ function ContactPage() {
                         required
                         value={phone}
                         onChange={(e) => setPhone(e.target.value)}
-                        placeholder="+91 98765 43210"
+                        placeholder="Phone Number"
                         className="rounded-none border-border focus-visible:ring-primary text-xs"
                       />
                     </div>
@@ -323,7 +323,7 @@ function ContactPage() {
                         required
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
-                        placeholder="ramesh@example.com"
+                        placeholder="Email Address"
                         className="rounded-none border-border focus-visible:ring-primary text-xs"
                       />
                     </div>

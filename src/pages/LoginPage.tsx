@@ -79,7 +79,7 @@ export function LoginPage() {
                     required
                     value={name}
                     onChange={(e) => setName(e.target.value)}
-                    placeholder="Radha Sundaram"
+                    placeholder="Full Name"
                     className="w-full pl-9 pr-3 py-2 text-xs rounded border border-[#E5DAC4] bg-[#FAF6EE] dark:bg-black/20 focus:outline-none focus:border-[#D15608]"
                   />
                 </div>
@@ -95,7 +95,7 @@ export function LoginPage() {
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="customer@example.com"
+                  placeholder="Email Address"
                   className="w-full pl-9 pr-3 py-2 text-xs rounded border border-[#E5DAC4] bg-[#FAF6EE] dark:bg-black/20 focus:outline-none focus:border-[#D15608]"
                 />
               </div>
@@ -111,7 +111,7 @@ export function LoginPage() {
                     required
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
-                    placeholder="+91 99401 35700"
+                    placeholder="Phone Number"
                     className="w-full pl-9 pr-3 py-2 text-xs rounded border border-[#E5DAC4] bg-[#FAF6EE] dark:bg-black/20 focus:outline-none focus:border-[#D15608]"
                   />
                 </div>

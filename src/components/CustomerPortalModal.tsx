@@ -220,7 +220,7 @@ export function CustomerPortalModal() {
                   required
                   value={loginEmail}
                   onChange={(e) => setLoginEmail(e.target.value)}
-                  placeholder="e.g. priya.sundaram@gmail.com"
+                  placeholder="Email Address"
                   className="h-10 text-xs rounded-none border-border"
                   autoFocus
                 />

@@ -1014,7 +1014,7 @@ export function ProductDetailPage({ id }: ProductDetailPageProps) {
                   required
                   value={reviewerName}
                   onChange={(e) => setReviewerName(e.target.value)}
-                  placeholder="e.g. Priya Natarajan"
+                  placeholder="Full Name"
                   className="w-full h-11 px-3.5 rounded-lg border border-[#D5C9B3] dark:border-white/20 bg-white dark:bg-[#141414] text-xs sm:text-sm text-[#0E0E0E] dark:text-[#FAF6EE] focus:outline-none focus:ring-2 focus:ring-[#9F160A]/40"
                 />
               </div>

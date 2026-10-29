@@ -73,9 +73,9 @@ export function CheckoutPage() {
   const [customerEmail, setCustomerEmail] = useState("");
   const [customerPhone, setCustomerPhone] = useState("");
   const [streetAddress, setStreetAddress] = useState("");
-  const [city, setCity] = useState("Chennai");
+  const [city, setCity] = useState("");
   const [stateName, setStateName] = useState("Tamil Nadu");
-  const [pincode, setPincode] = useState("600053");
+  const [pincode, setPincode] = useState("");
   const [orderNotes, setOrderNotes] = useState("");
 
   // Payment method
@@ -436,7 +436,7 @@ export function CheckoutPage() {
                   <input
                     type="text"
                     required
-                    placeholder="e.g. Abarna Muthu"
+                    placeholder="Full Name"
                     value={customerName}
                     onChange={(e) => setCustomerName(e.target.value)}
                     className="w-full pl-9 pr-3 py-2 rounded-lg border border-[#E5DAC4] dark:border-white/10 bg-[#FAF6EE] dark:bg-black/20 text-[#0E0E0E] dark:text-[#FAF6EE] focus:border-[#D15608] focus:outline-hidden"
@@ -453,7 +453,7 @@ export function CheckoutPage() {
                   <input
                     type="tel"
                     required
-                    placeholder="99401 35700"
+                    placeholder="Phone Number"
                     value={customerPhone}
                     onChange={(e) => setCustomerPhone(e.target.value)}
                     className="w-full pl-9 pr-3 py-2 rounded-lg border border-[#E5DAC4] dark:border-white/10 bg-[#FAF6EE] dark:bg-black/20 text-[#0E0E0E] dark:text-[#FAF6EE] focus:border-[#D15608] focus:outline-hidden"
@@ -470,7 +470,7 @@ export function CheckoutPage() {
                   <input
                     type="email"
                     required
-                    placeholder="abarna@example.com"
+                    placeholder="Email Address"
                     value={customerEmail}
                     onChange={(e) => setCustomerEmail(e.target.value)}
                     className="w-full pl-9 pr-3 py-2 rounded-lg border border-[#E5DAC4] dark:border-white/10 bg-[#FAF6EE] dark:bg-black/20 text-[#0E0E0E] dark:text-[#FAF6EE] focus:border-[#D15608] focus:outline-hidden"
@@ -487,7 +487,7 @@ export function CheckoutPage() {
                   <textarea
                     required
                     rows={2}
-                    placeholder="e.g. No. 14, Menambedu Road, Near Showroom, Ambattur"
+                    placeholder="Address (Door / Flat No, Street, Area)"
                     value={streetAddress}
                     onChange={(e) => setStreetAddress(e.target.value)}
                     className="w-full pl-9 pr-3 py-2 rounded-lg border border-[#E5DAC4] dark:border-white/10 bg-[#FAF6EE] dark:bg-black/20 text-[#0E0E0E] dark:text-[#FAF6EE] focus:border-[#D15608] focus:outline-hidden resize-none"
@@ -502,6 +502,7 @@ export function CheckoutPage() {
                 <input
                   type="text"
                   required
+                  placeholder="City / Town"
                   value={city}
                   onChange={(e) => setCity(e.target.value)}
                   className="w-full px-3 py-2 rounded-lg border border-[#E5DAC4] dark:border-white/10 bg-[#FAF6EE] dark:bg-black/20 text-[#0E0E0E] dark:text-[#FAF6EE] focus:border-[#D15608] focus:outline-hidden"
@@ -515,7 +516,7 @@ export function CheckoutPage() {
                 <input
                   type="text"
                   required
-                  placeholder="600053"
+                  placeholder="Postal Pincode (6 Digits)"
                   maxLength={6}
                   value={pincode}
                   onChange={(e) => setPincode(e.target.value)}
@@ -529,7 +530,7 @@ export function CheckoutPage() {
                 </label>
                 <input
                   type="text"
-                  placeholder="e.g. Call before delivery / Near Ambattur OT"
+                  placeholder="Special Notes / Landmark (Optional)"
                   value={orderNotes}
                   onChange={(e) => setOrderNotes(e.target.value)}
                   className="w-full px-3 py-2 rounded-lg border border-[#E5DAC4] dark:border-white/10 bg-[#FAF6EE] dark:bg-black/20 text-[#0E0E0E] dark:text-[#FAF6EE] focus:border-[#D15608] focus:outline-hidden"
