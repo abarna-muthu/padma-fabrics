@@ -1,6 +1,5 @@
 import PDFDocument from "pdfkit";
-import path from "path";
-import fs from "fs";
+import { PADMANABHA_LOGO_BASE64 } from "./logoBase64";
 
 export interface InvoiceItem {
   name: string;
@@ -133,22 +132,16 @@ export function generateInvoicePdf(data: InvoiceOrderData): Promise<Buffer> {
       doc.rect(40, 40, 515, 4).fill(primaryColor);
 
       // ----------------------------------------------------
-      // BRAND & COMPANY HEADER
+      // BRAND & COMPANY HEADER (WITH EMBEDDED LOGO)
       // ----------------------------------------------------
-      const logoPaths = [
-        path.resolve(process.cwd(), "src/assets/padmanabha-logo.jpg"),
-        path.resolve(process.cwd(), "public/padmanabha-logo.jpg"),
-      ];
-      const foundLogo = logoPaths.find((p) => fs.existsSync(p));
-
       let headerTextLeft = 40;
-      if (foundLogo) {
-        try {
-          doc.image(foundLogo, 40, 55, { width: 50, height: 50 });
-          headerTextLeft = 100;
-        } catch {
-          headerTextLeft = 40;
-        }
+      try {
+        const logoBuffer = Buffer.from(PADMANABHA_LOGO_BASE64, "base64");
+        doc.image(logoBuffer, 40, 52, { width: 55, height: 55 });
+        headerTextLeft = 105;
+      } catch (err) {
+        console.warn("[InvoiceService] Could not draw logo:", err);
+        headerTextLeft = 40;
       }
 
       // Company Name & Subtitle
@@ -156,17 +149,17 @@ export function generateInvoicePdf(data: InvoiceOrderData): Promise<Buffer> {
         .font("Helvetica-Bold")
         .fontSize(16)
         .fillColor(primaryColor)
-        .text("PADMANABHA FABRICS", headerTextLeft, 55);
+        .text("PADMANABHA FABRICS", headerTextLeft, 54);
 
       doc
         .font("Helvetica")
         .fontSize(8)
         .fillColor(grayColor)
-        .text("Handcrafted Silk Sarees, Fine Textiles & Traditional Ethnic Weaves", headerTextLeft, 75)
-        .text("No. 4, North Mada Street, Ambattur, Chennai - 600053, Tamil Nadu, India", headerTextLeft, 87)
-        .text("Phone: +91 99401 35700 | Email: contact@padmanabhafabrics.com", headerTextLeft, 99)
+        .text("Handcrafted Silk Sarees, Fine Textiles & Traditional Ethnic Weaves", headerTextLeft, 73)
+        .text("No. 4, North Mada Street, Ambattur, Chennai - 600053, Tamil Nadu, India", headerTextLeft, 85)
+        .text("Phone: +91 99401 35700 | Email: contact@padmanabhafabrics.com", headerTextLeft, 97)
         .font("Helvetica-Bold")
-        .text("GSTIN: 33AAACP1234F1Z5  |  State Code: 33 (Tamil Nadu)", headerTextLeft, 111);
+        .text("GSTIN: 33AAACP1234F1Z5  |  State Code: 33 (Tamil Nadu)", headerTextLeft, 109);
 
       // ----------------------------------------------------
       // RIGHT TOP: TAX INVOICE BADGE & NUMBERS
@@ -275,12 +268,10 @@ export function generateInvoicePdf(data: InvoiceOrderData): Promise<Buffer> {
       const tableTop = 232;
       const col = {
         idx: 40,
-        desc: 65,
-        hsn: 290,
-        qty: 340,
-        price: 380,
-        tax: 440,
-        total: 495,
+        desc: 70,
+        qty: 350,
+        price: 410,
+        total: 485,
       };
 
       // Table Header Row
@@ -294,11 +285,9 @@ export function generateInvoicePdf(data: InvoiceOrderData): Promise<Buffer> {
         .fillColor("#FFFFFF")
         .text("#", col.idx + 5, tableTop + 6)
         .text("ITEM & DESCRIPTION", col.desc, tableTop + 6)
-        .text("HSN", col.hsn, tableTop + 6)
-        .text("QTY", col.qty, tableTop + 6, { width: 35, align: "center" })
-        .text("RATE (₹)", col.price, tableTop + 6, { width: 55, align: "right" })
-        .text("GST", col.tax, tableTop + 6, { width: 50, align: "center" })
-        .text("AMOUNT (₹)", col.total, tableTop + 6, { width: 55, align: "right" });
+        .text("QTY", col.qty, tableTop + 6, { width: 45, align: "center" })
+        .text("PRICE (₹)", col.price, tableTop + 6, { width: 65, align: "right" })
+        .text("TOTAL (₹)", col.total, tableTop + 6, { width: 65, align: "right" });
 
       // Table Body Rows
       let currentY = tableTop + 20;
@@ -310,7 +299,6 @@ export function generateInvoicePdf(data: InvoiceOrderData): Promise<Buffer> {
           doc.rect(40, currentY, 515, rowHeight).fill("#FAFAFA");
         }
 
-        const hsnCode = item.hsn || (item.name.toLowerCase().includes("saree") ? "5007" : "5208");
         const qty = item.quantity || 1;
         const lineTotal = item.price * qty;
 
@@ -334,7 +322,7 @@ export function generateInvoicePdf(data: InvoiceOrderData): Promise<Buffer> {
           .fontSize(8)
           .fillColor(darkColor)
           .text(item.name || "Handcrafted Textile Product", col.desc, currentY + 4, {
-            width: 220,
+            width: 270,
             height: 10,
             ellipsis: true,
           });
@@ -351,42 +339,30 @@ export function generateInvoicePdf(data: InvoiceOrderData): Promise<Buffer> {
             .font("Helvetica")
             .fontSize(7)
             .fillColor(grayColor)
-            .text(subDetail, col.desc, currentY + 14, { width: 220, ellipsis: true });
+            .text(subDetail, col.desc, currentY + 14, { width: 270, ellipsis: true });
         }
-
-        doc
-          .font("Helvetica")
-          .fontSize(8)
-          .fillColor(grayColor)
-          .text(hsnCode, col.hsn, currentY + 7);
 
         doc
           .font("Helvetica-Bold")
           .fontSize(8)
           .fillColor(darkColor)
-          .text(String(qty), col.qty, currentY + 7, { width: 35, align: "center" });
+          .text(String(qty), col.qty, currentY + 7, { width: 45, align: "center" });
 
         doc
           .font("Helvetica")
           .fontSize(8)
           .fillColor(darkColor)
           .text(Number(item.price).toLocaleString("en-IN", { minimumFractionDigits: 2 }), col.price, currentY + 7, {
-            width: 55,
+            width: 65,
             align: "right",
           });
-
-        doc
-          .font("Helvetica")
-          .fontSize(7.5)
-          .fillColor(grayColor)
-          .text("5% (Incl)", col.tax, currentY + 7, { width: 50, align: "center" });
 
         doc
           .font("Helvetica-Bold")
           .fontSize(8)
           .fillColor(darkColor)
           .text(Number(lineTotal).toLocaleString("en-IN", { minimumFractionDigits: 2 }), col.total, currentY + 7, {
-            width: 55,
+            width: 65,
             align: "right",
           });
 
@@ -453,17 +429,12 @@ export function generateInvoicePdf(data: InvoiceOrderData): Promise<Buffer> {
           { width: 250, align: "center" },
         );
 
-      // Right Box: Totals & Tax Calculation
+      // Right Box: Totals & Summary Calculation
       const rightSummaryX = 330;
       const rightWidth = 225;
       const sub = Number(data.subtotal || 0);
       const ship = Number(data.shippingCharge || 0);
       const total = Number(data.totalAmount || sub + ship);
-
-      // Calculate GST breakdown (5% GST inclusive in textiles)
-      // Taxable value = Total / 1.05, GST = Total - Taxable
-      const gstTotal = Math.round((sub * 5) / 105);
-      const isInterstate = (data.shippingState || "Tamil Nadu").toLowerCase() !== "tamil nadu";
 
       let sumY = summaryTop;
       const sumRow = (label: string, valStr: string, isBold: boolean = false, highlight: boolean = false) => {
@@ -479,22 +450,14 @@ export function generateInvoicePdf(data: InvoiceOrderData): Promise<Buffer> {
           .fillColor(highlight ? primaryColor : darkColor)
           .text(valStr, rightSummaryX + 110, sumY, { width: 115, align: "right" });
 
-        sumY += 15;
+        sumY += 16;
       };
 
       sumRow("Items Subtotal:", `₹${sub.toLocaleString("en-IN", { minimumFractionDigits: 2 })}`);
       sumRow(
-        `Shipping (${data.shippingState || "State"}):`,
+        `Shipping (${data.shippingState || "Tamil Nadu"}):`,
         ship > 0 ? `₹${ship.toLocaleString("en-IN", { minimumFractionDigits: 2 })}` : "FREE (₹0.00)",
       );
-
-      if (isInterstate) {
-        sumRow("IGST (5%):", `₹${gstTotal.toLocaleString("en-IN", { minimumFractionDigits: 2 })} (Included)`);
-      } else {
-        const halfGst = (gstTotal / 2).toFixed(2);
-        sumRow("CGST (2.5%):", `₹${halfGst} (Included)`);
-        sumRow("SGST (2.5%):", `₹${halfGst} (Included)`);
-      }
 
       if (data.discountAmount && data.discountAmount > 0) {
         sumRow("Discount:", `-₹${Number(data.discountAmount).toFixed(2)}`);
