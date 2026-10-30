@@ -13,6 +13,7 @@ const INITIAL_ADMIN_PASS = "admin123";
 export interface DatabaseAdapter {
   query<T = any>(sql: string, params?: any[]): Promise<T[]>;
   execute(sql: string, params?: any[]): Promise<any>;
+  getConnection(): Promise<mysql.PoolConnection | null>;
   isMySQL: boolean;
 }
 
@@ -335,6 +336,10 @@ let mysqlPool: mysql.Pool | null = null;
 let isConnectedToMySQL = false;
 const memoryDb = new MemoryDatabase();
 
+export function getPool(): mysql.Pool | null {
+  return mysqlPool;
+}
+
 export async function initDatabase(): Promise<DatabaseAdapter> {
   let host = process.env["DB_HOST"] || process.env["TIDB_HOST"];
   let user = process.env["DB_USER"] || process.env["TIDB_USER"];
@@ -417,6 +422,12 @@ export async function initDatabase(): Promise<DatabaseAdapter> {
       }
       return executeMemoryCommand(sql, params);
     },
+    async getConnection(): Promise<mysql.PoolConnection | null> {
+      if (isConnectedToMySQL && mysqlPool) {
+        return await mysqlPool.getConnection();
+      }
+      return null;
+    },
     get isMySQL() {
       return isConnectedToMySQL;
     },
@@ -452,6 +463,13 @@ async function runMigrations(pool: mysql.Pool) {
       await pool.query("ALTER TABLE product_images ADD COLUMN colour VARCHAR(100)").catch(() => {});
       await pool.query("ALTER TABLE order_items ADD COLUMN colour VARCHAR(100)").catch(() => {});
       await pool.query("ALTER TABLE order_items ADD COLUMN image_url TEXT").catch(() => {});
+      await pool.query("ALTER TABLE orders ADD COLUMN user_id VARCHAR(50)").catch(() => {});
+      await pool.query("ALTER TABLE orders ADD COLUMN phone VARCHAR(50)").catch(() => {});
+      await pool.query("ALTER TABLE orders ADD COLUMN email VARCHAR(255)").catch(() => {});
+      await pool.query("ALTER TABLE orders ADD COLUMN address TEXT").catch(() => {});
+      await pool.query("ALTER TABLE order_items ADD COLUMN image TEXT").catch(() => {});
+      await pool.query("ALTER TABLE order_items ADD COLUMN color VARCHAR(100)").catch(() => {});
+      await pool.query("ALTER TABLE order_items ADD COLUMN price DECIMAL(10,2)").catch(() => {});
       await pool.query("ALTER TABLE cart_items ADD COLUMN colour VARCHAR(100)").catch(() => {});
       await pool.query("ALTER TABLE cart_items ADD COLUMN image_url TEXT").catch(() => {});
       await pool.query("CREATE TABLE IF NOT EXISTS site_settings (setting_key VARCHAR(50) PRIMARY KEY, setting_value LONGTEXT NOT NULL, updated_at BIGINT NOT NULL)").catch(() => {});

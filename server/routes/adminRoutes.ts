@@ -17,6 +17,7 @@ import {
   getOrderById,
   updateOrderStatus,
   updatePaymentStatus,
+  deleteOrder,
   getCustomers,
   updateCustomer,
   deleteCustomer,
@@ -67,6 +68,7 @@ router.get("/orders", getOrders);
 router.get("/orders/:id", getOrderById);
 router.patch("/orders/:id/status", updateOrderStatus);
 router.patch("/orders/:id/payment", updatePaymentStatus);
+router.delete("/orders/:id", deleteOrder);
 
 // Enquiries
 router.get("/enquiries", getEnquiries);

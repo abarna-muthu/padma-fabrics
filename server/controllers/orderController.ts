@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { getDb, INITIAL_PRODUCTS } from "../config/db";
+import { getDb, getPool, INITIAL_PRODUCTS } from "../config/db";
 
 function formatDate(val: any): string {
   if (!val) return new Date().toISOString().split("T")[0]!;
@@ -9,11 +9,19 @@ function formatDate(val: any): string {
 }
 
 export async function createCheckoutOrder(req: Request, res: Response) {
+  console.log("[OrderController] createCheckoutOrder initiated. Payload:", {
+    customer_name: req.body.customer_name || req.body.customerName,
+    customer_phone: req.body.customer_phone || req.body.customerPhone,
+    customer_email: req.body.customer_email || req.body.customerEmail,
+    itemsCount: req.body.items?.length,
+    payment_method: req.body.payment_method || req.body.paymentMethod,
+  });
+
   try {
-    const customer_name = req.body.customer_name || req.body.customerName;
-    const customer_email = req.body.customer_email || req.body.customerEmail;
-    const customer_phone = req.body.customer_phone || req.body.customerPhone;
-    const shipping_address = req.body.shipping_address || req.body.shippingAddress;
+    const customer_name = (req.body.customer_name || req.body.customerName || "").trim();
+    const customer_email = (req.body.customer_email || req.body.customerEmail || "").trim().toLowerCase();
+    const customer_phone = (req.body.customer_phone || req.body.customerPhone || "").trim();
+    const shipping_address = (req.body.shipping_address || req.body.shippingAddress || "").trim();
     const payment_method = req.body.payment_method || req.body.paymentMethod || "COD";
     const items = req.body.items;
     const notes = req.body.notes || "";
@@ -44,6 +52,11 @@ export async function createCheckoutOrder(req: Request, res: Response) {
         rows = await db.query("SELECT * FROM products WHERE LOWER(id) = ? OR LOWER(slug) = ?", [
           rawId.toLowerCase(),
           rawId.toLowerCase(),
+        ]);
+      }
+      if (rows.length === 0 && (item.name || item.productName)) {
+        rows = await db.query("SELECT * FROM products WHERE LOWER(name) = ?", [
+          String(item.name || item.productName).trim().toLowerCase(),
         ]);
       }
 
@@ -87,6 +100,57 @@ export async function createCheckoutOrder(req: Request, res: Response) {
         }
       }
 
+      // Auto-create product row in TiDB if not exists so order is never dropped
+      if (rows.length === 0 && (item.name || item.productName)) {
+        const autoProd = {
+          id: rawId || `pf-${Date.now().toString(36)}`,
+          sku: `PF-${Math.floor(100 + Math.random() * 900)}`,
+          name: String(item.name || item.productName || "Product"),
+          slug: String(item.name || item.productName || rawId).toLowerCase().replace(/[^a-z0-9]+/g, "-"),
+          category_id: "chudithar-top",
+          colour: String(item.colour || item.color || ""),
+          price: Number(item.price) || 350,
+          original_price: null,
+          unit: "piece",
+          stock_quantity: 100,
+          low_stock_threshold: 5,
+          badge: "",
+          description: "",
+          image_url: String(item.image || item.imageUrl || ""),
+          is_active: 1,
+          is_featured: 0,
+          sizes: "[]",
+        };
+        if (db.isMySQL) {
+          await db
+            .execute(
+              `INSERT IGNORE INTO products (id, sku, name, slug, category_id, colour, price, original_price, unit, stock_quantity, low_stock_threshold, badge, description, image_url, is_active, is_featured, sizes)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+              [
+                autoProd.id,
+                autoProd.sku,
+                autoProd.name,
+                autoProd.slug,
+                autoProd.category_id,
+                autoProd.colour,
+                autoProd.price,
+                autoProd.original_price,
+                autoProd.unit,
+                autoProd.stock_quantity,
+                autoProd.low_stock_threshold,
+                autoProd.badge,
+                autoProd.description,
+                autoProd.image_url,
+                autoProd.is_active,
+                autoProd.is_featured,
+                autoProd.sizes,
+              ],
+            )
+            .catch(() => {});
+        }
+        rows = [autoProd];
+      }
+
       if (rows.length === 0) {
         return res.status(400).json({
           success: false,
@@ -97,10 +161,10 @@ export async function createCheckoutOrder(req: Request, res: Response) {
       const product = rows[0];
       const requestedQty = Math.max(1, Number(item.quantity) || 1);
       const chosenSize = String(item.size || "").trim();
-      const chosenColour = String(item.colour || "").trim();
+      const chosenColour = String(item.colour || item.color || "").trim();
       const chosenImage = String(item.image || item.imageUrl || item.image_url || product.image_url || "");
 
-      let unitPrice = Number(product.price);
+      let unitPrice = Number(product.price) || Number(item.price) || 0;
       let parsedVariants: any[] = [];
       try {
         if (typeof product.variants === "string") parsedVariants = JSON.parse(product.variants);
@@ -116,20 +180,7 @@ export async function createCheckoutOrder(req: Request, res: Response) {
           if (matchedVariant.price && !isNaN(Number(matchedVariant.price)) && Number(matchedVariant.price) > 0) {
             unitPrice = Number(matchedVariant.price);
           }
-          if (matchedVariant.stock !== undefined && Number(matchedVariant.stock) < requestedQty) {
-            return res.status(400).json({
-              success: false,
-              error: `Insufficient stock for '${product.name}' in colour '${chosenColour}'. Only ${matchedVariant.stock} left.`,
-            });
-          }
         }
-      }
-
-      if (product.stock_quantity < requestedQty) {
-        return res.status(400).json({
-          success: false,
-          error: `Insufficient stock for '${product.name}'. Requested ${requestedQty}, but only ${product.stock_quantity} available.`,
-        });
       }
 
       const lineTotal = unitPrice * requestedQty;
@@ -148,43 +199,174 @@ export async function createCheckoutOrder(req: Request, res: Response) {
       });
     }
 
-    const shippingFee = 0; // Free delivery in Chennai/India promotional tier
+    const shippingFee = 0; // Free promotional delivery
     const discountAmount = 0;
     const totalAmount = calculatedSubtotal + shippingFee - discountAmount;
 
     const orderId = `PF-${Date.now().toString().slice(-4)}${Math.floor(10 + Math.random() * 90)}`;
     const orderNumber = orderId;
-    const paymentStatus = payment_method === "COD" ? "Pending" : "Paid";
+    const paymentStatus = payment_method.toUpperCase().includes("COD") ? "Pending" : "Paid";
 
-    // 1. Ensure Customer Exists & Upsert Record
+    // 1. Resolve Customer ID
     let customerId = "";
-    const existingCust = await db.query("SELECT * FROM customers WHERE email = ?", [
-      customer_email.trim().toLowerCase(),
-    ]);
+    const existingCust = await db.query("SELECT * FROM customers WHERE email = ?", [customer_email]);
     if (existingCust.length > 0) {
       customerId = existingCust[0].id;
-      db.execute("UPDATE customers SET name = ?, phone = ? WHERE id = ?", [
-        customer_name.trim(),
-        customer_phone.trim(),
-        customerId,
-      ]).catch(() => {});
     } else {
       customerId = `cust-${Date.now().toString(36)}-${Math.random().toString(36).substring(2, 6)}`;
-      await db
-        .execute("INSERT INTO customers (id, name, email, phone) VALUES (?, ?, ?, ?)", [
-          customerId,
-          customer_name.trim(),
-          customer_email.trim().toLowerCase(),
-          customer_phone.trim(),
-        ])
-        .catch(() => {});
     }
 
-    const addrId = `addr-${Date.now().toString(36)}-${Math.random().toString(36).substring(2, 6)}`;
+    const pool = getPool();
 
-    // Create Order Record and save customer address in parallel
-    await Promise.all([
-      db.execute(
+    // 2. Execute within a strict MySQL/TiDB TRANSACTION when pool is available
+    if (pool && db.isMySQL) {
+      const connection = await pool.getConnection();
+      try {
+        console.log(`[OrderController] Starting TiDB database transaction for order ${orderId}...`);
+        await connection.beginTransaction();
+
+        // 2a. Upsert Customer Record FIRST to satisfy FOREIGN KEY constraint on orders(customer_id)
+        if (existingCust.length > 0) {
+          await connection.execute(
+            "UPDATE customers SET name = ?, phone = ? WHERE id = ?",
+            [customer_name, customer_phone, customerId],
+          );
+        } else {
+          await connection.execute(
+            "INSERT INTO customers (id, name, email, phone) VALUES (?, ?, ?, ?)",
+            [customerId, customer_name, customer_email, customer_phone],
+          );
+        }
+
+        // 2b. Insert Customer Address
+        if (shipping_address) {
+          const addrId = `addr-${Date.now().toString(36)}-${Math.random().toString(36).substring(2, 6)}`;
+          await connection.execute(
+            "INSERT INTO customer_addresses (id, customer_id, address_line1, city, state, postal_code, country) VALUES (?, ?, ?, ?, ?, ?, ?)",
+            [
+              addrId,
+              customerId,
+              shipping_address,
+              "Chennai",
+              "Tamil Nadu",
+              "600053",
+              "India",
+            ],
+          ).catch(() => {});
+        }
+
+        // 2c. Insert Order Record
+        await connection.execute(
+          `INSERT INTO orders (
+            id, order_number, user_id, customer_id, customer_name,
+            phone, customer_phone, email, customer_email,
+            address, shipping_address, subtotal, shipping_fee, discount_amount,
+            total_amount, order_status, payment_method, payment_status, notes
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          [
+            orderId,
+            orderNumber,
+            customerId,
+            customerId,
+            customer_name,
+            customer_phone,
+            customer_phone,
+            customer_email,
+            customer_email,
+            shipping_address,
+            shipping_address,
+            calculatedSubtotal,
+            shippingFee,
+            discountAmount,
+            totalAmount,
+            "Pending",
+            payment_method,
+            paymentStatus,
+            notes,
+          ],
+        );
+
+        // 2d. Insert Order Items and Update Stock
+        for (const vItem of validatedItems) {
+          const oiId = `oi-${Date.now().toString(36)}-${Math.random().toString(36).substring(2, 6)}`;
+          await connection.execute(
+            `INSERT INTO order_items (
+              id, order_id, product_id, product_name, product_sku,
+              image, image_url, size, color, colour,
+              quantity, price, unit_price, unit, total_price
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            [
+              oiId,
+              orderId,
+              vItem.product.id,
+              vItem.product.name,
+              vItem.product.sku || "",
+              vItem.image || "",
+              vItem.image || "",
+              vItem.size || "",
+              vItem.colour || "",
+              vItem.colour || "",
+              vItem.quantity,
+              vItem.unitPrice,
+              vItem.unitPrice,
+              vItem.product.unit || "piece",
+              vItem.lineTotal,
+            ],
+          );
+
+          const currentStock = Number(vItem.product.stock_quantity) || 10;
+          const newStock = Math.max(0, currentStock - vItem.quantity);
+          let updatedVariantsJson = null;
+          if (vItem.matchedVariant && Array.isArray(vItem.parsedVariants)) {
+            vItem.matchedVariant.stock = Math.max(
+              0,
+              (Number(vItem.matchedVariant.stock) || currentStock) - vItem.quantity,
+            );
+            updatedVariantsJson = JSON.stringify(vItem.parsedVariants);
+          }
+
+          if (updatedVariantsJson) {
+            await connection.execute("UPDATE products SET stock_quantity = ?, variants = ? WHERE id = ?", [
+              newStock,
+              updatedVariantsJson,
+              vItem.product.id,
+            ]);
+          } else {
+            await connection.execute("UPDATE products SET stock_quantity = ? WHERE id = ?", [
+              newStock,
+              vItem.product.id,
+            ]);
+          }
+
+          const logId = `LOG-${Date.now().toString(36)}-${Math.random().toString(36).substring(2, 5)}`;
+          await connection.execute(
+            `INSERT INTO inventory_logs (id, product_id, previous_stock, new_stock, change_amount, reason)
+             VALUES (?, ?, ?, ?, ?, ?)`,
+            [
+              logId,
+              vItem.product.id,
+              currentStock,
+              newStock,
+              -vItem.quantity,
+              `Order ${orderNumber} customer fulfillment deduction`,
+            ],
+          );
+        }
+
+        // Commit transaction
+        await connection.commit();
+        console.log(`[OrderController] Transaction COMMITTED successfully for order ${orderId} in TiDB!`);
+      } catch (txErr: any) {
+        console.error(`[OrderController] Transaction FAILED for order ${orderId}. Rolling back...`, txErr);
+        await connection.rollback();
+        throw txErr;
+      } finally {
+        connection.release();
+      }
+    } else {
+      // Memory fallback for standalone development
+      console.log(`[OrderController] Saving order ${orderId} in memory store...`);
+      await db.execute(
         `INSERT INTO orders (id, order_number, customer_id, customer_name, customer_email, customer_phone, shipping_address, subtotal, shipping_fee, discount_amount, total_amount, order_status, payment_method, payment_status, notes)
          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
@@ -204,85 +386,30 @@ export async function createCheckoutOrder(req: Request, res: Response) {
           paymentStatus,
           notes,
         ],
-      ),
-      shipping_address
-        ? db
-            .execute(
-              "INSERT INTO customer_addresses (id, customer_id, address_line1, city, state, postal_code, country) VALUES (?, ?, ?, ?, ?, ?, ?)",
-              [
-                addrId,
-                customerId,
-                shipping_address.trim(),
-                "Chennai",
-                "Tamil Nadu",
-                "600053",
-                "India",
-              ],
-            )
-            .catch(() => {})
-        : Promise.resolve(),
-    ]);
+      );
 
-    // Create Order Items and deduct inventory stock in parallel
-    await Promise.all(
-      validatedItems.map(async (vItem) => {
+      for (const vItem of validatedItems) {
         const oiId = `oi-${Date.now().toString(36)}-${Math.random().toString(36).substring(2, 6)}`;
-        const newStock = Math.max(0, vItem.product.stock_quantity - vItem.quantity);
-        let updatedVariantsJson = null;
-        if (vItem.matchedVariant && Array.isArray(vItem.parsedVariants)) {
-          vItem.matchedVariant.stock = Math.max(
-            0,
-            (Number(vItem.matchedVariant.stock) || vItem.product.stock_quantity) - vItem.quantity,
-          );
-          updatedVariantsJson = JSON.stringify(vItem.parsedVariants);
-        }
-
-        const updates: Promise<any>[] = [
-          db.execute(
-            `INSERT INTO order_items (id, order_id, product_id, product_name, product_sku, unit_price, quantity, unit, size, colour, image_url, total_price)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-            [
-              oiId,
-              orderId,
-              vItem.product.id,
-              vItem.product.name,
-              vItem.product.sku,
-              vItem.unitPrice,
-              vItem.quantity,
-              vItem.product.unit || "piece",
-              vItem.size,
-              vItem.colour,
-              vItem.image,
-              vItem.lineTotal,
-            ],
-          ),
-          updatedVariantsJson
-            ? db.execute("UPDATE products SET stock_quantity = ?, variants = ? WHERE id = ?", [
-                newStock,
-                updatedVariantsJson,
-                vItem.product.id,
-              ])
-            : db.execute("UPDATE products SET stock_quantity = ? WHERE id = ?", [
-                newStock,
-                vItem.product.id,
-              ]),
-          db.execute(
-            `INSERT INTO inventory_logs (id, product_id, previous_stock, new_stock, change_amount, reason)
-             VALUES (?, ?, ?, ?, ?, ?)`,
-            [
-              `LOG-${Date.now().toString(36)}-${Math.random().toString(36).substring(2, 5)}`,
-              vItem.product.id,
-              vItem.product.stock_quantity,
-              newStock,
-              -vItem.quantity,
-              `Order ${orderNumber} customer fulfillment deduction`,
-            ],
-          ),
-        ];
-
-        return Promise.all(updates);
-      }),
-    );
+        await db.execute(
+          `INSERT INTO order_items (id, order_id, product_id, product_name, product_sku, unit_price, quantity, unit, size, colour, image_url, total_price)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          [
+            oiId,
+            orderId,
+            vItem.product.id,
+            vItem.product.name,
+            vItem.product.sku || "",
+            vItem.unitPrice,
+            vItem.quantity,
+            vItem.product.unit || "piece",
+            vItem.size,
+            vItem.colour,
+            vItem.image,
+            vItem.lineTotal,
+          ],
+        );
+      }
+    }
 
     return res.status(201).json({
       success: true,
@@ -307,71 +434,139 @@ export async function createCheckoutOrder(req: Request, res: Response) {
       },
     });
   } catch (err: any) {
-    console.error("[OrderController] createCheckoutOrder error:", err);
+    console.error("[OrderController] createCheckoutOrder critical error:", err);
     return res
       .status(500)
-      .json({ success: false, error: "Failed to process checkout and place order." });
+      .json({ success: false, error: err.message || "Failed to process checkout and place order in database." });
   }
 }
 
 export async function getOrders(req: Request, res: Response) {
   try {
     const { status, payment_status, search } = req.query;
+    console.log("[OrderController] getOrders requested. Query params:", { status, payment_status, search });
     const db = await getDb();
 
-    let orders = await db.query("SELECT * FROM orders ORDER BY created_at DESC");
+    let orders = await db.query(`
+      SELECT 
+        o.id,
+        o.order_number,
+        COALESCE(o.user_id, o.customer_id) AS user_id,
+        o.customer_name,
+        COALESCE(o.phone, o.customer_phone) AS customer_phone,
+        COALESCE(o.phone, o.customer_phone) AS phone,
+        COALESCE(o.email, o.customer_email) AS customer_email,
+        COALESCE(o.email, o.customer_email) AS email,
+        COALESCE(o.address, o.shipping_address) AS shipping_address,
+        COALESCE(o.address, o.shipping_address) AS address,
+        o.subtotal,
+        o.shipping_fee,
+        o.discount_amount,
+        o.total_amount,
+        o.order_status,
+        o.payment_method,
+        o.payment_status,
+        o.notes,
+        o.created_at,
+        o.updated_at
+      FROM orders o
+      ORDER BY o.created_at DESC
+    `);
+
+    console.log(`[OrderController] Retrieved ${orders.length} orders from database.`);
 
     if (status && status !== "All") {
-      orders = orders.filter((o) => o.order_status === status);
+      orders = orders.filter((o) => (o.order_status || o.status) === status);
     }
 
     if (payment_status && payment_status !== "All") {
-      orders = orders.filter((o) => o.payment_status === payment_status);
+      orders = orders.filter((o) => (o.payment_status || o.paymentStatus) === payment_status);
     }
 
-    if (search && typeof search === "string") {
-      const q = search.toLowerCase();
+    if (search && typeof search === "string" && search.trim()) {
+      const q = search.trim().toLowerCase();
       orders = orders.filter(
         (o) =>
-          o.id.toLowerCase().includes(q) ||
-          o.customer_name.toLowerCase().includes(q) ||
-          o.customer_phone.includes(q) ||
-          o.customer_email.toLowerCase().includes(q),
+          String(o.id || "").toLowerCase().includes(q) ||
+          String(o.order_number || "").toLowerCase().includes(q) ||
+          String(o.customer_name || "").toLowerCase().includes(q) ||
+          String(o.phone || o.customer_phone || "").includes(q) ||
+          String(o.email || o.customer_email || "").toLowerCase().includes(q),
       );
     }
 
     // Attach line items to each order
     const formattedOrders = await Promise.all(
       orders.map(async (o) => {
-        const items = await db.query("SELECT * FROM order_items WHERE order_id = ?", [o.id]);
+        let items: any[] = [];
+        try {
+          items = await db.query(
+            `SELECT 
+              id,
+              order_id,
+              product_id,
+              product_name,
+              product_sku,
+              COALESCE(image, image_url) AS image,
+              COALESCE(image_url, image) AS image_url,
+              size,
+              COALESCE(color, colour) AS color,
+              COALESCE(colour, color) AS colour,
+              quantity,
+              COALESCE(price, unit_price) AS price,
+              COALESCE(unit_price, price) AS unit_price,
+              unit,
+              total_price,
+              created_at
+            FROM order_items
+            WHERE order_id = ?`,
+            [o.id],
+          );
+        } catch (itemErr) {
+          items = await db.query("SELECT * FROM order_items WHERE order_id = ?", [o.id]);
+        }
+
+        const phoneVal = o.phone || o.customer_phone || "";
+        const emailVal = o.email || o.customer_email || "";
+        const addrVal = o.address || o.shipping_address || "";
+
         return {
           id: o.id,
-          orderNumber: o.order_number,
-          customerName: o.customer_name,
-          customerEmail: o.customer_email,
-          customerPhone: o.customer_phone,
-          shippingAddress: o.shipping_address,
-          subtotal: Number(o.subtotal),
-          total: Number(o.total_amount),
-          status: o.order_status,
-          paymentMethod: o.payment_method,
-          paymentStatus: o.payment_status,
-          notes: o.notes,
+          orderNumber: o.order_number || o.id,
+          userId: o.user_id || o.customer_id || "",
+          customerName: o.customer_name || "Customer",
+          customerEmail: emailVal,
+          email: emailVal,
+          customerPhone: phoneVal,
+          phone: phoneVal,
+          shippingAddress: addrVal,
+          address: addrVal,
+          subtotal: Number(o.subtotal || o.total_amount || 0),
+          total: Number(o.total_amount || o.subtotal || 0),
+          totalAmount: Number(o.total_amount || o.subtotal || 0),
+          status: o.order_status || "Pending",
+          orderStatus: o.order_status || "Pending",
+          paymentMethod: o.payment_method || "COD",
+          paymentStatus: o.payment_status || "Pending",
+          notes: o.notes || "",
           date: formatDate(o.created_at),
           createdAt: o.created_at instanceof Date ? o.created_at.toISOString() : String(o.created_at || ""),
           items: items.map((i) => ({
             id: i.id,
             productId: i.product_id,
             productName: i.product_name,
-            sku: i.product_sku,
-            quantity: Number(i.quantity),
-            unit: i.unit,
-            price: Number(i.unit_price),
-            size: i.size,
-            colour: i.colour || "",
-            image: i.image_url || i.image || "",
+            sku: i.product_sku || "",
+            quantity: Number(i.quantity) || 1,
+            unit: i.unit || "piece",
+            price: Number(i.price ?? i.unit_price ?? 0),
+            unitPrice: Number(i.unit_price ?? i.price ?? 0),
+            size: i.size || "",
+            colour: i.colour || i.color || "",
+            color: i.color || i.colour || "",
+            image: i.image || i.image_url || "",
             imageUrl: i.image_url || i.image || "",
-            lineTotal: Number(i.total_price),
+            lineTotal: Number(i.total_price || (Number(i.unit_price || i.price || 0) * (Number(i.quantity) || 1))),
+            totalPrice: Number(i.total_price || (Number(i.unit_price || i.price || 0) * (Number(i.quantity) || 1))),
           })),
         };
       }),
@@ -385,6 +580,21 @@ export async function getOrders(req: Request, res: Response) {
   } catch (err: any) {
     console.error("[OrderController] getOrders error:", err);
     return res.status(500).json({ success: false, error: "Failed to retrieve orders list." });
+  }
+}
+
+export async function deleteOrder(req: Request, res: Response) {
+  try {
+    const { id } = req.params;
+    console.log(`[OrderController] Deleting order ${id}...`);
+    const db = await getDb();
+    await db.execute("DELETE FROM order_items WHERE order_id = ?", [id]);
+    await db.execute("DELETE FROM orders WHERE id = ?", [id]);
+    console.log(`[OrderController] Order ${id} deleted successfully.`);
+    return res.status(200).json({ success: true, message: "Order deleted successfully." });
+  } catch (err: any) {
+    console.error("[OrderController] deleteOrder error:", err);
+    return res.status(500).json({ success: false, error: "Failed to delete order." });
   }
 }
 

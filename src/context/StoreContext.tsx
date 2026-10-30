@@ -1263,24 +1263,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       const ordersRes = await orderApi.getAll();
       const serverOrders = (ordersRes as any)?.orders || ordersRes.data;
       if (ordersRes.success && Array.isArray(serverOrders)) {
-        const existingLocalOrders = (() => {
-          try {
-            const raw = localStorage.getItem(STORAGE_ORDERS_KEY);
-            return raw ? JSON.parse(raw) : [];
-          } catch {
-            return [];
-          }
-        })();
-        const orderMap = new Map<string, any>();
-        for (const o of existingLocalOrders) {
-          if (o?.id) orderMap.set(o.id, o);
-        }
-        for (const o of serverOrders) {
-          if (o?.id) orderMap.set(o.id, o);
-        }
-        const merged = Array.from(orderMap.values());
-        setOrders(merged);
-        localStorage.setItem(STORAGE_ORDERS_KEY, JSON.stringify(merged));
+        setOrders(serverOrders);
+        localStorage.setItem(STORAGE_ORDERS_KEY, JSON.stringify(serverOrders));
       }
     } catch (err) {
       console.warn("Could not refresh orders:", err);
@@ -1293,7 +1277,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     customerEmail: string;
     customerPhone: string;
     shippingAddress?: string;
-    paymentMethod?: "cod" | "online";
+    paymentMethod?: "cod" | "online" | string;
     items?: Array<{
       productId: string;
       quantity: number;
@@ -1336,73 +1320,14 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
       const orderPayload = res.data || (res as any).order;
       if (res.success && orderPayload) {
-        // Clear bag on successful server-side checkout
+        // Clear bag ONLY after successful server-side save in TiDB
         clearBag();
 
         const resolvedOrderId = orderPayload.orderId || orderPayload.id || `PF-${Date.now().toString().slice(-4)}`;
         const resolvedOrderNumber = orderPayload.orderNumber || orderPayload.id || resolvedOrderId;
 
-        // Immediately record in admin orders with current date
-        const newAdminOrder: Order = {
-          id: resolvedOrderId,
-          orderNumber: resolvedOrderNumber,
-          customerName: details.customerName,
-          customerEmail: details.customerEmail,
-          customerPhone: details.customerPhone,
-          date: new Date().toISOString().split("T")[0] || "",
-          shippingAddress: details.shippingAddress || "Ambattur, Chennai",
-          items:
-            details.items && details.items.length > 0
-              ? details.items.map((it) => {
-                  const prod = productsList.find((p) => p.id === it.productId);
-                  const unitPrice = it.price ?? prod?.price ?? 0;
-                  return {
-                    id: `oi-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
-                    orderId: resolvedOrderId,
-                    productId: it.productId,
-                    productName: it.name || prod?.name || it.productId,
-                    productSku: prod?.sku,
-                    price: unitPrice,
-                    unitPrice: unitPrice,
-                    quantity: it.quantity,
-                    size: it.size,
-                    colour: it.colour,
-                    image: it.image || prod?.image,
-                    unit: prod?.unit || "piece",
-                    totalPrice: unitPrice * it.quantity,
-                  };
-                })
-              : bag.map((b) => {
-                  const prod = productsList.find((p) => p.id === b.id);
-                  return {
-                    id: `oi-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
-                    orderId: resolvedOrderId,
-                    productId: b.id,
-                    productName: prod?.name || b.id,
-                    productSku: prod?.sku,
-                    price: prod?.price || 0,
-                    unitPrice: prod?.price || 0,
-                    quantity: b.quantity,
-                    unit: prod?.unit || "piece",
-                    totalPrice: (prod?.price || 0) * b.quantity,
-                  };
-                }),
-          subtotal: Number(orderPayload.subtotal || orderPayload.totalAmount || 0),
-          shippingFee: 0,
-          discountAmount: 0,
-          total: Number(orderPayload.totalAmount || orderPayload.subtotal || 0),
-          totalAmount: Number(orderPayload.totalAmount || orderPayload.subtotal || 0),
-          status: "Pending",
-          orderStatus: "Pending",
-          paymentMethod: details.paymentMethod === "online" ? "Online UPI" : "COD",
-          paymentStatus: details.paymentMethod === "online" ? "Paid" : "Pending",
-          createdAt: new Date().toISOString(),
-        };
-
-        saveOrders([newAdminOrder, ...orders.filter((o) => o.id !== resolvedOrderId)]);
-
-        // Refresh orders list from backend asynchronously in background without blocking
-        refreshOrders().catch(() => {});
+        // Refresh orders list from backend immediately so admin and user portal see it
+        await refreshOrders().catch(() => {});
 
         return {
           success: true,
@@ -1411,137 +1336,16 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         };
       }
 
-      // If backend explicitly rejected due to verified insufficient stock, return that reason
-      if (res.error && res.error.toLowerCase().includes("insufficient stock")) {
-        return {
-          success: false,
-          error: res.error,
-        };
-      }
-
-      // Graceful standalone fallback if commerce backend is unavailable or had catalog resolution issue
-      console.warn("Backend checkout notice, falling back to local order store:", res.error);
-      const fallbackOrderId = `PF-${Date.now().toString().slice(-4)}${Math.floor(10 + Math.random() * 90)}`;
-      
-      const constructedItems =
-        details.items && details.items.length > 0
-          ? details.items.map((it) => {
-              const prod = productsList.find((p) => p.id === it.productId);
-              const unitPrice = it.price ?? prod?.price ?? 0;
-              return {
-                id: `oi-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
-                orderId: fallbackOrderId,
-                productId: it.productId,
-                productName: it.name || prod?.name || it.productId,
-                productSku: prod?.sku,
-                price: unitPrice,
-                unitPrice: unitPrice,
-                quantity: it.quantity,
-                unit: prod?.unit || "piece",
-                totalPrice: unitPrice * it.quantity,
-              };
-            })
-          : bag.map((b) => {
-              const prod = productsList.find((p) => p.id === b.id);
-              return {
-                id: `oi-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
-                orderId: fallbackOrderId,
-                productId: b.id,
-                productName: prod?.name || b.id,
-                productSku: prod?.sku,
-                price: prod?.price || 0,
-                unitPrice: prod?.price || 0,
-                quantity: b.quantity,
-                unit: prod?.unit || "piece",
-                totalPrice: (prod?.price || 0) * b.quantity,
-              };
-            });
-
-      const calculatedTotal = constructedItems.reduce((acc, item) => acc + item.totalPrice, 0);
-
-      const localNewOrder: Order = {
-        id: fallbackOrderId,
-        orderNumber: fallbackOrderId,
-        customerName: details.customerName,
-        customerEmail: details.customerEmail,
-        customerPhone: details.customerPhone,
-        date: new Date().toISOString().split("T")[0] || "",
-        shippingAddress: details.shippingAddress || "Ambattur, Chennai",
-        items: constructedItems,
-        subtotal: calculatedTotal,
-        shippingFee: 0,
-        discountAmount: 0,
-        total: calculatedTotal,
-        totalAmount: calculatedTotal,
-        status: "Pending",
-        orderStatus: "Pending",
-        paymentMethod: details.paymentMethod === "online" ? "Online UPI" : "COD",
-        paymentStatus: details.paymentMethod === "online" ? "Paid" : "Pending",
-        createdAt: new Date().toISOString(),
-      };
-
-      saveOrders([localNewOrder, ...orders]);
-      clearBag();
-
+      // Return server error to the user if it fails
       return {
-        success: true,
-        orderId: fallbackOrderId,
-        orderNumber: fallbackOrderId,
+        success: false,
+        error: res.error || "Failed to process order in database. Please check your network and try again.",
       };
     } catch (err: any) {
-      console.warn("Checkout execution error, falling back to local order store:", err.message);
-      const fallbackOrderId = `PF-${Date.now().toString().slice(-4)}${Math.floor(10 + Math.random() * 90)}`;
-      const localNewOrder: Order = {
-        id: fallbackOrderId,
-        orderNumber: fallbackOrderId,
-        customerName: details.customerName,
-        customerEmail: details.customerEmail,
-        customerPhone: details.customerPhone,
-        date: new Date().toISOString().split("T")[0] || "",
-        shippingAddress: details.shippingAddress || "Ambattur, Chennai",
-        items: bag.map((b) => {
-          const prod = productsList.find((p) => p.id === b.id);
-          return {
-            id: `oi-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
-            orderId: fallbackOrderId,
-            productId: b.id,
-            productName: prod?.name || b.id,
-            productSku: prod?.sku,
-            price: prod?.price || 0,
-            unitPrice: prod?.price || 0,
-            quantity: b.quantity,
-            unit: prod?.unit || "piece",
-            totalPrice: (prod?.price || 0) * b.quantity,
-          };
-        }),
-        subtotal: bag.reduce((acc, b) => {
-          const prod = productsList.find((p) => p.id === b.id);
-          return acc + (prod?.price || 0) * b.quantity;
-        }, 0),
-        shippingFee: 0,
-        discountAmount: 0,
-        total: bag.reduce((acc, b) => {
-          const prod = productsList.find((p) => p.id === b.id);
-          return acc + (prod?.price || 0) * b.quantity;
-        }, 0),
-        totalAmount: bag.reduce((acc, b) => {
-          const prod = productsList.find((p) => p.id === b.id);
-          return acc + (prod?.price || 0) * b.quantity;
-        }, 0),
-        status: "Pending",
-        orderStatus: "Pending",
-        paymentMethod: details.paymentMethod === "online" ? "Online UPI" : "COD",
-        paymentStatus: details.paymentMethod === "online" ? "Paid" : "Pending",
-        createdAt: new Date().toISOString(),
-      };
-
-      saveOrders([localNewOrder, ...orders]);
-      clearBag();
-
+      console.error("[StoreContext] Checkout error:", err);
       return {
-        success: true,
-        orderId: fallbackOrderId,
-        orderNumber: fallbackOrderId,
+        success: false,
+        error: err.message || "An unexpected error occurred during order creation.",
       };
     }
   };

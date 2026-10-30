@@ -258,8 +258,8 @@ export const orderApi = {
     customerEmail: string;
     customerPhone: string;
     shippingAddress?: string;
-    paymentMethod?: "cod" | "online";
-    items: { productId: string; quantity: number; size?: string }[];
+    paymentMethod?: string;
+    items: { productId: string; quantity: number; size?: string; colour?: string; price?: number; name?: string; image?: string }[];
   }) {
     const body = {
       ...payload,
@@ -267,13 +267,15 @@ export const orderApi = {
       customer_email: payload.customerEmail,
       customer_phone: payload.customerPhone,
       shipping_address: payload.shippingAddress,
-      payment_method: payload.paymentMethod?.toUpperCase() || "ONLINE",
+      payment_method: payload.paymentMethod || "COD",
     };
     return apiRequest<{
       orderId: string;
       orderNumber: string;
       totalAmount: number;
+      subtotal?: number;
       status: string;
+      orderStatus?: string;
     }>("/api/orders/checkout", {
       method: "POST",
       body: JSON.stringify(body),
@@ -291,6 +293,12 @@ export const orderApi = {
     return apiRequest<any>(`/api/orders/${id}/payment-status`, {
       method: "PATCH",
       body: JSON.stringify({ paymentStatus }),
+    });
+  },
+
+  async delete(id: string) {
+    return apiRequest<any>(`/api/orders/${id}`, {
+      method: "DELETE",
     });
   },
 

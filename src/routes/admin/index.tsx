@@ -286,10 +286,20 @@ function AdminDashboardPage() {
     }
   };
 
-  // Auto-refresh orders whenever Admin navigates to Orders tab
+  // Auto-refresh orders on page load, on Orders tab activation, and every 12 seconds via polling
+  useEffect(() => {
+    refreshOrders().catch(() => {});
+
+    const interval = setInterval(() => {
+      refreshOrders().catch(() => {});
+    }, 12000);
+
+    return () => clearInterval(interval);
+  }, []);
+
   useEffect(() => {
     if (activeTab === "orders") {
-      refreshOrders();
+      refreshOrders().catch(() => {});
     }
   }, [activeTab]);
 
@@ -581,12 +591,26 @@ function AdminDashboardPage() {
 
   const handleRemoveGalleryImage = (indexToRemove: number) => {
     setProdImages((prev) => {
+      const removed = prev[indexToRemove];
       const next = prev.filter((_, i) => i !== indexToRemove);
-      if (prodImage === prev[indexToRemove]) {
-        setProdImage(next[0] || "");
+      
+      // Update primary cover image strictly to the first remaining image (next[0])
+      const newCover = next[0] || "";
+      setProdImage(newCover);
+
+      // Clean the removed image from prodVariants so it NEVER resurrects!
+      if (removed) {
+        setProdVariants((vList) =>
+          vList.map((v) => ({
+            ...v,
+            image: v.image === removed ? undefined : v.image,
+            images: Array.isArray(v.images) ? v.images.filter((img) => img !== removed) : [],
+          }))
+        );
       }
       return next;
     });
+    toast.success("Photo removed from gallery");
   };
 
   const handleSetPrimaryImage = (index: number) => {
@@ -676,27 +700,47 @@ function AdminDashboardPage() {
           const uploadRes = await productApi.uploadImage(base64Data, "padma_products");
           if (uploadRes && uploadRes.success && (uploadRes.secure_url || uploadRes.url)) {
             const cloudUrl = uploadRes.secure_url || uploadRes.url;
-            setProdImage(cloudUrl);
-            setProdImages((prev) => Array.from(new Set([...prev, cloudUrl])));
+            setProdImages((prev) => {
+              const updated = Array.from(new Set([...prev, cloudUrl]));
+              if (!prodImage || prev.length === 0) {
+                setProdImage(updated[0] || cloudUrl);
+              }
+              return updated;
+            });
             setImageUploadStatus(`Cloudinary: ${file.name || "Pasted photo"} (uploaded)`);
             toast.success("Photo uploaded to Cloudinary (padma_products)!");
           } else {
-            setProdImage(base64Data);
-            setProdImages((prev) => Array.from(new Set([...prev, base64Data])));
+            setProdImages((prev) => {
+              const updated = Array.from(new Set([...prev, base64Data]));
+              if (!prodImage || prev.length === 0) {
+                setProdImage(updated[0] || base64Data);
+              }
+              return updated;
+            });
             setImageUploadStatus(`${file.name || "Pasted photo"} (local preview)`);
           }
         } catch (uploadErr: any) {
           console.warn("Cloudinary upload fallback to local preview:", uploadErr);
-          setProdImage(base64Data);
-          setProdImages((prev) => Array.from(new Set([...prev, base64Data])));
+          setProdImages((prev) => {
+            const updated = Array.from(new Set([...prev, base64Data]));
+            if (!prodImage || prev.length === 0) {
+              setProdImage(updated[0] || base64Data);
+            }
+            return updated;
+          });
           setImageUploadStatus(`${file.name || "Pasted photo"} (local preview)`);
         } finally {
           setIsUploadingImage(false);
         }
       };
       img.onerror = () => {
-        setProdImage(result);
-        setProdImages((prev) => Array.from(new Set([...prev, result])));
+        setProdImages((prev) => {
+          const updated = Array.from(new Set([...prev, result]));
+          if (!prodImage || prev.length === 0) {
+            setProdImage(updated[0] || result);
+          }
+          return updated;
+        });
         setImageUploadStatus(`${file.name || "Pasted photo"}`);
         setIsUploadingImage(false);
       };
@@ -1027,8 +1071,9 @@ function AdminDashboardPage() {
     e.preventDefault();
     if (!prodName || !prodPrice) return;
 
-    // If image is still a base64 string, upload to Cloudinary now
-    let finalImage = prodImage || (editingProduct ? editingProduct.image : productsList[0]?.image || "");
+    // Cover image is STRICTLY the first image in prodImages (if available) or prodImage
+    const activeCover = (prodImages.length > 0 ? prodImages[0] : prodImage) || "";
+    let finalImage = activeCover || (editingProduct ? editingProduct.image : productsList[0]?.image || "");
     if (finalImage && finalImage.startsWith("data:")) {
       try {
         toast.loading("Saving photo to Cloudinary...", { id: "cloud-save" });
@@ -1067,9 +1112,17 @@ function AdminDashboardPage() {
       });
     }
 
-    const cleanProdImages = prodImages.map((img) => (img.startsWith("data:") && finalImage.startsWith("http") ? finalImage : img));
-    const variantImages = processedVariants.map((v) => v.image).filter(Boolean) as string[];
-    const galleryToSave = Array.from(new Set([finalImage, ...cleanProdImages, ...variantImages])).filter(Boolean);
+    // Strictly save ONLY images in prodImages (with the cover image at index 0)
+    // Deleted images are NEVER re-injected!
+    const cleanProdImages = prodImages.map((img, idx) => {
+      if (idx === 0 && finalImage && finalImage.startsWith("http")) return finalImage;
+      if (img.startsWith("data:") && finalImage.startsWith("http") && img === activeCover) return finalImage;
+      return img;
+    }).filter(Boolean);
+
+    const galleryToSave = cleanProdImages.length > 0
+      ? Array.from(new Set([finalImage, ...cleanProdImages])).filter(Boolean)
+      : (finalImage ? [finalImage] : []);
 
     try {
       if (editingProduct) {
@@ -3034,8 +3087,15 @@ function AdminDashboardPage() {
                           }
                         >
                           <td className="p-3.5 font-sans font-bold text-sm tracking-tight text-foreground">
-                            <div className={o.status === "Cancelled" ? "text-red-700 dark:text-red-400 font-bold" : ""}>
-                              {o.id}
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              <span className={o.status === "Cancelled" ? "text-red-700 dark:text-red-400 font-bold" : ""}>
+                                {o.id}
+                              </span>
+                              {o.status === "Pending" && (
+                                <span className="px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-amber-500/15 text-amber-700 dark:text-amber-400 border border-amber-500/30">
+                                  New
+                                </span>
+                              )}
                             </div>
                           </td>
                           <td className="p-3.5">
@@ -3139,6 +3199,7 @@ function AdminDashboardPage() {
                               }`}
                             >
                               <option value="Pending">Pending (Day 1)</option>
+                              <option value="Confirmed">Confirmed</option>
                               <option value="Processing">Processing (Day 2)</option>
                               <option value="Shipped">Shipped (Day 3+)</option>
                               <option value="Delivered">Delivered</option>
@@ -5149,7 +5210,7 @@ function AdminDashboardPage() {
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 pt-1">
                     {prodImages.map((imgUrl, imgIdx) => (
                       <div
-                        key={imgIdx}
+                        key={`${imgUrl}-${imgIdx}`}
                         className={`relative group bg-card border rounded-xs overflow-hidden shadow-2xs ${
                           imgIdx === 0
                             ? "border-[#D15608] ring-2 ring-[#D15608]/30"
