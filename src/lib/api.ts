@@ -258,6 +258,8 @@ export const orderApi = {
     customerEmail: string;
     customerPhone: string;
     shippingAddress?: string;
+    shippingState?: string;
+    state?: string;
     paymentMethod?: string;
     items: { productId: string; quantity: number; size?: string; colour?: string; price?: number; name?: string; image?: string }[];
   }) {
@@ -267,6 +269,7 @@ export const orderApi = {
       customer_email: payload.customerEmail,
       customer_phone: payload.customerPhone,
       shipping_address: payload.shippingAddress,
+      shipping_state: payload.shippingState || payload.state,
       payment_method: payload.paymentMethod || "COD",
     };
     return apiRequest<{
@@ -274,6 +277,9 @@ export const orderApi = {
       orderNumber: string;
       totalAmount: number;
       subtotal?: number;
+      shippingFee?: number;
+      shippingCharge?: number;
+      shippingState?: string;
       status: string;
       orderStatus?: string;
     }>("/api/orders/checkout", {
@@ -388,6 +394,91 @@ export const contentApi = {
   async reset() {
     return apiRequest<any>("/api/content/reset", {
       method: "POST",
+    });
+  },
+};
+
+// ----------------------------------------------------
+// Shipping Rates API
+// ----------------------------------------------------
+export interface ShippingRateItem {
+  id: string;
+  state: string;
+  charge: number;
+  isActive: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export const shippingApi = {
+  // Public rate check for selected state and subtotal
+  async getRate(state: string, subtotal?: number) {
+    const qs = new URLSearchParams({ state });
+    if (subtotal !== undefined) qs.set("subtotal", String(subtotal));
+    return apiRequest<{
+      success: boolean;
+      state: string;
+      charge: number;
+      finalCharge: number;
+      isFreeShipping: boolean;
+      freeShippingThreshold: number;
+      isActive: boolean;
+      error?: string;
+    }>(`/api/shipping-rate?${qs.toString()}`);
+  },
+
+  // Public list of active states & rates
+  async getRates() {
+    return apiRequest<{
+      success: boolean;
+      count: number;
+      rates: ShippingRateItem[];
+      freeShippingThreshold: number;
+    }>("/api/shipping-rates");
+  },
+
+  // Admin list of all rates
+  async getAdminRates() {
+    return apiRequest<{
+      success: boolean;
+      count: number;
+      rates: ShippingRateItem[];
+      freeShippingThreshold: number;
+    }>("/api/admin/shipping-rates");
+  },
+
+  // Admin update individual state rate
+  async updateRate(id: string, data: { charge?: number; is_active?: boolean; isActive?: boolean }) {
+    return apiRequest<{
+      success: boolean;
+      message: string;
+      rate: ShippingRateItem;
+    }>(`/api/admin/shipping-rates/${encodeURIComponent(id)}`, {
+      method: "PUT",
+      body: JSON.stringify(data),
+    });
+  },
+
+  // Admin bulk update
+  async bulkUpdate(data: { charge?: number; is_active?: boolean; isActive?: boolean; rates?: any[] }) {
+    return apiRequest<{
+      success: boolean;
+      message: string;
+    }>("/api/admin/shipping-rates/bulk", {
+      method: "POST",
+      body: JSON.stringify(data),
+    });
+  },
+
+  // Admin update free shipping settings
+  async updateSettings(data: { free_shipping_threshold: number }) {
+    return apiRequest<{
+      success: boolean;
+      message: string;
+      freeShippingThreshold: number;
+    }>("/api/admin/shipping-rates/settings", {
+      method: "POST",
+      body: JSON.stringify(data),
     });
   },
 };

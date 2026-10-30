@@ -70,7 +70,7 @@ import {
 import { ALL, categories, money, type Product, type ProductVariant, type Order } from "@/lib/catalog";
 import { computeOrderTracking } from "@/lib/orderTracking";
 import { OrderTrackingModal } from "@/components/OrderTrackingModal";
-import { customerApi, productApi } from "@/lib/api";
+import { customerApi, productApi, shippingApi, type ShippingRateItem } from "@/lib/api";
 import { AdminLoginView } from "./login";
 
 export const Route = createFileRoute("/admin/")({
@@ -150,6 +150,7 @@ type AdminTab =
   | "orders"
   | "customers"
   | "sales"
+  | "shipping"
   | "home-content"
   | "about-content"
   | "contact-content"
@@ -297,6 +298,137 @@ function AdminDashboardPage() {
 
     return () => clearInterval(interval);
   }, []);
+
+  // ----------------- SHIPPING CHARGES MANAGEMENT STATE -----------------
+  const [shippingRatesList, setShippingRatesList] = useState<ShippingRateItem[]>([]);
+  const [shippingRatesLoading, setShippingRatesLoading] = useState(false);
+  const [shippingRateSearch, setShippingRateSearch] = useState("");
+  const [freeShippingThresholdInput, setFreeShippingThresholdInput] = useState<string>("0");
+  const [isSavingThreshold, setIsSavingThreshold] = useState(false);
+  const [bulkChargeInput, setBulkChargeInput] = useState<string>("");
+  const [isApplyingBulk, setIsApplyingBulk] = useState(false);
+  const [savingRateId, setSavingRateId] = useState<string | null>(null);
+
+  const fetchShippingRates = async () => {
+    setShippingRatesLoading(true);
+    try {
+      const res = await shippingApi.getAdminRates();
+      if (res && res.success && Array.isArray(res.rates)) {
+        setShippingRatesList(res.rates);
+        setFreeShippingThresholdInput(String(res.freeShippingThreshold || 0));
+      }
+    } catch (err) {
+      console.warn("Could not load admin shipping rates:", err);
+    } finally {
+      setShippingRatesLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (activeTab === "shipping") {
+      fetchShippingRates();
+    }
+  }, [activeTab]);
+
+  const handleUpdateSingleChargeInput = (id: string, newCharge: number) => {
+    setShippingRatesList((prev) =>
+      prev.map((r) => (r.id === id ? { ...r, charge: newCharge } : r)),
+    );
+  };
+
+  const handleToggleRateActive = async (rate: ShippingRateItem) => {
+    const updatedStatus = !rate.isActive;
+    setShippingRatesList((prev) =>
+      prev.map((r) => (r.id === rate.id ? { ...r, isActive: updatedStatus } : r)),
+    );
+
+    try {
+      await shippingApi.updateRate(rate.id, { isActive: updatedStatus });
+      toast.success(`${rate.state} is now ${updatedStatus ? "Active (Delivery Available)" : "Inactive"}`);
+    } catch (err: any) {
+      toast.error(err.message || "Failed to toggle status");
+      setShippingRatesList((prev) =>
+        prev.map((r) => (r.id === rate.id ? { ...r, isActive: rate.isActive } : r)),
+      );
+    }
+  };
+
+  const handleSaveSingleRate = async (rate: ShippingRateItem) => {
+    setSavingRateId(rate.id);
+    try {
+      const res = await shippingApi.updateRate(rate.id, {
+        charge: Number(rate.charge) || 0,
+        isActive: rate.isActive,
+      });
+      if (res && res.success) {
+        toast.success(`Shipping charge for "${rate.state}" saved at ₹${Number(rate.charge) || 0}.`);
+      } else {
+        toast.error("Failed to save shipping rate.");
+      }
+    } catch (err: any) {
+      toast.error(err.message || "Error saving shipping rate.");
+    } finally {
+      setSavingRateId(null);
+    }
+  };
+
+  const handleApplyBulkCharge = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const chargeVal = parseFloat(bulkChargeInput);
+    if (isNaN(chargeVal) || chargeVal < 0) {
+      toast.error("Please enter a valid non-negative shipping charge amount.");
+      return;
+    }
+
+    setIsApplyingBulk(true);
+    try {
+      const res = await shippingApi.bulkUpdate({ charge: chargeVal });
+      if (res && res.success) {
+        toast.success(res.message || `Set standard charge ₹${chargeVal} for all Indian states.`);
+        setShippingRatesList((prev) => prev.map((r) => ({ ...r, charge: chargeVal })));
+        setBulkChargeInput("");
+      } else {
+        toast.error(res?.message || "Failed to apply bulk shipping charge.");
+      }
+    } catch (err: any) {
+      toast.error(err.message || "Failed to apply bulk update.");
+    } finally {
+      setIsApplyingBulk(false);
+    }
+  };
+
+  const handleSaveFreeShippingThreshold = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const thresholdVal = parseFloat(freeShippingThresholdInput);
+    if (isNaN(thresholdVal) || thresholdVal < 0) {
+      toast.error("Please enter a valid amount (or 0 to disable).");
+      return;
+    }
+
+    setIsSavingThreshold(true);
+    try {
+      const res = await shippingApi.updateSettings({ free_shipping_threshold: thresholdVal });
+      if (res && res.success) {
+        toast.success(
+          thresholdVal > 0
+            ? `Free shipping enabled for orders above ₹${thresholdVal.toLocaleString("en-IN")}.`
+            : "Free shipping threshold disabled (standard state charges apply).",
+        );
+      } else {
+        toast.error("Failed to save free shipping threshold.");
+      }
+    } catch (err: any) {
+      toast.error(err.message || "Failed to update settings.");
+    } finally {
+      setIsSavingThreshold(false);
+    }
+  };
+
+  const filteredShippingRates = useMemo(() => {
+    if (!shippingRateSearch.trim()) return shippingRatesList;
+    const q = shippingRateSearch.toLowerCase().trim();
+    return shippingRatesList.filter((r) => r.state.toLowerCase().includes(q));
+  }, [shippingRatesList, shippingRateSearch]);
 
   useEffect(() => {
     if (activeTab === "orders") {
@@ -1839,6 +1971,22 @@ function AdminDashboardPage() {
           <button
             type="button"
             onClick={() => {
+              setActiveTab("shipping");
+              setMobileMenuOpen(false);
+            }}
+            className={`w-full flex items-center gap-3 px-3.5 py-2.5 text-sm font-medium rounded-xl transition-all text-left cursor-pointer ${
+              activeTab === "shipping"
+                ? "bg-[#D15608] text-white font-semibold shadow-xs"
+                : "text-[#0E0E0E] hover:bg-[#FAF7F2] hover:text-black"
+            }`}
+          >
+            <Truck className={`size-4 shrink-0 ${activeTab === "shipping" ? "text-white" : "text-[#D15608]"}`} />
+            <span className={activeTab === "shipping" ? "text-white" : "text-[#0E0E0E]"}>Shipping Charges</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
               setActiveTab("settings");
               setMobileMenuOpen(false);
             }}
@@ -1958,13 +2106,15 @@ function AdminDashboardPage() {
                       ? "Customer Orders"
                       : activeTab === "sales"
                         ? "Sales Overview & Analytics"
-                        : activeTab === "home-content"
-                          ? "Home Page Content Editor"
-                          : activeTab === "about-content"
-                            ? "About Page Content Editor"
-                            : activeTab === "contact-content"
-                              ? "Contact Page Content Editor"
-                              : "Account & Portal Settings"}
+                        : activeTab === "shipping"
+                          ? "State-Wise Shipping Rates & Delivery Controls"
+                          : activeTab === "home-content"
+                            ? "Home Page Content Editor"
+                            : activeTab === "about-content"
+                              ? "About Page Content Editor"
+                              : activeTab === "contact-content"
+                                ? "Contact Page Content Editor"
+                                : "Account & Portal Settings"}
             </h1>
           </div>
 
@@ -4879,6 +5029,333 @@ function AdminDashboardPage() {
             </form>
           </div>
         )}
+
+        {/* ----------------- TAB: SHIPPING CHARGES MANAGEMENT ----------------- */}
+        {activeTab === "shipping" && (
+          <div className="space-y-6 max-w-6xl">
+            {/* Header / Intro banner */}
+            <div className="p-5 bg-white border border-[rgba(14,14,14,0.08)] rounded-2xl shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div>
+                <div className="flex items-center gap-2">
+                  <div className="size-8 rounded-lg bg-[#D15608]/10 text-[#D15608] flex items-center justify-center">
+                    <Truck className="size-4" />
+                  </div>
+                  <h2 className="font-['Cormorant_Garamond'] text-xl sm:text-2xl font-bold text-[#0E0E0E]">
+                    State-Wise Shipping Rates & Logistics Control
+                  </h2>
+                </div>
+                <p className="text-xs text-[#5C5549] mt-1 leading-relaxed max-w-2xl">
+                  Manage doorstep delivery charges across all 36 Indian states and union territories. Rates are recalculated strictly on the server during checkout from TiDB Cloud.
+                </p>
+              </div>
+
+              <div className="flex items-center gap-2 shrink-0">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={fetchShippingRates}
+                  disabled={shippingRatesLoading}
+                  className="text-xs h-9 bg-white text-[#0E0E0E] border-[rgba(14,14,14,0.15)] hover:bg-[#FAF7F2] rounded-xl flex items-center gap-1.5"
+                >
+                  <RefreshCw className={`size-3.5 ${shippingRatesLoading ? "animate-spin" : ""}`} />
+                  <span>Refresh Rates</span>
+                </Button>
+              </div>
+            </div>
+
+            {/* Quick Metrics KPI cards */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div className="p-4 bg-white border border-[rgba(14,14,14,0.08)] rounded-xl shadow-xs">
+                <span className="text-[11px] uppercase tracking-wider font-semibold text-[#5C5549] block">
+                  Total States & UTs
+                </span>
+                <div className="text-2xl font-bold font-sans tabular-nums text-[#0E0E0E] mt-1">
+                  {shippingRatesList.length} Zones
+                </div>
+                <span className="text-[10px] text-emerald-600 font-medium mt-0.5 block">
+                  Pre-filled & indexed in TiDB Cloud
+                </span>
+              </div>
+
+              <div className="p-4 bg-white border border-[rgba(14,14,14,0.08)] rounded-xl shadow-xs">
+                <span className="text-[11px] uppercase tracking-wider font-semibold text-[#5C5549] block">
+                  Active Delivery Coverage
+                </span>
+                <div className="text-2xl font-bold font-sans tabular-nums text-[#D15608] mt-1">
+                  {shippingRatesList.filter((r) => r.isActive).length} / {shippingRatesList.length} Active
+                </div>
+                <span className="text-[10px] text-[#5C5549] mt-0.5 block">
+                  Customers can select active states
+                </span>
+              </div>
+
+              <div className="p-4 bg-white border border-[rgba(14,14,14,0.08)] rounded-xl shadow-xs">
+                <span className="text-[11px] uppercase tracking-wider font-semibold text-[#5C5549] block">
+                  Free Shipping Rule
+                </span>
+                <div className="text-2xl font-bold font-sans tabular-nums text-[#0E0E0E] mt-1">
+                  {Number(freeShippingThresholdInput) > 0
+                    ? `₹${Number(freeShippingThresholdInput).toLocaleString("en-IN")}+`
+                    : "Disabled"}
+                </div>
+                <span className="text-[10px] text-[#5C5549] mt-0.5 block">
+                  {Number(freeShippingThresholdInput) > 0
+                    ? "Orders above threshold get free shipping"
+                    : "Standard state rates apply to all orders"}
+                </span>
+              </div>
+            </div>
+
+            {/* 2 Control Tools: Bulk Uniform Charge & Free Shipping Threshold */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Tool 1: Set same charge for all states */}
+              <div className="p-5 bg-white border border-[rgba(14,14,14,0.08)] rounded-xl shadow-xs space-y-3">
+                <div className="flex items-center gap-2">
+                  <div className="p-1.5 rounded bg-primary/10 text-primary">
+                    <SlidersHorizontal className="size-4" />
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-bold text-[#0E0E0E]">Set Same Charge for All States (Bulk)</h3>
+                    <p className="text-[11px] text-[#5C5549]">
+                      Quickly apply a uniform shipping fee to every state in one click.
+                    </p>
+                  </div>
+                </div>
+
+                <form onSubmit={handleApplyBulkCharge} className="flex items-center gap-2 pt-1">
+                  <div className="relative flex-1">
+                    <span className="absolute left-3 top-2.5 text-xs text-[#5C5549] font-bold">₹</span>
+                    <Input
+                      type="number"
+                      min="0"
+                      step="1"
+                      required
+                      placeholder="e.g. 60 or 0 (Free)"
+                      value={bulkChargeInput}
+                      onChange={(e) => setBulkChargeInput(e.target.value)}
+                      className="pl-7 h-9 text-xs rounded-lg border-[rgba(14,14,14,0.15)] font-sans tabular-nums"
+                    />
+                  </div>
+                  <Button
+                    type="submit"
+                    disabled={isApplyingBulk || !bulkChargeInput}
+                    className="h-9 text-xs px-4 bg-[#D15608] hover:bg-[#9F160A] text-white rounded-lg font-semibold shrink-0 cursor-pointer"
+                  >
+                    {isApplyingBulk ? (
+                      <>
+                        <Loader2 className="size-3.5 animate-spin mr-1.5" />
+                        <span>Applying…</span>
+                      </>
+                    ) : (
+                      <span>Apply to All States</span>
+                    )}
+                  </Button>
+                </form>
+                <p className="text-[10px] text-[#5C5549] italic">
+                  Tip: Enter 0 to offer site-wide Free Shipping for all states.
+                </p>
+              </div>
+
+              {/* Tool 2: Free Shipping Threshold */}
+              <div className="p-5 bg-white border border-[rgba(14,14,14,0.08)] rounded-xl shadow-xs space-y-3">
+                <div className="flex items-center gap-2">
+                  <div className="p-1.5 rounded bg-emerald-500/10 text-emerald-600">
+                    <Sparkles className="size-4" />
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-bold text-[#0E0E0E]">Free Shipping Minimum Order Amount</h3>
+                    <p className="text-[11px] text-[#5C5549]">
+                      Automatically waive shipping fees when customer cart reaches this value.
+                    </p>
+                  </div>
+                </div>
+
+                <form onSubmit={handleSaveFreeShippingThreshold} className="flex items-center gap-2 pt-1">
+                  <div className="relative flex-1">
+                    <span className="absolute left-3 top-2.5 text-xs text-[#5C5549] font-bold">₹</span>
+                    <Input
+                      type="number"
+                      min="0"
+                      step="50"
+                      required
+                      placeholder="e.g. 999 (0 to disable)"
+                      value={freeShippingThresholdInput}
+                      onChange={(e) => setFreeShippingThresholdInput(e.target.value)}
+                      className="pl-7 h-9 text-xs rounded-lg border-[rgba(14,14,14,0.15)] font-sans tabular-nums"
+                    />
+                  </div>
+                  <Button
+                    type="submit"
+                    disabled={isSavingThreshold}
+                    className="h-9 text-xs px-4 bg-[#0E0E0E] hover:bg-black text-white rounded-lg font-semibold shrink-0 cursor-pointer"
+                  >
+                    {isSavingThreshold ? (
+                      <>
+                        <Loader2 className="size-3.5 animate-spin mr-1.5" />
+                        <span>Saving…</span>
+                      </>
+                    ) : (
+                      <span>Save Threshold</span>
+                    )}
+                  </Button>
+                </form>
+                <p className="text-[10px] text-[#5C5549] italic">
+                  Set to 0 to disable free shipping threshold (standard state rate will always apply).
+                </p>
+              </div>
+            </div>
+
+            {/* State-by-State Rates Table */}
+            <div className="bg-white border border-[rgba(14,14,14,0.08)] rounded-2xl shadow-xs overflow-hidden">
+              <div className="p-4 sm:p-5 border-b border-[rgba(14,14,14,0.08)] flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-[#FAF7F2]/40">
+                <div>
+                  <h3 className="font-semibold text-sm text-[#0E0E0E] flex items-center gap-2">
+                    <MapPin className="size-4 text-[#D15608]" />
+                    <span>State & Union Territory Shipping Rates</span>
+                    <span className="text-xs font-normal text-[#5C5549]">
+                      ({filteredShippingRates.length} shown)
+                    </span>
+                  </h3>
+                  <p className="text-[11px] text-[#5C5549] mt-0.5">
+                    Edit any state's fee individually and click Save. Toggle Active on/off to enable or restrict delivery.
+                  </p>
+                </div>
+
+                <div className="relative w-full sm:w-64">
+                  <Search className="absolute left-3 top-2.5 size-3.5 text-[#5C5549]" />
+                  <Input
+                    type="text"
+                    placeholder="Search state or UT..."
+                    value={shippingRateSearch}
+                    onChange={(e) => setShippingRateSearch(e.target.value)}
+                    className="pl-8 h-8 text-xs bg-white rounded-lg border-[rgba(14,14,14,0.15)]"
+                  />
+                </div>
+              </div>
+
+              {shippingRatesLoading ? (
+                <div className="p-12 text-center text-xs text-[#5C5549] flex flex-col items-center justify-center gap-2">
+                  <Loader2 className="size-6 animate-spin text-[#D15608]" />
+                  <span>Loading shipping rates from TiDB Cloud…</span>
+                </div>
+              ) : filteredShippingRates.length === 0 ? (
+                <div className="p-12 text-center text-xs text-[#5C5549] space-y-2">
+                  <p>No states matching "{shippingRateSearch}".</p>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setShippingRateSearch("")}
+                    className="text-xs h-7"
+                  >
+                    Clear Filter
+                  </Button>
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-xs">
+                    <thead className="bg-[#FAF7F2] text-[#5C5549] border-b border-[rgba(14,14,14,0.08)] text-[11px] uppercase tracking-wider font-semibold">
+                      <tr>
+                        <th className="p-3 pl-5 w-12 text-center">#</th>
+                        <th className="p-3">State / Union Territory</th>
+                        <th className="p-3 w-48">Shipping Charge (₹)</th>
+                        <th className="p-3 w-36 text-center">Delivery Status</th>
+                        <th className="p-3 pr-5 w-28 text-right">Action</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-[rgba(14,14,14,0.06)]">
+                      {filteredShippingRates.map((rate, idx) => {
+                        const isSaving = savingRateId === rate.id;
+
+                        return (
+                          <tr key={rate.id} className="hover:bg-[#FAF7F2]/60 transition-colors">
+                            {/* Index */}
+                            <td className="p-3 pl-5 text-center font-mono text-[11px] text-[#5C5549]">
+                              {idx + 1}
+                            </td>
+
+                            {/* State Name */}
+                            <td className="p-3">
+                              <div className="font-semibold text-sm text-[#0E0E0E]">
+                                {rate.state}
+                              </div>
+                              <span className="text-[10px] font-mono text-[#5C5549]">
+                                ID: {rate.id}
+                              </span>
+                            </td>
+
+                            {/* Editable Charge Input */}
+                            <td className="p-3">
+                              <div className="flex items-center gap-1.5 max-w-[160px]">
+                                <span className="font-bold text-xs text-[#5C5549]">₹</span>
+                                <Input
+                                  type="number"
+                                  min="0"
+                                  step="1"
+                                  value={rate.charge}
+                                  onChange={(e) =>
+                                    handleUpdateSingleChargeInput(
+                                      rate.id,
+                                      Math.max(0, parseFloat(e.target.value) || 0),
+                                    )
+                                  }
+                                  className="h-8 text-xs font-bold font-sans tabular-nums rounded-lg border-[rgba(14,14,14,0.18)] bg-white text-[#0E0E0E]"
+                                />
+                                {Number(rate.charge) === 0 && (
+                                  <span className="px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider bg-emerald-500/10 text-emerald-600 shrink-0">
+                                    FREE
+                                  </span>
+                                )}
+                              </div>
+                            </td>
+
+                            {/* Active / Inactive Toggle */}
+                            <td className="p-3 text-center">
+                              <button
+                                type="button"
+                                onClick={() => handleToggleRateActive(rate)}
+                                className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold tracking-wide transition-all cursor-pointer ${
+                                  rate.isActive
+                                    ? "bg-emerald-500/15 text-emerald-700 hover:bg-emerald-500/25 border border-emerald-500/30"
+                                    : "bg-rose-500/10 text-rose-700 hover:bg-rose-500/20 border border-rose-500/30"
+                                }`}
+                                title={rate.isActive ? "Click to deactivate delivery for this state" : "Click to activate delivery for this state"}
+                              >
+                                <span className={`size-2 rounded-full ${rate.isActive ? "bg-emerald-600" : "bg-rose-600"}`} />
+                                <span>{rate.isActive ? "Active" : "Inactive"}</span>
+                              </button>
+                            </td>
+
+                            {/* Save Button */}
+                            <td className="p-3 pr-5 text-right">
+                              <Button
+                                type="button"
+                                size="sm"
+                                disabled={isSaving}
+                                onClick={() => handleSaveSingleRate(rate)}
+                                className="h-8 text-xs px-3 bg-[#D15608] hover:bg-[#9F160A] text-white font-semibold rounded-lg shadow-2xs transition-all cursor-pointer"
+                              >
+                                {isSaving ? (
+                                  <Loader2 className="size-3.5 animate-spin" />
+                                ) : (
+                                  <>
+                                    <Check className="size-3.5 mr-1" />
+                                    <span>Save</span>
+                                  </>
+                                )}
+                              </Button>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
       </main>
 
       {/* ----------------- MODAL: ADD / EDIT PRODUCT ----------------- */}
@@ -6279,7 +6756,13 @@ function AdminDashboardPage() {
                       : "text-xs text-muted-foreground pt-1"
                   }
                 >
+                  <span className="font-semibold text-foreground">Delivery Address: </span>
                   {selectedOrder.shippingAddress}
+                  {selectedOrder.shippingState && (
+                    <span className="inline-block ml-1.5 px-2 py-0.5 rounded-full bg-primary/10 text-primary font-bold text-[10px] uppercase tracking-wide">
+                      {selectedOrder.shippingState}
+                    </span>
+                  )}
                 </div>
               </div>
 
@@ -6319,8 +6802,30 @@ function AdminDashboardPage() {
                     </div>
                   ))}
                 </div>
+
+                {/* Subtotal, State & Shipping breakdown */}
+                <div className="py-2.5 space-y-1.5 text-xs border-b border-border text-muted-foreground">
+                  <div className="flex justify-between">
+                    <span>Items Subtotal:</span>
+                    <span className="font-semibold text-foreground font-sans tabular-nums">
+                      {money(selectedOrder.items.reduce((sum, it) => sum + (it.price * (it.quantity || 1)), 0))}
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span>Delivery State & Shipping Fee:</span>
+                    <span className="font-semibold text-primary font-sans tabular-nums">
+                      {selectedOrder.shippingState ? `${selectedOrder.shippingState}: ` : ""}
+                      {(selectedOrder.shippingCharge !== undefined && Number(selectedOrder.shippingCharge) > 0)
+                        ? money(selectedOrder.shippingCharge)
+                        : (selectedOrder.shippingFee !== undefined && Number(selectedOrder.shippingFee) > 0)
+                          ? money(selectedOrder.shippingFee)
+                          : "FREE (₹0)"}
+                    </span>
+                  </div>
+                </div>
+
                 <div className="flex justify-between font-bold text-base pt-2 text-primary font-sans tabular-nums">
-                  <span>Total Amount</span>
+                  <span>Grand Total Amount</span>
                   <span>{money(selectedOrder.total)}</span>
                 </div>
               </div>

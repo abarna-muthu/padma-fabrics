@@ -27,6 +27,8 @@ import { useCustomerAuth } from "@/context/CustomerAuthContext";
 import { formatPrice } from "@/utils/formatters";
 import { toast } from "sonner";
 import { openRazorpayCheckout } from "@/lib/razorpay";
+import { INDIAN_STATES_AND_UTS } from "@/data/shippingStates";
+import { shippingApi } from "@/lib/api";
 
 export function CheckoutPage() {
   const navigate = useNavigate();
@@ -78,6 +80,58 @@ export function CheckoutPage() {
   const [pincode, setPincode] = useState("");
   const [orderNotes, setOrderNotes] = useState("");
 
+  // Shipping rate state
+  const [shippingCharge, setShippingCharge] = useState<number>(0);
+  const [isFreeShipping, setIsFreeShipping] = useState<boolean>(false);
+  const [freeShippingThreshold, setFreeShippingThreshold] = useState<number>(0);
+  const [isLoadingShipping, setIsLoadingShipping] = useState<boolean>(false);
+
+  // Grand Total calculation (subtotal + dynamic shipping fee)
+  const grandTotal = useMemo(() => {
+    return Math.max(0, checkoutSubtotal + (isFreeShipping ? 0 : shippingCharge));
+  }, [checkoutSubtotal, shippingCharge, isFreeShipping]);
+
+  // Fetch shipping charge whenever stateName or checkoutSubtotal changes
+  useEffect(() => {
+    if (!stateName || !stateName.trim()) {
+      setShippingCharge(0);
+      setIsFreeShipping(false);
+      return;
+    }
+
+    let isCancelled = false;
+    setIsLoadingShipping(true);
+
+    shippingApi
+      .getRate(stateName.trim(), checkoutSubtotal)
+      .then((res) => {
+        if (isCancelled) return;
+        if (res && res.success) {
+          const finalChg = typeof res.finalCharge === "number" ? res.finalCharge : (res.charge || 0);
+          setShippingCharge(finalChg);
+          setIsFreeShipping(!!res.isFreeShipping);
+          if (res.freeShippingThreshold) {
+            setFreeShippingThreshold(res.freeShippingThreshold);
+          }
+        } else {
+          setShippingCharge(0);
+          setIsFreeShipping(false);
+        }
+      })
+      .catch((err) => {
+        if (isCancelled) return;
+        console.warn("Could not retrieve state shipping rate:", err);
+        setShippingCharge(0);
+      })
+      .finally(() => {
+        if (!isCancelled) setIsLoadingShipping(false);
+      });
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [stateName, checkoutSubtotal]);
+
   // Payment method
   const [paymentMethod, setPaymentMethod] = useState<"online" | "cod">("online");
   const [selectedUpiApp, setSelectedUpiApp] = useState<string>("gpay");
@@ -91,6 +145,9 @@ export function CheckoutPage() {
     customerPhone: string;
     customerEmail: string;
     address: string;
+    shippingState: string;
+    subtotal: number;
+    shippingCharge: number;
     totalAmount: number;
     paymentMethod: string;
     date: string;
@@ -131,6 +188,10 @@ export function CheckoutPage() {
     }
     if (!street) {
       setErrorMsg("Please enter your delivery street address / door number.");
+      return;
+    }
+    if (!stateName || !stateName.trim()) {
+      setErrorMsg("Please select your delivery State / Union Territory.");
       return;
     }
     if (!pin || pin.length < 6) {
@@ -175,6 +236,7 @@ export function CheckoutPage() {
             customerEmail: email,
             customerPhone: phone,
             shippingAddress: fullAddress,
+            shippingState: stateName.trim(),
             paymentMethod: paymentMethod === "online" ? `Razorpay (${paymentRef || selectedUpiApp.toUpperCase()})` : "COD",
             items: orderItems,
           });
@@ -194,7 +256,10 @@ export function CheckoutPage() {
               customerPhone: phone,
               customerEmail: email,
               address: fullAddress,
-              totalAmount: checkoutSubtotal,
+              shippingState: stateName.trim(),
+              subtotal: checkoutSubtotal,
+              shippingCharge: isFreeShipping ? 0 : shippingCharge,
+              totalAmount: grandTotal,
               paymentMethod: paymentMethod === "online" ? `Razorpay Online (${paymentRef || selectedUpiApp.toUpperCase()})` : "Cash on Delivery (COD)",
               date: new Date().toLocaleDateString("en-IN", {
                 day: "numeric",
@@ -229,7 +294,7 @@ export function CheckoutPage() {
 
       if (paymentMethod === "online") {
         const launched = await openRazorpayCheckout({
-          amount: checkoutSubtotal,
+          amount: grandTotal,
           name,
           email,
           phone,
@@ -261,7 +326,7 @@ export function CheckoutPage() {
     const whatsappOrderUrl = `https://wa.me/919940135700?text=${encodeURIComponent(
       `Hello Padmanabha Fabrics! I placed Order #${confirmedOrder.orderNumber} for ${confirmedOrder.itemsCount} items (Total: ${formatPrice(
         confirmedOrder.totalAmount,
-      )}).\nName: ${confirmedOrder.customerName}\nPhone: ${confirmedOrder.customerPhone}\nPayment: ${confirmedOrder.paymentMethod}\nPlease confirm dispatch from Ambattur showroom!`,
+      )}).\nName: ${confirmedOrder.customerName}\nPhone: ${confirmedOrder.customerPhone}\nState: ${confirmedOrder.shippingState}\nPayment: ${confirmedOrder.paymentMethod}\nPlease confirm dispatch from Ambattur showroom!`,
     )}`;
 
     return (
@@ -305,6 +370,23 @@ export function CheckoutPage() {
               <span>Delivery Destination</span>
               <span className="font-medium text-[#0E0E0E] dark:text-[#FAF6EE] max-w-xs text-right truncate">
                 {confirmedOrder.address}
+              </span>
+            </div>
+
+            <div className="flex justify-between text-[#5C5549] dark:text-[#B5AC9E]">
+              <span>State / Zone</span>
+              <span className="font-semibold text-[#0E0E0E] dark:text-[#FAF6EE]">{confirmedOrder.shippingState}</span>
+            </div>
+
+            <div className="flex justify-between text-[#5C5549] dark:text-[#B5AC9E] pt-2 border-t border-[#E5DAC4]/60">
+              <span>Items Subtotal</span>
+              <span className="font-medium text-[#0E0E0E] dark:text-[#FAF6EE]">{formatPrice(confirmedOrder.subtotal)}</span>
+            </div>
+
+            <div className="flex justify-between text-[#5C5549] dark:text-[#B5AC9E]">
+              <span>State Shipping Fee</span>
+              <span className="font-semibold text-emerald-600 dark:text-emerald-400">
+                {confirmedOrder.shippingCharge > 0 ? formatPrice(confirmedOrder.shippingCharge) : "FREE (₹0)"}
               </span>
             </div>
 
@@ -510,6 +592,25 @@ export function CheckoutPage() {
               </div>
 
               <div>
+                <label className="block text-[11px] font-semibold text-[#5C5549] dark:text-[#B5AC9E] mb-1">
+                  Delivery State / UT *
+                </label>
+                <select
+                  required
+                  value={stateName}
+                  onChange={(e) => setStateName(e.target.value)}
+                  className="w-full px-3 py-2 rounded-lg border border-[#E5DAC4] dark:border-white/10 bg-[#FAF6EE] dark:bg-black/20 text-[#0E0E0E] dark:text-[#FAF6EE] focus:border-[#D15608] focus:outline-hidden cursor-pointer text-xs"
+                >
+                  <option value="">-- Select Delivery State --</option>
+                  {INDIAN_STATES_AND_UTS.map((st) => (
+                    <option key={st} value={st}>
+                      {st}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="col-span-1 sm:col-span-2">
                 <label className="block text-[11px] font-semibold text-[#5C5549] dark:text-[#B5AC9E] mb-1">
                   Postal Pincode (6 Digits) *
                 </label>
@@ -728,20 +829,48 @@ export function CheckoutPage() {
                   {formatPrice(checkoutSubtotal)}
                 </span>
               </div>
-              <div className="flex justify-between text-[#8A9A7B] font-semibold">
-                <span>Direct Showroom Shipping</span>
-                <span>FREE</span>
+
+              <div className="flex justify-between items-center text-xs">
+                <span className="text-[#5C5549] dark:text-[#B5AC9E] flex items-center gap-1.5">
+                  <Truck className="size-3.5 text-[#D15608]" />
+                  <span>Shipping Charge {stateName ? `(${stateName})` : ""}</span>
+                </span>
+                {isLoadingShipping ? (
+                  <span className="text-muted-foreground flex items-center gap-1 text-[11px]">
+                    <Loader2 className="size-3 animate-spin" /> Calculating…
+                  </span>
+                ) : isFreeShipping ? (
+                  <span className="text-emerald-600 font-bold flex items-center gap-1">
+                    {shippingCharge > 0 && (
+                      <span className="line-through text-muted-foreground/60 font-normal mr-0.5">
+                        {formatPrice(shippingCharge)}
+                      </span>
+                    )}
+                    FREE
+                  </span>
+                ) : (
+                  <span className="font-semibold text-[#0E0E0E] dark:text-[#FAF6EE]">
+                    {shippingCharge > 0 ? formatPrice(shippingCharge) : "FREE (₹0)"}
+                  </span>
+                )}
               </div>
+
+              {freeShippingThreshold > 0 && checkoutSubtotal < freeShippingThreshold && (
+                <div className="text-[10px] text-amber-700 dark:text-amber-300 bg-amber-500/10 border border-amber-500/20 rounded p-1.5 flex items-center gap-1">
+                  <span>💡 Add {formatPrice(freeShippingThreshold - checkoutSubtotal)} more for Free Shipping!</span>
+                </div>
+              )}
+
               <div className="pt-2 border-t border-[#D15608]/20 flex justify-between text-base font-bold text-[#9F160A] dark:text-[#FAF6EE]">
-                <span>Total Amount</span>
-                <span className="text-xl">{formatPrice(checkoutSubtotal)}</span>
+                <span>Grand Total</span>
+                <span className="text-xl">{formatPrice(grandTotal)}</span>
               </div>
             </div>
 
             {/* Place Order CTA */}
             <button
               type="submit"
-              disabled={isSubmitting}
+              disabled={isSubmitting || !stateName}
               className="w-full min-h-[48px] py-3.5 px-4 rounded-xl bg-[#D15608] hover:bg-[#9F160A] disabled:opacity-50 text-white text-xs sm:text-sm font-bold uppercase tracking-wider flex items-center justify-center gap-2 shadow-md hover:shadow-lg transition-all cursor-pointer touch-manipulation"
             >
               {isSubmitting ? (
@@ -752,7 +881,7 @@ export function CheckoutPage() {
               ) : (
                 <>
                   <Lock className="size-3.5" />
-                  <span>Place Order · {formatPrice(checkoutSubtotal)}</span>
+                  <span>Place Order · {formatPrice(grandTotal)}</span>
                 </>
               )}
             </button>

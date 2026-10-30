@@ -22,6 +22,7 @@ export async function createCheckoutOrder(req: Request, res: Response) {
     const customer_email = (req.body.customer_email || req.body.customerEmail || "").trim().toLowerCase();
     const customer_phone = (req.body.customer_phone || req.body.customerPhone || "").trim();
     const shipping_address = (req.body.shipping_address || req.body.shippingAddress || "").trim();
+    const shipping_state = (req.body.shipping_state || req.body.shippingState || req.body.state || "").trim();
     const payment_method = req.body.payment_method || req.body.paymentMethod || "COD";
     const items = req.body.items;
     const notes = req.body.notes || "";
@@ -30,6 +31,13 @@ export async function createCheckoutOrder(req: Request, res: Response) {
       return res.status(400).json({
         success: false,
         error: "Customer name, email, phone number, and delivery address are required.",
+      });
+    }
+
+    if (!shipping_state) {
+      return res.status(400).json({
+        success: false,
+        error: "Delivery state is required. Please select your state to calculate shipping charges.",
       });
     }
 
@@ -199,7 +207,50 @@ export async function createCheckoutOrder(req: Request, res: Response) {
       });
     }
 
-    const shippingFee = 0; // Free promotional delivery
+    // Server-side recalculation of shipping charge strictly from database (never trust client)
+    let shippingFee = 0;
+    let isFreeShipping = false;
+
+    // Check free shipping threshold in site_settings
+    let freeShippingThreshold = 0;
+    try {
+      const thresholdRows = await db.query(
+        "SELECT setting_value FROM site_settings WHERE setting_key = 'free_shipping_threshold'",
+      );
+      if (thresholdRows && thresholdRows.length > 0) {
+        const tVal = Number(thresholdRows[0].setting_value);
+        if (!isNaN(tVal) && tVal > 0) {
+          freeShippingThreshold = tVal;
+        }
+      }
+    } catch (tErr) {
+      console.warn("[OrderController] Could not fetch free shipping threshold:", tErr);
+    }
+
+    if (shipping_state) {
+      try {
+        const rateSlug = "rate-" + shipping_state.toLowerCase().replace(/[^a-z0-9]+/g, "-");
+        const rateRows = await db.query(
+          "SELECT charge, is_active FROM shipping_rates WHERE LOWER(state) = LOWER(?) OR id = ?",
+          [shipping_state, rateSlug],
+        );
+        if (rateRows && rateRows.length > 0) {
+          const r = rateRows[0];
+          if (r.is_active) {
+            shippingFee = Number(r.charge) || 0;
+          }
+        }
+      } catch (rErr) {
+        console.warn(`[OrderController] Error querying shipping rate for state '${shipping_state}':`, rErr);
+      }
+    }
+
+    // Apply free shipping if order qualifies
+    if (freeShippingThreshold > 0 && calculatedSubtotal >= freeShippingThreshold) {
+      isFreeShipping = true;
+      shippingFee = 0;
+    }
+
     const discountAmount = 0;
     const totalAmount = calculatedSubtotal + shippingFee - discountAmount;
 
@@ -248,7 +299,7 @@ export async function createCheckoutOrder(req: Request, res: Response) {
               customerId,
               shipping_address,
               "Chennai",
-              "Tamil Nadu",
+              shipping_state || "Tamil Nadu",
               "600053",
               "India",
             ],
@@ -260,9 +311,9 @@ export async function createCheckoutOrder(req: Request, res: Response) {
           `INSERT INTO orders (
             id, order_number, user_id, customer_id, customer_name,
             phone, customer_phone, email, customer_email,
-            address, shipping_address, subtotal, shipping_fee, discount_amount,
+            address, shipping_address, shipping_state, subtotal, shipping_fee, shipping_charge, discount_amount,
             total_amount, order_status, payment_method, payment_status, notes
-          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
           [
             orderId,
             orderNumber,
@@ -275,7 +326,9 @@ export async function createCheckoutOrder(req: Request, res: Response) {
             customer_email,
             shipping_address,
             shipping_address,
+            shipping_state,
             calculatedSubtotal,
+            shippingFee,
             shippingFee,
             discountAmount,
             totalAmount,
@@ -367,8 +420,8 @@ export async function createCheckoutOrder(req: Request, res: Response) {
       // Memory fallback for standalone development
       console.log(`[OrderController] Saving order ${orderId} in memory store...`);
       await db.execute(
-        `INSERT INTO orders (id, order_number, customer_id, customer_name, customer_email, customer_phone, shipping_address, subtotal, shipping_fee, discount_amount, total_amount, order_status, payment_method, payment_status, notes)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        `INSERT INTO orders (id, order_number, customer_id, customer_name, customer_email, customer_phone, shipping_address, shipping_state, subtotal, shipping_fee, shipping_charge, discount_amount, total_amount, order_status, payment_method, payment_status, notes)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           orderId,
           orderNumber,
@@ -377,7 +430,9 @@ export async function createCheckoutOrder(req: Request, res: Response) {
           customer_email,
           customer_phone,
           shipping_address,
+          shipping_state,
           calculatedSubtotal,
+          shippingFee,
           shippingFee,
           discountAmount,
           totalAmount,
@@ -419,6 +474,11 @@ export async function createCheckoutOrder(req: Request, res: Response) {
         orderNumber,
         totalAmount,
         subtotal: calculatedSubtotal,
+        shippingFee,
+        shippingCharge: shippingFee,
+        shippingState: shipping_state,
+        state: shipping_state,
+        isFreeShipping,
         paymentStatus,
         orderStatus: "Pending",
         itemsCount: validatedItems.length,
@@ -428,6 +488,11 @@ export async function createCheckoutOrder(req: Request, res: Response) {
         orderNumber,
         totalAmount,
         subtotal: calculatedSubtotal,
+        shippingFee,
+        shippingCharge: shippingFee,
+        shippingState: shipping_state,
+        state: shipping_state,
+        isFreeShipping,
         paymentStatus,
         orderStatus: "Pending",
         itemsCount: validatedItems.length,
@@ -459,8 +524,11 @@ export async function getOrders(req: Request, res: Response) {
         COALESCE(o.email, o.customer_email) AS email,
         COALESCE(o.address, o.shipping_address) AS shipping_address,
         COALESCE(o.address, o.shipping_address) AS address,
+        COALESCE(o.shipping_state, '') AS shipping_state,
+        COALESCE(o.shipping_state, '') AS state,
         o.subtotal,
-        o.shipping_fee,
+        COALESCE(o.shipping_charge, o.shipping_fee, 0) AS shipping_charge,
+        COALESCE(o.shipping_fee, o.shipping_charge, 0) AS shipping_fee,
         o.discount_amount,
         o.total_amount,
         o.order_status,
@@ -542,6 +610,10 @@ export async function getOrders(req: Request, res: Response) {
           shippingAddress: addrVal,
           address: addrVal,
           subtotal: Number(o.subtotal || o.total_amount || 0),
+          shippingFee: Number(o.shipping_fee ?? o.shipping_charge ?? 0),
+          shippingCharge: Number(o.shipping_charge ?? o.shipping_fee ?? 0),
+          shippingState: o.shipping_state || o.state || "",
+          state: o.shipping_state || o.state || "",
           total: Number(o.total_amount || o.subtotal || 0),
           totalAmount: Number(o.total_amount || o.subtotal || 0),
           status: o.order_status || "Pending",
@@ -623,8 +695,13 @@ export async function getOrderById(req: Request, res: Response) {
         customerEmail: o.customer_email,
         customerPhone: o.customer_phone,
         shippingAddress: o.shipping_address,
-        subtotal: Number(o.subtotal),
+        shippingState: o.shipping_state || "",
+        state: o.shipping_state || "",
+        subtotal: Number(o.subtotal || o.total_amount || 0),
+        shippingFee: Number(o.shipping_fee ?? o.shipping_charge ?? 0),
+        shippingCharge: Number(o.shipping_charge ?? o.shipping_fee ?? 0),
         total: Number(o.total_amount),
+        totalAmount: Number(o.total_amount),
         status: o.order_status,
         paymentMethod: o.payment_method,
         paymentStatus: o.payment_status,

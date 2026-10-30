@@ -6,6 +6,8 @@ import orderRoutes from "./routes/orderRoutes";
 import contactRoutes from "./routes/contactRoutes";
 import adminRoutes from "./routes/adminRoutes";
 import contentRoutes from "./routes/contentRoutes";
+import shippingRoutes from "./routes/shippingRoutes";
+import { getShippingRate } from "./controllers/shippingController";
 import { getDb } from "./config/db";
 
 export function createApp() {
@@ -63,6 +65,9 @@ export function createApp() {
   app.use("/api/contact", contactRoutes);
   app.use("/api/admin", adminRoutes);
   app.use("/api/content", contentRoutes);
+  app.use("/api/shipping-rates", shippingRoutes);
+  // Direct shortcut as requested: GET /api/shipping-rate?state=<state>
+  app.get("/api/shipping-rate", getShippingRate);
 
   // 404 handler for unmatched API routes
   app.use("/api", (req: Request, res: Response) => {

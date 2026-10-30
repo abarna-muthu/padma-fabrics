@@ -25,6 +25,12 @@ import {
 import { getEnquiries } from "../controllers/contactController";
 import { adminUpdateCredentials, getAdminProfile } from "../controllers/authController";
 import { uploadImage, getUploadSignature } from "../controllers/uploadController";
+import {
+  getAdminShippingRates,
+  updateShippingRate,
+  bulkUpdateShippingRates,
+  updateShippingSettings,
+} from "../controllers/shippingController";
 
 const router = Router();
 
@@ -72,6 +78,13 @@ router.delete("/orders/:id", deleteOrder);
 
 // Enquiries
 router.get("/enquiries", getEnquiries);
+
+// Shipping Rates Management
+router.get("/shipping-rates", getAdminShippingRates);
+router.put("/shipping-rates/:id", updateShippingRate);
+router.post("/shipping-rates/bulk", bulkUpdateShippingRates);
+router.post("/shipping-rates/settings", updateShippingSettings);
+router.put("/shipping-rates/settings", updateShippingSettings);
 
 // Settings
 router.get("/settings/profile", getAdminProfile);

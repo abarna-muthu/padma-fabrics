@@ -222,6 +222,9 @@ export type Order = {
   subtotal?: number;
   totalAmount?: number;
   shippingFee?: number;
+  shippingCharge?: number;
+  shippingState?: string;
+  state?: string;
   discountAmount?: number;
   status: "Pending" | "Processing" | "Shipped" | "Delivered" | "Cancelled";
   orderStatus?: string;

@@ -3,6 +3,7 @@ import mysql from "mysql2/promise";
 import bcrypt from "bcryptjs";
 import fs from "fs";
 import path from "path";
+import { DEFAULT_SHIPPING_RATES } from "../data/shippingData";
 
 dotenv.config();
 
@@ -175,11 +176,13 @@ class MemoryDatabase {
   contact_enquiries: any[] = [];
   site_settings: any[] = [];
   product_reviews: any[] = [];
+  shipping_rates: any[] = [];
 
   constructor() {
     // Seed categories and load persisted products so catalog additions are permanent
     this.categories = [...INITIAL_CATEGORIES];
     this.products = loadPersistedProducts();
+    this.shipping_rates = DEFAULT_SHIPPING_RATES.map((r) => ({ ...r }));
     this.initSeed();
   }
 
@@ -375,6 +378,39 @@ async function runMigrations(pool: mysql.Pool) {
       await pool.query("ALTER TABLE cart_items ADD COLUMN image_url TEXT").catch(() => {});
       await pool.query("CREATE TABLE IF NOT EXISTS site_settings (setting_key VARCHAR(50) PRIMARY KEY, setting_value LONGTEXT NOT NULL, updated_at BIGINT NOT NULL)").catch(() => {});
       await pool.query("CREATE TABLE IF NOT EXISTS product_reviews (id VARCHAR(36) PRIMARY KEY, product_id VARCHAR(50) NOT NULL, customer_name VARCHAR(150) NOT NULL, rating INT NOT NULL DEFAULT 5, comment TEXT NOT NULL, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, INDEX idx_review_product (product_id))").catch(() => {});
+      
+      // Ensure shipping_rates table and orders shipping columns exist
+      await pool.query(`
+        CREATE TABLE IF NOT EXISTS shipping_rates (
+          id VARCHAR(50) PRIMARY KEY,
+          state VARCHAR(100) UNIQUE NOT NULL,
+          charge DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+          is_active TINYINT(1) NOT NULL DEFAULT 1,
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+          INDEX idx_shipping_state (state),
+          INDEX idx_shipping_active (is_active)
+        )
+      `).catch(() => {});
+      await pool.query("ALTER TABLE orders ADD COLUMN shipping_state VARCHAR(100)").catch(() => {});
+      await pool.query("ALTER TABLE orders ADD COLUMN shipping_charge DECIMAL(10,2) DEFAULT 0.00").catch(() => {});
+
+      // Pre-fill default Indian States & UTs shipping rates if table is empty
+      try {
+        const [existingRates]: any = await pool.query("SELECT COUNT(*) as count FROM shipping_rates");
+        if (existingRates && existingRates[0]?.count === 0) {
+          console.log("[Database] Pre-filling shipping_rates for Indian states and UTs...");
+          for (const rate of DEFAULT_SHIPPING_RATES) {
+            await pool.execute(
+              "INSERT IGNORE INTO shipping_rates (id, state, charge, is_active) VALUES (?, ?, ?, ?)",
+              [rate.id, rate.state, rate.charge, 1],
+            );
+          }
+          console.log("[Database] Successfully pre-filled 36 Indian states and UTs into shipping_rates.");
+        }
+      } catch (rateErr: any) {
+        console.warn("[Database] Notice pre-filling shipping rates:", rateErr.message);
+      }
 
       console.log("[Database] Schema migrations applied successfully.");
 
@@ -531,6 +567,19 @@ function executeMemoryQuery<T = any>(sql: string, params: any[] = []): T[] {
         .reverse() as any;
     }
     return [...memoryDb.product_reviews].reverse() as any;
+  }
+
+  // Shipping rates
+  if (normalized.includes("from shipping_rates") && normalized.includes("where lower(state) =")) {
+    const st = String(params[0] || "").toLowerCase().trim();
+    return memoryDb.shipping_rates.filter((r) => r.state.toLowerCase() === st) as any;
+  }
+  if (normalized.includes("from shipping_rates") && (normalized.includes("where id =") || normalized.includes("where state ="))) {
+    const val = String(params[0] || "").toLowerCase().trim();
+    return memoryDb.shipping_rates.filter((r) => r.id.toLowerCase() === val || r.state.toLowerCase() === val) as any;
+  }
+  if (normalized.includes("from shipping_rates")) {
+    return memoryDb.shipping_rates as any;
   }
 
   return [] as any;
@@ -925,6 +974,36 @@ function executeMemoryCommand(sql: string, params: any[] = []): any {
     };
     memoryDb.product_reviews.unshift(rev);
     return { insertId: rev.id, affectedRows: 1 };
+  }
+
+  // Shipping rates update / insert
+  if (normalized.startsWith("update shipping_rates set")) {
+    const charge = Number(params[0]);
+    const isActive = params[1] !== undefined ? (params[1] ? 1 : 0) : 1;
+    const target = String(params[2] || "").toLowerCase().trim();
+    const rate = memoryDb.shipping_rates.find((r) => r.id.toLowerCase() === target || r.state.toLowerCase() === target);
+    if (rate) {
+      rate.charge = charge;
+      rate.is_active = isActive;
+      rate.updated_at = new Date().toISOString();
+      return { affectedRows: 1 };
+    }
+  }
+
+  if (normalized.startsWith("insert ignore into shipping_rates") || normalized.startsWith("insert into shipping_rates")) {
+    const rate = {
+      id: params[0],
+      state: params[1],
+      charge: Number(params[2]) || 0,
+      is_active: params[3] !== undefined ? (params[3] ? 1 : 0) : 1,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    };
+    if (!memoryDb.shipping_rates.some((r) => r.state.toLowerCase() === rate.state.toLowerCase())) {
+      memoryDb.shipping_rates.push(rate);
+      return { insertId: rate.id, affectedRows: 1 };
+    }
+    return { affectedRows: 0 };
   }
 
   return { affectedRows: 0 };

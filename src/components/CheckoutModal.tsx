@@ -29,6 +29,8 @@ import { useStore } from "@/context/StoreContext";
 import { Link } from "@tanstack/react-router";
 import { money, bagTotal } from "@/lib/catalog";
 import { openRazorpayCheckout } from "@/lib/razorpay";
+import { INDIAN_STATES_AND_UTS } from "@/data/shippingStates";
+import { shippingApi } from "@/lib/api";
 
 interface CheckoutModalProps {
   isOpen: boolean;
@@ -52,6 +54,11 @@ export function CheckoutModal({ isOpen, onClose, onOrderSuccess }: CheckoutModal
   const [stateName, setStateName] = useState("Tamil Nadu");
   const [pincode, setPincode] = useState("");
 
+  // Shipping Rate State
+  const [shippingCharge, setShippingCharge] = useState<number>(0);
+  const [isFreeShipping, setIsFreeShipping] = useState<boolean>(false);
+  const [isLoadingShipping, setIsLoadingShipping] = useState<boolean>(false);
+
   // Payment Selection State
   const [paymentMethod, setPaymentMethod] = useState<"online" | "cod">("online");
   const [selectedUpiApp, setSelectedUpiApp] = useState<string>("gpay");
@@ -69,6 +76,45 @@ export function CheckoutModal({ isOpen, onClose, onOrderSuccess }: CheckoutModal
   } | null>(null);
 
   const totalAmount = bagTotal(bag);
+  const grandTotal = Math.max(0, totalAmount + (isFreeShipping ? 0 : shippingCharge));
+
+  // Fetch shipping rate dynamically on stateName or totalAmount change
+  useEffect(() => {
+    if (!stateName || !stateName.trim()) {
+      setShippingCharge(0);
+      setIsFreeShipping(false);
+      return;
+    }
+
+    let isCancelled = false;
+    setIsLoadingShipping(true);
+
+    shippingApi
+      .getRate(stateName.trim(), totalAmount)
+      .then((res) => {
+        if (isCancelled) return;
+        if (res && res.success) {
+          const finalChg = typeof res.finalCharge === "number" ? res.finalCharge : (res.charge || 0);
+          setShippingCharge(finalChg);
+          setIsFreeShipping(!!res.isFreeShipping);
+        } else {
+          setShippingCharge(0);
+          setIsFreeShipping(false);
+        }
+      })
+      .catch((err) => {
+        if (isCancelled) return;
+        console.warn("Could not retrieve modal state shipping rate:", err);
+        setShippingCharge(0);
+      })
+      .finally(() => {
+        if (!isCancelled) setIsLoadingShipping(false);
+      });
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [stateName, totalAmount]);
 
   // Initialize customer fields from session if available
   useEffect(() => {
@@ -110,6 +156,10 @@ export function CheckoutModal({ isOpen, onClose, onOrderSuccess }: CheckoutModal
       setOrderError("Please enter your complete delivery street address / door no.");
       return;
     }
+    if (!stateName.trim()) {
+      setOrderError("Please select your delivery state / UT.");
+      return;
+    }
     if (!pincode.trim()) {
       setOrderError("Please enter your delivery postal pincode.");
       return;
@@ -138,6 +188,7 @@ export function CheckoutModal({ isOpen, onClose, onOrderSuccess }: CheckoutModal
             customerEmail: email,
             customerPhone: phone,
             shippingAddress: fullAddress,
+            shippingState: stateName.trim(),
             paymentMethod: paymentMethod === "online" ? `Razorpay (${paymentRef || "Paid"})` : "COD",
           });
 
@@ -176,7 +227,7 @@ export function CheckoutModal({ isOpen, onClose, onOrderSuccess }: CheckoutModal
               customerPhone: phone,
               customerEmail: email,
               address: fullAddress,
-              totalAmount: totalAmount,
+              totalAmount: grandTotal,
               paymentMethod: paymentMethod === "online" ? "Razorpay Online (Paid)" : "Cash on Delivery (Pending)",
             };
             setConfirmedOrder(orderInfo);
@@ -203,7 +254,7 @@ export function CheckoutModal({ isOpen, onClose, onOrderSuccess }: CheckoutModal
       if (paymentMethod === "online") {
         setPaymentStatusText("Opening Razorpay Payment Gateway…");
         const launched = await openRazorpayCheckout({
-          amount: totalAmount,
+          amount: grandTotal,
           name,
           email,
           phone,
@@ -408,16 +459,22 @@ export function CheckoutModal({ isOpen, onClose, onOrderSuccess }: CheckoutModal
                   </div>
                   <div className="space-y-1.5">
                     <label htmlFor="checkout-state" className="text-xs font-medium text-foreground">
-                      State *
+                      Delivery State *
                     </label>
-                    <Input
+                    <select
                       id="checkout-state"
                       required
                       value={stateName}
                       onChange={(e) => setStateName(e.target.value)}
-                      placeholder="State"
-                      className="h-9 text-xs rounded-none border-border"
-                    />
+                      className="w-full h-9 px-2 text-xs rounded-none border border-border bg-background text-foreground cursor-pointer"
+                    >
+                      <option value="">-- State / UT --</option>
+                      {INDIAN_STATES_AND_UTS.map((st) => (
+                        <option key={st} value={st}>
+                          {st}
+                        </option>
+                      ))}
+                    </select>
                   </div>
                   <div className="space-y-1.5">
                     <label htmlFor="checkout-pin" className="text-xs font-medium text-foreground">
@@ -545,13 +602,29 @@ export function CheckoutModal({ isOpen, onClose, onOrderSuccess }: CheckoutModal
                   <span>Subtotal ({bag.length} items)</span>
                   <span className="font-sans tabular-nums">{money(totalAmount)}</span>
                 </div>
-                <div className="flex justify-between text-muted-foreground">
-                  <span>Delivery Charges</span>
-                  <span className="text-emerald-600 font-semibold uppercase text-[11px]">FREE (Chennai Special)</span>
+                <div className="flex justify-between items-center text-muted-foreground">
+                  <span className="flex items-center gap-1">
+                    <Truck className="size-3 text-primary" />
+                    <span>Shipping Fee ({stateName || "State"})</span>
+                  </span>
+                  {isLoadingShipping ? (
+                    <span className="text-muted-foreground text-[10px] flex items-center gap-1">
+                      <Loader2 className="size-2.5 animate-spin" /> Calculating…
+                    </span>
+                  ) : isFreeShipping ? (
+                    <span className="text-emerald-600 font-semibold uppercase text-[11px]">
+                      {shippingCharge > 0 && <span className="line-through text-muted-foreground/60 mr-1">{money(shippingCharge)}</span>}
+                      FREE
+                    </span>
+                  ) : (
+                    <span className="font-sans tabular-nums font-semibold text-foreground">
+                      {shippingCharge > 0 ? money(shippingCharge) : "FREE (₹0)"}
+                    </span>
+                  )}
                 </div>
                 <div className="flex justify-between text-base font-bold text-primary pt-1 border-t border-border/60">
                   <span>Total Amount Payable</span>
-                  <span className="font-display tabular-nums text-lg">{money(totalAmount)}</span>
+                  <span className="font-display tabular-nums text-lg">{money(grandTotal)}</span>
                 </div>
               </div>
 
@@ -561,7 +634,7 @@ export function CheckoutModal({ isOpen, onClose, onOrderSuccess }: CheckoutModal
                   type="submit"
                   size="default"
                   className="w-full !rounded-xl !h-auto min-h-[50px] py-3.5 px-3 sm:px-6 text-xs sm:text-sm font-bold uppercase tracking-wide shadow-md bg-[#D15608] hover:bg-[#9F160A] text-white flex items-center justify-center gap-2 cursor-pointer transition-all active:scale-[0.99] overflow-hidden"
-                  disabled={isSubmittingOrder}
+                  disabled={isSubmittingOrder || !stateName}
                 >
                   {isSubmittingOrder ? (
                     <span className="flex items-center justify-center gap-2 text-center text-xs sm:text-sm">
@@ -571,14 +644,14 @@ export function CheckoutModal({ isOpen, onClose, onOrderSuccess }: CheckoutModal
                   ) : paymentMethod === "online" ? (
                     <>
                       <Zap className="size-4 shrink-0 fill-amber-300 text-amber-300" />
-                      <span className="truncate sm:hidden">Pay & Confirm · {money(totalAmount)}</span>
-                      <span className="hidden sm:inline">Proceed to Pay & Confirm · {money(totalAmount)}</span>
+                      <span className="truncate sm:hidden">Pay & Confirm · {money(grandTotal)}</span>
+                      <span className="hidden sm:inline">Proceed to Pay & Confirm · {money(grandTotal)}</span>
                     </>
                   ) : (
                     <>
                       <CheckCircle2 className="size-4 shrink-0 text-white" />
-                      <span className="truncate sm:hidden">Confirm COD Order · {money(totalAmount)}</span>
-                      <span className="hidden sm:inline">Confirm Cash on Delivery Order · {money(totalAmount)}</span>
+                      <span className="truncate sm:hidden">Confirm COD Order · {money(grandTotal)}</span>
+                      <span className="hidden sm:inline">Confirm Cash on Delivery Order · {money(grandTotal)}</span>
                     </>
                   )}
                 </Button>

@@ -83,7 +83,9 @@ interface StoreContextType {
     customerEmail: string;
     customerPhone: string;
     shippingAddress?: string;
-    paymentMethod?: "cod" | "online";
+    shippingState?: string;
+    state?: string;
+    paymentMethod?: "cod" | "online" | string;
     items?: Array<{
       productId: string;
       quantity: number;
@@ -1343,6 +1345,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     customerEmail: string;
     customerPhone: string;
     shippingAddress?: string;
+    shippingState?: string;
+    state?: string;
     paymentMethod?: "cod" | "online" | string;
     items?: Array<{
       productId: string;
@@ -1380,6 +1384,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         customerEmail: details.customerEmail,
         customerPhone: details.customerPhone,
         ...(details.shippingAddress ? { shippingAddress: details.shippingAddress } : {}),
+        shippingState: details.shippingState || details.state,
         paymentMethod: details.paymentMethod || "cod",
         items,
       });
