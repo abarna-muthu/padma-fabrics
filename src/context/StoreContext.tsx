@@ -454,11 +454,22 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
     hydrateStorage();
 
+    const isDummyOrder = (o: any) =>
+      o?.customerEmail?.includes("@example.com") ||
+      o?.customerName === "Pooja Venkatesh" ||
+      o?.customerName === "Karthik Subramanian" ||
+      o?.id?.startsWith("PF-TEST-") ||
+      ["PF-1081", "PF-1082", "PF-1083"].includes(o?.id);
+
     const storedOrders = localStorage.getItem(STORAGE_ORDERS_KEY);
     if (storedOrders) {
       try {
         const parsed = JSON.parse(storedOrders);
-        if (Array.isArray(parsed)) setOrders(parsed);
+        if (Array.isArray(parsed)) {
+          const cleanOrders = parsed.filter((o) => !isDummyOrder(o));
+          setOrders(cleanOrders);
+          localStorage.setItem(STORAGE_ORDERS_KEY, JSON.stringify(cleanOrders));
+        }
       } catch {}
     }
     const storedLogs = localStorage.getItem(STORAGE_STOCK_LOGS_KEY);
@@ -616,26 +627,17 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
         const ordersRes = await orderApi.getAll();
         const serverOrders = (ordersRes as any)?.orders || ordersRes.data;
-        if (ordersRes.success && Array.isArray(serverOrders) && serverOrders.length > 0) {
-          // Merge with any local orders so nothing is lost
-          const existingLocalOrders = (() => {
-            try {
-              const raw = localStorage.getItem(STORAGE_ORDERS_KEY);
-              return raw ? JSON.parse(raw) : [];
-            } catch {
-              return [];
-            }
-          })();
-          const orderMap = new Map<string, any>();
-          for (const o of existingLocalOrders) {
-            if (o?.id) orderMap.set(o.id, o);
-          }
-          for (const o of serverOrders) {
-            if (o?.id) orderMap.set(o.id, o);
-          }
-          const mergedOrders = Array.from(orderMap.values());
-          setOrders(mergedOrders);
-          localStorage.setItem(STORAGE_ORDERS_KEY, JSON.stringify(mergedOrders));
+        if (ordersRes.success && Array.isArray(serverOrders)) {
+          const isDummyOrder = (o: any) =>
+            o?.customerEmail?.includes("@example.com") ||
+            o?.customerName === "Pooja Venkatesh" ||
+            o?.customerName === "Karthik Subramanian" ||
+            o?.id?.startsWith("PF-TEST-") ||
+            ["PF-1081", "PF-1082", "PF-1083"].includes(o?.id);
+
+          const cleanOrders = serverOrders.filter((o: any) => !isDummyOrder(o));
+          setOrders(cleanOrders);
+          localStorage.setItem(STORAGE_ORDERS_KEY, JSON.stringify(cleanOrders));
         }
 
         const invRes = await inventoryApi.getAll();
@@ -1263,8 +1265,16 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       const ordersRes = await orderApi.getAll();
       const serverOrders = (ordersRes as any)?.orders || ordersRes.data;
       if (ordersRes.success && Array.isArray(serverOrders)) {
-        setOrders(serverOrders);
-        localStorage.setItem(STORAGE_ORDERS_KEY, JSON.stringify(serverOrders));
+        const isDummyOrder = (o: any) =>
+          o?.customerEmail?.includes("@example.com") ||
+          o?.customerName === "Pooja Venkatesh" ||
+          o?.customerName === "Karthik Subramanian" ||
+          o?.id?.startsWith("PF-TEST-") ||
+          ["PF-1081", "PF-1082", "PF-1083"].includes(o?.id);
+
+        const cleanOrders = serverOrders.filter((o: any) => !isDummyOrder(o));
+        setOrders(cleanOrders);
+        localStorage.setItem(STORAGE_ORDERS_KEY, JSON.stringify(cleanOrders));
       }
     } catch (err) {
       console.warn("Could not refresh orders:", err);
