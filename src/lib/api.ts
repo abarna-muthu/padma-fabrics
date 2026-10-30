@@ -360,7 +360,8 @@ export const orderApi = {
       throw new Error(errorMsg);
     }
 
-    const blob = await response.blob();
+    const rawBlob = await response.blob();
+    const blob = new Blob([rawBlob], { type: "application/pdf" });
     const contentDisposition = response.headers.get("content-disposition");
     let filename = `Invoice-${cleanId}.pdf`;
     if (contentDisposition) {
@@ -372,10 +373,13 @@ export const orderApi = {
     const a = document.createElement("a");
     a.href = blobUrl;
     a.download = filename;
+    a.target = "_blank";
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
-    window.URL.revokeObjectURL(blobUrl);
+    setTimeout(() => {
+      window.URL.revokeObjectURL(blobUrl);
+    }, 2000);
   },
 };
 

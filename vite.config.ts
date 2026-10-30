@@ -5,15 +5,30 @@
 //     React/TanStack dedupe, error logger plugins, and sandbox detection (port/host/strictPort).
 // You can pass additional config via defineConfig({ vite: { ... }, etc... }) if needed.
 import { defineConfig } from "@lovable.dev/vite-tanstack-config";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const pdfkitStandalonePath = path.resolve(__dirname, "node_modules/pdfkit/js/pdfkit.standalone.js");
 
 export default defineConfig({
-  nitro: process.env.VERCEL ? { preset: "vercel" } : undefined,
+  nitro: {
+    preset: process.env.VERCEL ? "vercel" : undefined,
+    alias: {
+      pdfkit: pdfkitStandalonePath,
+    },
+  },
   tanstackStart: {
     // Redirect TanStack Start's bundled server entry to src/server.ts (our SSR error wrapper).
     // nitro/vite builds from this
     server: { entry: "server" },
   },
   vite: {
+    resolve: {
+      alias: {
+        pdfkit: pdfkitStandalonePath,
+      },
+    },
     server: {
       proxy: {
         "/api": {
