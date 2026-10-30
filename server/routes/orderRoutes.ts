@@ -7,12 +7,14 @@ import {
   updatePaymentStatus,
   deleteOrder,
   cancelOrder,
+  downloadOrderInvoice,
 } from "../controllers/orderController";
 
 const router = Router();
 
 router.get("/", getOrders);
 router.post("/checkout", createCheckoutOrder);
+router.get("/:id/invoice", downloadOrderInvoice);
 router.get("/:id", getOrderById);
 router.patch("/:id/status", updateOrderStatus);
 router.patch("/:id/payment", updatePaymentStatus);

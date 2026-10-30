@@ -10,3 +10,4 @@ router.get("/", getPublicShippingRates);
 router.get("/rate", getShippingRate);
 
 export default router;
+

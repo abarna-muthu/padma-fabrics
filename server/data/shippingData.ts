@@ -56,3 +56,4 @@ export const DEFAULT_SHIPPING_RATES: ShippingRateRecord[] = INDIAN_STATES_AND_UT
   charge: 0,
   is_active: 1,
 }));
+

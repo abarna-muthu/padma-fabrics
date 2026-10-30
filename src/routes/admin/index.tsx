@@ -49,6 +49,8 @@ import {
   Truck,
   Camera,
   Clipboard,
+  Printer,
+  Loader2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
@@ -70,7 +72,7 @@ import {
 import { ALL, categories, money, type Product, type ProductVariant, type Order } from "@/lib/catalog";
 import { computeOrderTracking } from "@/lib/orderTracking";
 import { OrderTrackingModal } from "@/components/OrderTrackingModal";
-import { customerApi, productApi, shippingApi, type ShippingRateItem } from "@/lib/api";
+import { customerApi, productApi, shippingApi, orderApi, getAdminToken, type ShippingRateItem } from "@/lib/api";
 import { AdminLoginView } from "./login";
 
 export const Route = createFileRoute("/admin/")({
@@ -1634,116 +1636,41 @@ function AdminDashboardPage() {
     return filteredOrders.slice(start, start + orderItemsPerPage);
   }, [filteredOrders, orderCurrentPage, orderItemsPerPage, totalOrderPages]);
 
-  // Download single order receipt / invoice (HTML format)
-  const handleDownloadSingleOrder = (order: Order) => {
-    const tracking = computeOrderTracking(order);
-    const dateStr = order.date || (order.createdAt ? order.createdAt.split("T")[0] : new Date().toISOString().split("T")[0]);
-    const itemsHtml = order.items
-      .map(
-        (it) => `
-        <tr>
-          <td style="padding: 10px; border-bottom: 1px solid #eee;">${it.productName || "Product"}</td>
-          <td style="padding: 10px; border-bottom: 1px solid #eee; text-align: center;">${it.size || "Standard"}</td>
-          <td style="padding: 10px; border-bottom: 1px solid #eee; text-align: center;">${it.quantity}</td>
-          <td style="padding: 10px; border-bottom: 1px solid #eee; text-align: right;">₹${(it.price || 0).toLocaleString("en-IN")}</td>
-          <td style="padding: 10px; border-bottom: 1px solid #eee; text-align: right; font-weight: bold;">₹${((it.price || 0) * it.quantity).toLocaleString("en-IN")}</td>
-        </tr>
-      `
-      )
-      .join("");
+  const [downloadingOrderId, setDownloadingOrderId] = useState<string | null>(null);
 
-    const invoiceHtml = `<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="utf-8" />
-  <title>Invoice - ${order.id} - Padmanabha Fabrics</title>
-  <style>
-    body { font-family: 'Poppins', Arial, sans-serif; margin: 0; padding: 20px; background: #fff; color: #111; }
-    .invoice-box { max-width: 800px; margin: auto; padding: 30px; border: 1px solid #eee; border-radius: 8px; }
-    .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #D15608; padding-bottom: 15px; margin-bottom: 25px; }
-    .title { font-size: 24px; font-weight: bold; color: #9F160A; letter-spacing: 2px; }
-    .subtitle { font-size: 11px; color: #EDBC3D; letter-spacing: 1px; }
-    .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 25px; font-size: 13px; line-height: 1.6; }
-    .table { width: 100%; border-collapse: collapse; margin-bottom: 25px; font-size: 13px; }
-    .table th { background: #FAF7F2; padding: 10px; text-align: left; border-bottom: 2px solid #ddd; }
-    .total-box { text-align: right; margin-top: 15px; font-size: 15px; }
-    .total-amount { font-size: 20px; color: #9F160A; font-weight: bold; }
-    .footer { text-align: center; margin-top: 30px; font-size: 11px; color: #777; border-top: 1px solid #eee; padding-top: 15px; }
-    @media print { body { padding: 0; } .invoice-box { border: none; padding: 0; } }
-  </style>
-</head>
-<body>
-  <div class="invoice-box">
-    <div class="header">
-      <div>
-        <div class="title">PADMANABHA FABRICS</div>
-        <div class="subtitle">CHENNAI · RETAIL & WHOLESALE</div>
-      </div>
-      <div style="text-align: right;">
-        <h2 style="margin: 0; font-size: 18px; color: #333;">ORDER INVOICE</h2>
-        <div style="font-size: 13px; color: #666;">Order #${order.id}</div>
-        <div style="font-size: 12px; color: #888;">Date: ${dateStr}</div>
-      </div>
-    </div>
+  // Download official server-generated PDF Tax Invoice
+  const handleDownloadSingleOrder = async (order: Order) => {
+    try {
+      setDownloadingOrderId(order.id);
+      toast.info(`Generating official PDF invoice for Order #${order.id}...`);
+      await orderApi.downloadInvoice(order.id, order.customerEmail, order.customerPhone);
+      toast.success(`Tax invoice for Order #${order.id} downloaded successfully!`);
+    } catch (err: any) {
+      console.error("Invoice download error:", err);
+      toast.error(err.message || `Failed to download invoice for #${order.id}.`);
+    } finally {
+      setDownloadingOrderId(null);
+    }
+  };
 
-    <div class="info-grid">
-      <div>
-        <strong>Customer Details:</strong><br />
-        ${order.customerName}<br />
-        Phone: ${order.customerPhone}<br />
-        Email: ${order.customerEmail || "N/A"}<br />
-        Address: ${order.shippingAddress || "Menambedu, Ambattur, Chennai"}
-      </div>
-      <div style="text-align: right;">
-        <strong>Order Summary:</strong><br />
-        Fulfillment Status: <span style="font-weight: bold; color: #9F160A;">${tracking.effectiveStatus}</span><br />
-        Estimated Delivery: ${order.deliveryDays || 5} Days<br />
-        Payment Status: ${order.paymentStatus || "Paid"}<br />
-        Payment Method: ${order.paymentMethod || "Online / COD"}
-      </div>
-    </div>
-
-    <table class="table">
-      <thead>
-        <tr>
-          <th>Item Description</th>
-          <th style="text-align: center;">Size</th>
-          <th style="text-align: center;">Qty</th>
-          <th style="text-align: right;">Unit Price</th>
-          <th style="text-align: right;">Total</th>
-        </tr>
-      </thead>
-      <tbody>
-        ${itemsHtml}
-      </tbody>
-    </table>
-
-    <div class="total-box">
-      <div>Subtotal: ₹${order.total.toLocaleString("en-IN")}</div>
-      <div>Delivery: ₹0 (Free Delivery)</div>
-      <div style="margin-top: 8px;">
-        Grand Total: <span class="total-amount">₹${order.total.toLocaleString("en-IN")}</span>
-      </div>
-    </div>
-
-    <div class="footer">
-      Padmanabha Fabrics · Menambedu, Ambattur, Chennai - 600053 · Phone: +91 99401 35700<br />
-      Thank you for your order! Handcrafted Weaves & Fine Indian Apparel.
-    </div>
-  </div>
-</body>
-</html>`;
-
-    const blob = new Blob([invoiceHtml], { type: "text/html;charset=utf-8" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = `Invoice-${order.id}.html`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
-    toast.success(`Invoice for #${order.id} downloaded!`);
+  // Open invoice in new window for direct print preview
+  const handlePrintSingleOrder = (order: Order) => {
+    try {
+      const cleanId = String(order.id).replace(/^#/, "").trim();
+      const token = getAdminToken();
+      const qs = new URLSearchParams();
+      if (token) qs.set("token", token);
+      if (order.customerEmail) qs.set("customerEmail", order.customerEmail);
+      const apiBase = ((import.meta as any).env?.VITE_API_URL || "").replace(/\/$/, "");
+      const invoiceUrl = `${apiBase}/api/orders/${cleanId}/invoice${qs.toString() ? `?${qs.toString()}` : ""}`;
+      const printWin = window.open(invoiceUrl, "_blank");
+      if (!printWin) {
+        toast.info("Pop-up blocked. Downloading invoice instead.");
+        handleDownloadSingleOrder(order);
+      }
+    } catch (err: any) {
+      toast.error(err.message || "Could not open invoice print window.");
+    }
   };
 
   // Export / Download all orders as CSV
@@ -3370,10 +3297,15 @@ function AdminDashboardPage() {
                       <button
                         type="button"
                         onClick={() => handleDownloadSingleOrder(o)}
-                        className="flex-1 py-1.5 px-2 text-xs rounded border border-border bg-background hover:border-gold hover:bg-gold/15 text-gold flex items-center justify-center gap-1 transition-colors cursor-pointer"
-                        title="Download Invoice"
+                        disabled={downloadingOrderId === o.id}
+                        className="flex-1 py-1.5 px-2 text-xs rounded border border-border bg-background hover:border-gold hover:bg-gold/15 text-gold flex items-center justify-center gap-1 transition-colors cursor-pointer disabled:opacity-50"
+                        title="Download PDF Invoice"
                       >
-                        <Download className="size-3.5" />
+                        {downloadingOrderId === o.id ? (
+                          <Loader2 className="size-3.5 animate-spin" />
+                        ) : (
+                          <Download className="size-3.5" />
+                        )}
                         <span>Invoice</span>
                       </button>
                       <button
@@ -3573,11 +3505,16 @@ function AdminDashboardPage() {
                               <button
                                 type="button"
                                 onClick={() => handleDownloadSingleOrder(o)}
-                                className="size-8 rounded flex items-center justify-center border border-border bg-background hover:border-gold hover:bg-gold/15 text-gold transition-colors cursor-pointer"
-                                title="Download Order Invoice (HTML)"
+                                disabled={downloadingOrderId === o.id}
+                                className="size-8 rounded flex items-center justify-center border border-border bg-background hover:border-gold hover:bg-gold/15 text-gold transition-colors cursor-pointer disabled:opacity-50"
+                                title="Download Order PDF Invoice"
                                 aria-label="Download Order Invoice"
                               >
-                                <Download className="size-3.5" />
+                                {downloadingOrderId === o.id ? (
+                                  <Loader2 className="size-3.5 animate-spin" />
+                                ) : (
+                                  <Download className="size-3.5" />
+                                )}
                               </button>
 
                               {/* EDIT ORDER ICON BUTTON */}
@@ -6907,10 +6844,25 @@ function AdminDashboardPage() {
                   type="button"
                   variant="outline"
                   size="sm"
+                  disabled={downloadingOrderId === selectedOrder.id}
                   onClick={() => handleDownloadSingleOrder(selectedOrder)}
-                  className="text-xs h-8 border-gold/40 text-gold hover:bg-gold/10 inline-flex items-center gap-1"
+                  className="text-xs h-8 border-gold/40 text-gold hover:bg-gold/10 inline-flex items-center gap-1 cursor-pointer"
                 >
-                  <Download className="size-3.5" /> Download Invoice
+                  {downloadingOrderId === selectedOrder.id ? (
+                    <Loader2 className="size-3.5 animate-spin" />
+                  ) : (
+                    <Download className="size-3.5" />
+                  )}
+                  <span>Download Invoice (PDF)</span>
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handlePrintSingleOrder(selectedOrder)}
+                  className="text-xs h-8 border-border hover:bg-secondary/40 text-foreground inline-flex items-center gap-1 cursor-pointer"
+                >
+                  <Printer className="size-3.5" /> Print Invoice
                 </Button>
               </div>
               <Button variant="outline" size="sm" onClick={() => setSelectedOrder(null)}>

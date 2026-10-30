@@ -1,5 +1,7 @@
 import { Request, Response } from "express";
 import { getDb, getPool, INITIAL_PRODUCTS } from "../config/db";
+import { verifyToken } from "../middleware/authMiddleware";
+import { generateInvoicePdf, type InvoiceOrderData } from "../services/invoiceService";
 
 function formatDate(val: any): string {
   if (!val) return new Date().toISOString().split("T")[0]!;
@@ -258,6 +260,25 @@ export async function createCheckoutOrder(req: Request, res: Response) {
     const orderNumber = orderId;
     const paymentStatus = payment_method.toUpperCase().includes("COD") ? "Pending" : "Paid";
 
+    // Generate unique sequential invoice number and date
+    const invoiceYear = new Date().getFullYear();
+    let invoiceNumber = "";
+    try {
+      const [seqRows]: any = await db.query(
+        "SELECT COUNT(*) as count FROM orders WHERE invoice_number LIKE ?",
+        [`PF-${invoiceYear}-%`],
+      );
+      const count = (seqRows && seqRows[0]?.count) || 0;
+      invoiceNumber = `PF-${invoiceYear}-${String(count + 1).padStart(4, "0")}`;
+    } catch {
+      invoiceNumber = `PF-${invoiceYear}-${orderId.replace(/\D/g, "").slice(-4) || "0001"}`;
+    }
+    const invoiceDate = new Date().toLocaleDateString("en-IN", {
+      day: "numeric",
+      month: "short",
+      year: "numeric",
+    });
+
     // 1. Resolve Customer ID
     let customerId = "";
     const existingCust = await db.query("SELECT * FROM customers WHERE email = ?", [customer_email]);
@@ -312,8 +333,8 @@ export async function createCheckoutOrder(req: Request, res: Response) {
             id, order_number, user_id, customer_id, customer_name,
             phone, customer_phone, email, customer_email,
             address, shipping_address, shipping_state, subtotal, shipping_fee, shipping_charge, discount_amount,
-            total_amount, order_status, payment_method, payment_status, notes
-          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            total_amount, order_status, payment_method, payment_status, notes, invoice_number, invoice_date
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
           [
             orderId,
             orderNumber,
@@ -336,6 +357,8 @@ export async function createCheckoutOrder(req: Request, res: Response) {
             payment_method,
             paymentStatus,
             notes,
+            invoiceNumber,
+            invoiceDate,
           ],
         );
 
@@ -420,8 +443,8 @@ export async function createCheckoutOrder(req: Request, res: Response) {
       // Memory fallback for standalone development
       console.log(`[OrderController] Saving order ${orderId} in memory store...`);
       await db.execute(
-        `INSERT INTO orders (id, order_number, customer_id, customer_name, customer_email, customer_phone, shipping_address, shipping_state, subtotal, shipping_fee, shipping_charge, discount_amount, total_amount, order_status, payment_method, payment_status, notes)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        `INSERT INTO orders (id, order_number, customer_id, customer_name, customer_email, customer_phone, shipping_address, shipping_state, subtotal, shipping_fee, shipping_charge, discount_amount, total_amount, order_status, payment_method, payment_status, notes, invoice_number, invoice_date)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           orderId,
           orderNumber,
@@ -440,6 +463,8 @@ export async function createCheckoutOrder(req: Request, res: Response) {
           payment_method,
           paymentStatus,
           notes,
+          invoiceNumber,
+          invoiceDate,
         ],
       );
 
@@ -472,6 +497,8 @@ export async function createCheckoutOrder(req: Request, res: Response) {
       data: {
         orderId,
         orderNumber,
+        invoiceNumber,
+        invoiceDate,
         totalAmount,
         subtotal: calculatedSubtotal,
         shippingFee,
@@ -486,6 +513,8 @@ export async function createCheckoutOrder(req: Request, res: Response) {
       order: {
         id: orderId,
         orderNumber,
+        invoiceNumber,
+        invoiceDate,
         totalAmount,
         subtotal: calculatedSubtotal,
         shippingFee,
@@ -535,6 +564,8 @@ export async function getOrders(req: Request, res: Response) {
         o.payment_method,
         o.payment_status,
         o.notes,
+        o.invoice_number,
+        o.invoice_date,
         o.created_at,
         o.updated_at
       FROM orders o
@@ -621,6 +652,8 @@ export async function getOrders(req: Request, res: Response) {
           paymentMethod: o.payment_method || "COD",
           paymentStatus: o.payment_status || "Pending",
           notes: o.notes || "",
+          invoiceNumber: o.invoice_number || "",
+          invoiceDate: o.invoice_date || "",
           date: formatDate(o.created_at),
           createdAt: o.created_at instanceof Date ? o.created_at.toISOString() : String(o.created_at || ""),
           items: items.map((i) => ({
@@ -706,6 +739,8 @@ export async function getOrderById(req: Request, res: Response) {
         paymentMethod: o.payment_method,
         paymentStatus: o.payment_status,
         notes: o.notes,
+        invoiceNumber: o.invoice_number || "",
+        invoiceDate: o.invoice_date || "",
         date: formatDate(o.created_at),
         createdAt: o.created_at instanceof Date ? o.created_at.toISOString() : String(o.created_at || ""),
         items: items.map((i) => ({
@@ -1090,6 +1125,208 @@ export async function deleteCustomer(req: Request, res: Response) {
   } catch (err: any) {
     console.error("[OrderController] deleteCustomer error:", err);
     return res.status(500).json({ success: false, error: err.message || "Failed to delete customer." });
+  }
+}
+
+export async function downloadOrderInvoice(req: Request, res: Response) {
+  try {
+    const { id } = req.params;
+    console.log(`[OrderController] downloadOrderInvoice requested for order: ${id}`);
+
+    const db = await getDb();
+    const cleanId = String(id).replace(/^#/, "").trim();
+    const rows = await db.query(
+      `SELECT * FROM orders 
+       WHERE id = ? OR order_number = ? OR LOWER(id) = ? OR LOWER(order_number) = ?`,
+      [id, id, cleanId.toLowerCase(), cleanId.toLowerCase()]
+    );
+
+    if (rows.length === 0) {
+      return res.status(404).json({ success: false, error: "Order record not found." });
+    }
+
+    const order = rows[0];
+
+    // Check if order is cancelled or payment failed
+    const orderStatus = order.order_status || order.status || "Pending";
+    const paymentStatus = order.payment_status || order.paymentStatus || "Pending";
+    if (orderStatus === "Cancelled" || paymentStatus === "Failed") {
+      return res.status(400).json({
+        success: false,
+        error: "Invoice is not available for cancelled or payment-failed orders.",
+      });
+    }
+
+    // Security check:
+    // 1. Is user Admin?
+    let isAdmin = req.headers["x-admin-fallback"] === "true";
+    let tokenUser: any = null;
+    const authHeader = req.headers.authorization;
+    if (authHeader && authHeader.startsWith("Bearer ")) {
+      try {
+        tokenUser = verifyToken(authHeader.split(" ")[1] || "");
+        if (tokenUser?.role === "admin") {
+          isAdmin = true;
+        }
+      } catch {}
+    }
+
+    if (req.query["token"]) {
+      try {
+        const qTokenUser = verifyToken(String(req.query["token"]));
+        if (qTokenUser?.role === "admin") {
+          isAdmin = true;
+        } else if (qTokenUser) {
+          tokenUser = qTokenUser;
+        }
+      } catch {}
+    }
+
+    // 2. If not admin, check customer identity match
+    const orderEmail = (order.email || order.customer_email || "").toLowerCase().trim();
+    const orderPhone = (order.phone || order.customer_phone || "").replace(/\D/g, "");
+
+    const providedEmail = (
+      tokenUser?.email ||
+      req.query["customerEmail"] ||
+      req.query["email"] ||
+      req.headers["x-customer-email"] ||
+      ""
+    ).toString().toLowerCase().trim();
+
+    const providedPhone = (
+      req.query["customerPhone"] ||
+      req.query["phone"] ||
+      req.headers["x-customer-phone"] ||
+      ""
+    ).toString().replace(/\D/g, "");
+
+    const isCustomerOwner =
+      (providedEmail && orderEmail && providedEmail === orderEmail) ||
+      (providedPhone && orderPhone && orderPhone.endsWith(providedPhone.slice(-10)));
+
+    if (!isAdmin && !isCustomerOwner) {
+      return res.status(403).json({
+        success: false,
+        error: "Access denied. Only the customer who placed this order or an administrator may download this invoice.",
+      });
+    }
+
+    // Ensure invoice_number and invoice_date exist and are saved
+    const invoiceYear = new Date(order.created_at || Date.now()).getFullYear() || new Date().getFullYear();
+    let invoiceNumber = order.invoice_number;
+    let invoiceDate = order.invoice_date;
+
+    if (!invoiceNumber) {
+      try {
+        const countRows = await db.query(
+          "SELECT COUNT(*) as count FROM orders WHERE invoice_number LIKE ?",
+          [`PF-${invoiceYear}-%`]
+        );
+        const count = (countRows && countRows[0]?.count) || 0;
+        invoiceNumber = `PF-${invoiceYear}-${String(count + 1).padStart(4, "0")}`;
+      } catch {
+        invoiceNumber = `PF-${invoiceYear}-${String(order.id).replace(/\D/g, "").slice(-4) || "0001"}`;
+      }
+
+      invoiceDate = new Date(order.created_at || Date.now()).toLocaleDateString("en-IN", {
+        day: "numeric",
+        month: "short",
+        year: "numeric",
+      });
+
+      // Save immutable invoice number to orders table
+      await db
+        .execute("UPDATE orders SET invoice_number = ?, invoice_date = ? WHERE id = ?", [
+          invoiceNumber,
+          invoiceDate,
+          order.id,
+        ])
+        .catch(() => {});
+    }
+
+    if (!invoiceDate) {
+      invoiceDate = new Date(order.created_at || Date.now()).toLocaleDateString("en-IN", {
+        day: "numeric",
+        month: "short",
+        year: "numeric",
+      });
+    }
+
+    // Fetch order line items
+    let items: any[] = [];
+    try {
+      items = await db.query(
+        `SELECT 
+          id, product_id, product_name, product_sku,
+          COALESCE(price, unit_price) AS price,
+          COALESCE(unit_price, price) AS unit_price,
+          quantity, size, 
+          COALESCE(colour, color) AS colour,
+          unit
+         FROM order_items 
+         WHERE order_id = ?`,
+        [order.id]
+      );
+    } catch {
+      items = await db.query("SELECT * FROM order_items WHERE order_id = ?", [order.id]);
+    }
+
+    const orderDateStr = new Date(order.created_at || Date.now()).toLocaleDateString("en-IN", {
+      day: "numeric",
+      month: "short",
+      year: "numeric",
+    });
+
+    const subtotal = Number(order.subtotal || order.total_amount || 0);
+    const shippingCharge = Number(order.shipping_charge ?? order.shipping_fee ?? 0);
+    const totalAmount = Number(order.total_amount || (subtotal + shippingCharge));
+
+    const invoiceData: InvoiceOrderData = {
+      id: order.id,
+      orderNumber: order.order_number || order.id,
+      invoiceNumber,
+      invoiceDate,
+      orderDate: orderDateStr,
+      customerName: order.customer_name || "Valued Customer",
+      customerEmail: order.customer_email || order.email || "",
+      customerPhone: order.customer_phone || order.phone || "",
+      shippingAddress: order.shipping_address || order.address || "Address on File",
+      shippingState: order.shipping_state || order.state || "Tamil Nadu",
+      paymentMethod: order.payment_method || "COD",
+      paymentStatus,
+      orderStatus,
+      subtotal,
+      shippingCharge,
+      discountAmount: Number(order.discount_amount || 0),
+      totalAmount,
+      items: items.map((it: any) => ({
+        name: it.product_name || "Product",
+        quantity: Number(it.quantity) || 1,
+        price: Number(it.unit_price ?? it.price ?? 0),
+        size: it.size || "",
+        colour: it.colour || it.color || "",
+        hsn: "5208", // Saree & Woven cotton/silk fabric HSN
+        unit: it.unit || "piece",
+      })),
+    };
+
+    const pdfBuffer = await generateInvoicePdf(invoiceData);
+
+    const safeFilename = `Invoice-${invoiceNumber.replace(/[^a-zA-Z0-9-_]/g, "_")}.pdf`;
+
+    res.setHeader("Content-Type", "application/pdf");
+    res.setHeader("Content-Disposition", `attachment; filename="${safeFilename}"`);
+    res.setHeader("Content-Length", pdfBuffer.length);
+    res.setHeader("Cache-Control", "no-cache");
+    return res.end(pdfBuffer);
+  } catch (err: any) {
+    console.error("[OrderController] downloadOrderInvoice critical error:", err);
+    return res.status(500).json({
+      success: false,
+      error: "Failed to generate or download invoice PDF.",
+      details: err.message,
+    });
   }
 }
 

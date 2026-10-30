@@ -394,6 +394,8 @@ async function runMigrations(pool: mysql.Pool) {
       `).catch(() => {});
       await pool.query("ALTER TABLE orders ADD COLUMN shipping_state VARCHAR(100)").catch(() => {});
       await pool.query("ALTER TABLE orders ADD COLUMN shipping_charge DECIMAL(10,2) DEFAULT 0.00").catch(() => {});
+      await pool.query("ALTER TABLE orders ADD COLUMN invoice_number VARCHAR(100) NULL").catch(() => {});
+      await pool.query("ALTER TABLE orders ADD COLUMN invoice_date VARCHAR(50) NULL").catch(() => {});
 
       // Pre-fill default Indian States & UTs shipping rates if table is empty
       try {

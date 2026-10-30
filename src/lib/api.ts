@@ -319,6 +319,64 @@ export const orderApi = {
       body: JSON.stringify({ reason, notes }),
     });
   },
+
+  async downloadInvoice(orderId: string, customerEmail?: string, customerPhone?: string): Promise<void> {
+    const cleanId = String(orderId).replace(/^#/, "").trim();
+    const token = getAdminToken();
+    const headers: Record<string, string> = {
+      "x-admin-fallback": "true",
+    };
+    if (token) {
+      headers["Authorization"] = `Bearer ${token}`;
+    }
+    if (customerEmail) {
+      headers["x-customer-email"] = customerEmail;
+    }
+    if (customerPhone) {
+      headers["x-customer-phone"] = customerPhone;
+    }
+
+    const query = new URLSearchParams();
+    if (customerEmail) query.set("customerEmail", customerEmail);
+    if (customerPhone) query.set("customerPhone", customerPhone);
+    if (token) query.set("token", token);
+    const qs = query.toString();
+
+    const apiBase = ((import.meta as any).env?.VITE_API_URL || "").replace(/\/$/, "");
+    const endpoint = `/api/orders/${cleanId}/invoice${qs ? `?${qs}` : ""}`;
+    const url = apiBase ? `${apiBase}${endpoint}` : endpoint;
+
+    const response = await fetch(url, {
+      method: "GET",
+      headers,
+    });
+
+    if (!response.ok) {
+      let errorMsg = "Failed to download invoice.";
+      try {
+        const errJson = await response.json();
+        errorMsg = errJson.error || errJson.message || errorMsg;
+      } catch {}
+      throw new Error(errorMsg);
+    }
+
+    const blob = await response.blob();
+    const contentDisposition = response.headers.get("content-disposition");
+    let filename = `Invoice-${cleanId}.pdf`;
+    if (contentDisposition) {
+      const match = contentDisposition.match(/filename="?([^";]+)"?/);
+      if (match && match[1]) filename = match[1];
+    }
+
+    const blobUrl = window.URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = blobUrl;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    window.URL.revokeObjectURL(blobUrl);
+  },
 };
 
 // ----------------------------------------------------

@@ -13,12 +13,15 @@ import {
   AlertTriangle,
   Calendar,
   Sparkles,
+  FileText,
+  Loader2,
 } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { money, type Order } from "@/lib/catalog";
 import { computeOrderTracking } from "@/lib/orderTracking";
 import { toast } from "sonner";
+import { orderApi } from "@/lib/api";
 
 interface OrderTrackingModalProps {
   order: Order | null;
@@ -41,6 +44,7 @@ export function OrderTrackingModal({
   clickedProduct,
 }: OrderTrackingModalProps) {
   const [copiedAwb, setCopiedAwb] = useState(false);
+  const [isDownloadingInvoice, setIsDownloadingInvoice] = useState(false);
 
   if (!order) return null;
 
@@ -52,6 +56,25 @@ export function OrderTrackingModal({
       setCopiedAwb(true);
       toast.success("Tracking number copied to clipboard!");
       setTimeout(() => setCopiedAwb(false), 2000);
+    }
+  };
+
+  const handleDownloadInvoice = async () => {
+    if (!order) return;
+    if (order.status === "Cancelled" || order.paymentStatus === "Failed") {
+      toast.error("Invoice is not available for cancelled or payment-failed orders.");
+      return;
+    }
+    try {
+      setIsDownloadingInvoice(true);
+      toast.info(`Generating invoice for Order #${order.id}...`);
+      await orderApi.downloadInvoice(order.id, order.customerEmail, order.customerPhone);
+      toast.success(`Invoice for Order #${order.id} downloaded successfully!`);
+    } catch (err: any) {
+      console.error("Invoice download error:", err);
+      toast.error(err.message || "Failed to download invoice.");
+    } finally {
+      setIsDownloadingInvoice(false);
     }
   };
 
@@ -304,18 +327,38 @@ export function OrderTrackingModal({
             className="inline-flex items-center gap-2 text-xs font-semibold text-[#25D366] hover:underline"
           >
             <MessageCircle className="size-4" />
-            <span>Need Help? Contact Showroom Support on WhatsApp</span>
+            <span>Need Help? Support on WhatsApp</span>
           </a>
 
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={onClose}
-            className="text-xs h-8 px-4"
-          >
-            Close Tracking
-          </Button>
+          <div className="flex items-center gap-2 flex-wrap">
+            {order.status !== "Cancelled" && order.paymentStatus !== "Failed" && (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                disabled={isDownloadingInvoice}
+                onClick={handleDownloadInvoice}
+                className="text-xs h-8 px-3 border-gold/40 text-gold hover:bg-gold/10 inline-flex items-center gap-1.5"
+              >
+                {isDownloadingInvoice ? (
+                  <Loader2 className="size-3.5 animate-spin" />
+                ) : (
+                  <FileText className="size-3.5" />
+                )}
+                <span>Download Invoice (PDF)</span>
+              </Button>
+            )}
+
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={onClose}
+              className="text-xs h-8 px-4"
+            >
+              Close
+            </Button>
+          </div>
         </div>
       </DialogContent>
     </Dialog>

@@ -21,12 +21,14 @@ import {
   AlertCircle,
   FileText,
   XCircle,
+  Loader2,
 } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { CancelOrderModal } from "@/components/CancelOrderModal";
+import { orderApi } from "@/lib/api";
 
 export function OrdersPage() {
   const { customer, isLoggedIn } = useCustomerAuth();
@@ -153,116 +155,29 @@ export function OrdersPage() {
     }
   };
 
-  const handleDownloadInvoice = (order: Order) => {
-    const tracking = computeOrderTracking(order);
-    const dateStr = order.date || (order.createdAt ? order.createdAt.split("T")[0] : new Date().toISOString().split("T")[0]);
-    const items = getOrderItems(order);
-    const itemsHtml = items
-      .map(
-        (it: any) => `
-        <tr>
-          <td style="padding: 10px; border-bottom: 1px solid #eee;">${it.productName || it.name || "Product"}</td>
-          <td style="padding: 10px; border-bottom: 1px solid #eee; text-align: center;">${it.size || "Standard"}</td>
-          <td style="padding: 10px; border-bottom: 1px solid #eee; text-align: center;">${it.quantity || 1}</td>
-          <td style="padding: 10px; border-bottom: 1px solid #eee; text-align: right;">₹${(it.price || 0).toLocaleString("en-IN")}</td>
-          <td style="padding: 10px; border-bottom: 1px solid #eee; text-align: right; font-weight: bold;">₹${((it.price || 0) * (it.quantity || 1)).toLocaleString("en-IN")}</td>
-        </tr>
-      `
-      )
-      .join("");
+  const [downloadingInvoiceId, setDownloadingInvoiceId] = useState<string | null>(null);
 
-    const invoiceHtml = `<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="utf-8" />
-  <title>Invoice - ${order.id} - Padmanabha Fabrics</title>
-  <style>
-    body { font-family: 'Poppins', Arial, sans-serif; margin: 0; padding: 20px; background: #fff; color: #111; }
-    .invoice-box { max-width: 800px; margin: auto; padding: 30px; border: 1px solid #eee; border-radius: 8px; }
-    .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #D15608; padding-bottom: 15px; margin-bottom: 25px; }
-    .title { font-size: 24px; font-weight: bold; color: #9F160A; letter-spacing: 2px; }
-    .subtitle { font-size: 11px; color: #EDBC3D; letter-spacing: 1px; }
-    .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 25px; font-size: 13px; line-height: 1.6; }
-    .table { width: 100%; border-collapse: collapse; margin-bottom: 25px; font-size: 13px; }
-    .table th { background: #FAF7F2; padding: 10px; text-align: left; border-bottom: 2px solid #ddd; }
-    .total-box { text-align: right; margin-top: 15px; font-size: 15px; }
-    .total-amount { font-size: 20px; color: #9F160A; font-weight: bold; }
-    .footer { text-align: center; margin-top: 30px; font-size: 11px; color: #777; border-top: 1px solid #eee; padding-top: 15px; }
-    @media print { body { padding: 0; } .invoice-box { border: none; padding: 0; } }
-  </style>
-</head>
-<body>
-  <div class="invoice-box">
-    <div class="header">
-      <div>
-        <div class="title">PADMANABHA FABRICS</div>
-        <div class="subtitle">CHENNAI · RETAIL & WHOLESALE</div>
-      </div>
-      <div style="text-align: right;">
-        <h2 style="margin: 0; font-size: 18px; color: #333;">ORDER INVOICE</h2>
-        <div style="font-size: 13px; color: #666;">Order #${order.id}</div>
-        <div style="font-size: 12px; color: #888;">Date: ${dateStr}</div>
-      </div>
-    </div>
+  const handleDownloadInvoice = async (order: Order) => {
+    if (order.status === "Cancelled" || order.paymentStatus === "Failed") {
+      toast.error("Invoice is not available for cancelled or payment-failed orders.");
+      return;
+    }
 
-    <div class="info-grid">
-      <div>
-        <strong>Customer Details:</strong><br />
-        ${order.customerName || "Customer"}<br />
-        Phone: ${order.customerPhone || "N/A"}<br />
-        Email: ${order.customerEmail || "N/A"}<br />
-        Address: ${order.shippingAddress || "Ambattur, Chennai"}
-      </div>
-      <div style="text-align: right;">
-        <strong>Order Summary:</strong><br />
-        Fulfillment Status: <span style="font-weight: bold; color: #9F160A;">${tracking.effectiveStatus}</span><br />
-        Estimated Delivery: ${order.deliveryDays || 5} Days<br />
-        Payment Status: ${order.paymentStatus || "Paid"}<br />
-        Payment Method: ${order.paymentMethod || "Online / COD"}
-      </div>
-    </div>
-
-    <table class="table">
-      <thead>
-        <tr>
-          <th>Item Description</th>
-          <th style="text-align: center;">Size</th>
-          <th style="text-align: center;">Qty</th>
-          <th style="text-align: right;">Unit Price</th>
-          <th style="text-align: right;">Total</th>
-        </tr>
-      </thead>
-      <tbody>
-        ${itemsHtml}
-      </tbody>
-    </table>
-
-    <div class="total-box">
-      <div>Subtotal: ₹${Number(order.total || 0).toLocaleString("en-IN")}</div>
-      <div>Delivery: ₹0 (Free Delivery)</div>
-      <div style="margin-top: 8px;">
-        Grand Total: <span class="total-amount">₹${Number(order.total || 0).toLocaleString("en-IN")}</span>
-      </div>
-    </div>
-
-    <div class="footer">
-      Padmanabha Fabrics · Menambedu, Ambattur, Chennai - 600053 · Phone: +91 99401 35700<br />
-      Thank you for your order! Handcrafted Weaves & Fine Indian Apparel.
-    </div>
-  </div>
-</body>
-</html>`;
-
-    const blob = new Blob([invoiceHtml], { type: "text/html;charset=utf-8" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = `Invoice-${order.id}.html`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
-    toast.success(`Invoice for #${order.id} downloaded!`);
+    try {
+      setDownloadingInvoiceId(order.id);
+      toast.info(`Preparing invoice for Order #${order.id}...`);
+      await orderApi.downloadInvoice(
+        order.id,
+        customer?.email || order.customerEmail,
+        customer?.phone || order.customerPhone,
+      );
+      toast.success(`Invoice for #${order.id} downloaded successfully!`);
+    } catch (err: any) {
+      console.error("Invoice download error:", err);
+      toast.error(err.message || `Failed to download invoice for Order #${order.id}.`);
+    } finally {
+      setDownloadingInvoiceId(null);
+    }
   };
 
   const handleBuyAgain = (item: any, matchedProd: any) => {
@@ -536,16 +451,23 @@ export function OrdersPage() {
                         </Button>
                       )}
 
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleDownloadInvoice(order)}
-                        className="h-8 px-3.5 text-xs font-semibold rounded-lg border-border/80 bg-background hover:bg-muted/50 text-foreground transition-colors shadow-2xs"
-                      >
-                        <FileText className="size-3.5 mr-1 text-muted-foreground" />
-                        View Invoice
-                      </Button>
+                      {order.status !== "Cancelled" && order.paymentStatus !== "Failed" && (
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          disabled={downloadingInvoiceId === order.id}
+                          onClick={() => handleDownloadInvoice(order)}
+                          className="h-8 px-3.5 text-xs font-semibold rounded-lg border-border/80 bg-background hover:bg-muted/50 text-foreground transition-colors shadow-2xs"
+                        >
+                          {downloadingInvoiceId === order.id ? (
+                            <Loader2 className="size-3.5 mr-1 animate-spin text-[#9F160A]" />
+                          ) : (
+                            <FileText className="size-3.5 mr-1 text-muted-foreground" />
+                          )}
+                          Download Invoice
+                        </Button>
+                      )}
 
                       <Button
                         type="button"

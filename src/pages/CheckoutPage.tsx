@@ -18,6 +18,8 @@ import {
   Phone,
   Mail,
   User,
+  Download,
+  FileText,
 } from "lucide-react";
 import { Breadcrumb } from "@/components/Breadcrumb";
 import { SectionHeading } from "@/components/SectionHeading";
@@ -28,7 +30,7 @@ import { formatPrice } from "@/utils/formatters";
 import { toast } from "sonner";
 import { openRazorpayCheckout } from "@/lib/razorpay";
 import { INDIAN_STATES_AND_UTS } from "@/data/shippingStates";
-import { shippingApi } from "@/lib/api";
+import { shippingApi, orderApi } from "@/lib/api";
 
 export function CheckoutPage() {
   const navigate = useNavigate();
@@ -85,6 +87,21 @@ export function CheckoutPage() {
   const [isFreeShipping, setIsFreeShipping] = useState<boolean>(false);
   const [freeShippingThreshold, setFreeShippingThreshold] = useState<number>(0);
   const [isLoadingShipping, setIsLoadingShipping] = useState<boolean>(false);
+  const [isDownloadingInvoice, setIsDownloadingInvoice] = useState<boolean>(false);
+
+  const handleDownloadInvoice = async (orderId: string, email?: string, phone?: string) => {
+    try {
+      setIsDownloadingInvoice(true);
+      toast.info("Preparing PDF invoice for download...");
+      await orderApi.downloadInvoice(orderId, email, phone);
+      toast.success("Invoice PDF downloaded successfully!");
+    } catch (err: any) {
+      console.error("Invoice download error:", err);
+      toast.error(err.message || "Could not download invoice. Please try again.");
+    } finally {
+      setIsDownloadingInvoice(false);
+    }
+  };
 
   // Grand Total calculation (subtotal + dynamic shipping fee)
   const grandTotal = useMemo(() => {
@@ -397,7 +414,21 @@ export function CheckoutPage() {
           </div>
 
           {/* Action CTAs */}
-          <div className="flex flex-col sm:flex-row gap-3 justify-center">
+          <div className="flex flex-col sm:flex-row flex-wrap gap-3 justify-center">
+            <button
+              type="button"
+              onClick={() => handleDownloadInvoice(confirmedOrder.orderNumber, confirmedOrder.customerEmail, confirmedOrder.customerPhone)}
+              disabled={isDownloadingInvoice}
+              className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-lg bg-[#9F160A] hover:bg-[#801208] text-white text-xs font-semibold uppercase tracking-wider shadow-md transition-all disabled:opacity-50 cursor-pointer"
+            >
+              {isDownloadingInvoice ? (
+                <Loader2 className="size-4 animate-spin" />
+              ) : (
+                <FileText className="size-4" />
+              )}
+              <span>Download Invoice (PDF)</span>
+            </button>
+
             <a
               href={whatsappOrderUrl}
               target="_blank"

@@ -54,3 +54,4 @@ INSERT IGNORE INTO shipping_rates (id, state, charge, is_active) VALUES
   ('rate-ladakh', 'Ladakh', 0.00, 1),
   ('rate-lakshadweep', 'Lakshadweep', 0.00, 1),
   ('rate-puducherry', 'Puducherry', 0.00, 1);
+

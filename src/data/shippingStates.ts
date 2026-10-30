@@ -42,3 +42,4 @@ export type IndianState = (typeof INDIAN_STATES_AND_UTS)[number];
 export function slugifyState(stateName: string): string {
   return "rate-" + stateName.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
 }
+
