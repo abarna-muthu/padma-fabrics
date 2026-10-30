@@ -153,7 +153,11 @@ const CATEGORY_MIGRATION: Record<string, string> = {
 
 export function normalizeProduct(p: any): Product {
   const cat = CATEGORY_MIGRATION[p.category] || p.category || "Chudithar Top";
-  let img = p.image || p.imageUrl || p.image_url;
+  const rawImages: string[] = Array.isArray(p.images) && p.images.length > 0
+    ? p.images.filter(Boolean)
+    : (typeof p.images === "string" ? (() => { try { const parsed = JSON.parse(p.images); return Array.isArray(parsed) ? parsed.filter(Boolean) : []; } catch { return []; } })() : []);
+
+  let img = (rawImages.length > 0 ? rawImages[0] : null) || p.image || p.imageUrl || p.image_url;
 
   // If image is missing, empty, or a dummy /assets/ image, restore original Cloudinary image from staticProducts
   if (
@@ -191,9 +195,9 @@ export function normalizeProduct(p: any): Product {
 
   const isActive = p.isActive !== false && p.is_active !== 0 && p.status !== "inactive";
 
-  const images = Array.isArray(p.images) && p.images.length > 0
-    ? p.images
-    : (typeof p.images === "string" ? (() => { try { return JSON.parse(p.images); } catch { return []; } })() : (img ? [img] : []));
+  const images = rawImages.length > 0
+    ? (img && !rawImages.includes(img) ? [img, ...rawImages] : (img && rawImages[0] !== img ? [img, ...rawImages.filter((x) => x !== img)] : rawImages))
+    : (img ? [img] : []);
 
   const variants = Array.isArray(p.variants)
     ? p.variants
@@ -207,6 +211,7 @@ export function normalizeProduct(p: any): Product {
     category: cat,
     image: img || "/placeholder.svg",
     imageUrl: img || "/placeholder.svg",
+    image_url: img || "/placeholder.svg",
     images,
     variants,
     sizes: sanitizedSizes,
@@ -954,6 +959,12 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     let prevStock: number | undefined;
     let prevName: string | undefined;
 
+    const targetImages = Array.isArray(updates.images) && updates.images.length > 0
+      ? updates.images.filter(Boolean)
+      : updates.image ? [updates.image] : [];
+    const targetImage = updates.image || (targetImages.length > 0 ? targetImages[0] : undefined);
+
+    let nextList: Product[] = [];
     setProductsList((currentList) => {
       const found = currentList.find((p) => p.id === id);
       if (found) {
@@ -963,9 +974,17 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       const updated = currentList.map((p) => {
         if (p.id === id) {
           const nextStatus = updates.status || p.status || "active";
+          const chosenImage = targetImage || p.image;
+          const chosenImages = targetImages.length > 0
+            ? targetImages
+            : (p.images && p.images.length > 0 ? p.images : (chosenImage ? [chosenImage] : []));
           return normalizeProduct({
             ...p,
             ...updates,
+            image: chosenImage,
+            imageUrl: chosenImage,
+            image_url: chosenImage,
+            images: chosenImages,
             isActive: nextStatus !== "inactive" && nextStatus !== "archived",
             status: nextStatus,
             updatedAt: nowIso,
@@ -973,9 +992,13 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         }
         return p;
       });
-      saveProducts(updated);
+      nextList = updated;
       return updated;
     });
+
+    if (nextList.length > 0) {
+      saveProducts(nextList);
+    }
 
     // Also update in STORAGE_CUSTOM_PRODUCTS_KEY if present
     try {
@@ -984,7 +1007,17 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         const parsed = JSON.parse(customStored);
         if (Array.isArray(parsed) && parsed.some((p: any) => p.id === id)) {
           const updatedCustom = parsed.map((p: any) =>
-            p.id === id ? { ...p, ...updates, updatedAt: nowIso } : p,
+            p.id === id
+              ? {
+                  ...p,
+                  ...updates,
+                  image: targetImage || p.image,
+                  imageUrl: targetImage || p.imageUrl,
+                  image_url: targetImage || p.image_url,
+                  images: targetImages.length > 0 ? targetImages : p.images,
+                  updatedAt: nowIso,
+                }
+              : p,
           );
           localStorage.setItem(STORAGE_CUSTOM_PRODUCTS_KEY, JSON.stringify(updatedCustom));
         }
@@ -996,7 +1029,15 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       idbGetProducts().then((all) => {
         const target = all?.find((p: any) => p.id === id);
         if (target) {
-          idbSaveSingleProduct({ ...target, ...updates, updatedAt: nowIso }).catch(() => {});
+          idbSaveSingleProduct({
+            ...target,
+            ...updates,
+            image: targetImage || target.image,
+            imageUrl: targetImage || target.imageUrl,
+            image_url: targetImage || target.image_url,
+            images: targetImages.length > 0 ? targetImages : target.images,
+            updatedAt: nowIso,
+          }).catch(() => {});
         }
       }).catch(() => {});
     } catch {}
@@ -1022,7 +1063,22 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
     // Persist to backend database API
     try {
-      await productApi.update(id, { ...updates, updatedAt: nowIso });
+      const apiRes = await productApi.update(id, {
+        ...updates,
+        image: targetImage,
+        imageUrl: targetImage,
+        image_url: targetImage,
+        images: targetImages,
+        updatedAt: nowIso,
+      });
+      if (apiRes && apiRes.success && apiRes.product) {
+        const normalized = normalizeProduct(apiRes.product);
+        setProductsList((currentList) => {
+          const synced = currentList.map((p) => (p.id === id ? { ...p, ...normalized } : p));
+          saveProducts(synced);
+          return synced;
+        });
+      }
     } catch (err) {
       console.warn("Could not sync updated product to backend API:", err);
     }

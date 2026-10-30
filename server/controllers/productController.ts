@@ -132,7 +132,8 @@ export async function getProducts(req: Request, res: Response) {
 
     // Format products for frontend consumption
     const formatted = products.map((p) => {
-      const img = p.image || p.imageUrl || p.image_url || "";
+      const safeImages = parseSafeImages(p.images, p.image || p.imageUrl || p.image_url || "");
+      const img = (safeImages.length > 0 ? safeImages[0] : null) || p.image || p.imageUrl || p.image_url || "/assets/burgundy-silk.jpg";
       const isActive = p.is_active !== undefined ? Boolean(p.is_active) : (p.isActive !== false);
       const catId = p.category_id || p.categoryId || (p.category ? p.category.toLowerCase().replace(/[^a-z0-9]+/g, "-") : "chudithar-top");
       const stock = Number(p.stock_quantity ?? p.stockQuantity ?? p.stock ?? 10);
@@ -155,7 +156,8 @@ export async function getProducts(req: Request, res: Response) {
         description: p.description || "",
         image: img,
         imageUrl: img,
-        images: parseSafeImages(p.images, img),
+        image_url: img,
+        images: safeImages.length > 0 ? safeImages : [img],
         variants: parseSafeVariants(p.variants),
         isActive: isActive,
         status: isActive ? "active" : "inactive",
@@ -189,12 +191,13 @@ export async function getProductById(req: Request, res: Response) {
     }
 
     const p = rows[0];
-    const img = p.image || p.imageUrl || p.image_url || "";
+    const rawGallery = parseSafeImages(p.images, p.image || p.imageUrl || p.image_url || "");
+    const img = (rawGallery.length > 0 ? rawGallery[0] : null) || p.image || p.imageUrl || p.image_url || "/assets/burgundy-silk.jpg";
     const isActive = p.is_active !== undefined ? Boolean(p.is_active) : (p.isActive !== false);
     const catId = p.category_id || p.categoryId || (p.category ? p.category.toLowerCase().replace(/[^a-z0-9]+/g, "-") : "chudithar-top");
     const stock = Number(p.stock_quantity ?? p.stockQuantity ?? p.stock ?? 10);
 
-    let galleryImages = parseSafeImages(p.images, img);
+    let galleryImages = rawGallery.length > 0 ? rawGallery : [img];
     try {
       const extraImages = await db.query(
         "SELECT image_url FROM product_images WHERE product_id = ? ORDER BY display_order ASC",
@@ -224,6 +227,7 @@ export async function getProductById(req: Request, res: Response) {
       description: p.description || "",
       image: img,
       imageUrl: img,
+      image_url: img,
       images: galleryImages,
       variants: parseSafeVariants(p.variants),
       isActive: isActive,
@@ -517,7 +521,24 @@ export async function updateProduct(req: Request, res: Response) {
             ? Number(stockQuantity)
             : rows[0]?.stock_quantity ?? 10;
 
-    const finalImage = image_url || image || imageUrl || rows[0]?.image_url || "/assets/burgundy-silk.jpg";
+    const rawImages = Array.isArray(images) && images.length > 0
+      ? images.filter(Boolean)
+      : typeof images === "string"
+        ? parseSafeImages(images)
+        : [];
+
+    const finalImage =
+      image ||
+      image_url ||
+      imageUrl ||
+      (rawImages.length > 0 ? rawImages[0] : null) ||
+      rows[0]?.image_url ||
+      "/assets/burgundy-silk.jpg";
+
+    const resolvedImages = rawImages.length > 0
+      ? (rawImages.includes(finalImage) ? [finalImage, ...rawImages.filter((img) => img !== finalImage)] : [finalImage, ...rawImages])
+      : [finalImage];
+
     const rawCat = categoryId || category || rows[0]?.category_id || "sarees";
     const finalCategory =
       CATEGORY_NAME_TO_ID[rawCat] || rawCat.toLowerCase().replace(/[^a-z0-9]+/g, "-");
@@ -535,8 +556,6 @@ export async function updateProduct(req: Request, res: Response) {
         .toLowerCase()
         .replace(/[^a-z0-9]+/g, "-")
         .replace(/(^-|-$)/g, "");
-
-      const resolvedImages = Array.isArray(images) && images.length > 0 ? images : [finalImage];
 
       await db.execute(
         `INSERT INTO products (id, sku, name, slug, category_id, colour, price, original_price, unit, stock_quantity, low_stock_threshold, badge, description, image_url, is_active, is_featured, sizes, variants, images)
@@ -583,17 +602,10 @@ export async function updateProduct(req: Request, res: Response) {
               : JSON.stringify(previous.variants)
             : JSON.stringify([]);
 
-      const imagesToSave =
-        images !== undefined
-          ? JSON.stringify(images)
-          : previous.images
-            ? typeof previous.images === "string"
-              ? previous.images
-              : JSON.stringify(previous.images)
-            : JSON.stringify([finalImage]);
+      const imagesToSave = JSON.stringify(resolvedImages);
 
       await db.execute(
-        `UPDATE products SET name = ?, category_id = ?, colour = ?, price = ?, unit = ?, stock_quantity = ?, badge = ?, description = ?, image_url = ?, is_active = ?, sizes = ?, variants = ?, images = ? WHERE id = ?`,
+        `UPDATE products SET name = ?, category_id = ?, colour = ?, price = ?, unit = ?, stock_quantity = ?, badge = ?, description = ?, image_url = ?, is_active = ?, sizes = ?, variants = ?, images = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?`,
         [
           name || previous.name,
           finalCategory,
@@ -648,17 +660,8 @@ export async function updateProduct(req: Request, res: Response) {
           ? JSON.parse(rows[0].variants || "[]")
           : rows[0]?.variants || [];
 
-    const resolvedImages =
-      images !== undefined
-        ? Array.isArray(images)
-          ? images
-          : JSON.parse(images || "[]")
-        : typeof rows[0]?.images === "string"
-          ? JSON.parse(rows[0].images || "[]")
-          : [finalImage];
-
     const updatedProduct = {
-      id,
+      id: rows[0]?.id || id,
       name: name || rows[0]?.name,
       category: CATEGORY_ID_TO_NAME[finalCategory] || finalCategory,
       categoryId: finalCategory,
@@ -671,6 +674,7 @@ export async function updateProduct(req: Request, res: Response) {
       description: description !== undefined ? description : rows[0]?.description,
       image: finalImage,
       imageUrl: finalImage,
+      image_url: finalImage,
       images: resolvedImages,
       variants: resolvedVariants,
       isActive: Boolean(activeVal),
@@ -855,7 +859,13 @@ export async function bulkSyncProducts(req: Request, res: Response) {
       const stock = Number(p.stock !== undefined ? p.stock : p.stock_quantity) || 0;
       const badge = p.badge || "New arrival";
       const description = p.description || "";
-      const image = p.image || p.image_url || "/assets/burgundy-silk.jpg";
+      const rawSyncImages = Array.isArray(p.images) && p.images.length > 0
+        ? p.images.filter(Boolean)
+        : typeof p.images === "string"
+          ? parseSafeImages(p.images)
+          : [];
+      const image = (rawSyncImages.length > 0 ? rawSyncImages[0] : null) || p.image || p.imageUrl || p.image_url || "/assets/burgundy-silk.jpg";
+      const resolvedSyncImages = rawSyncImages.length > 0 ? (rawSyncImages.includes(image) ? [image, ...rawSyncImages.filter((img: string) => img !== image)] : [image, ...rawSyncImages]) : [image];
       const isActive = p.status === "inactive" || p.isActive === false ? 0 : 1;
       const isFeatured = p.is_featured || p.isFeatured ? 1 : 0;
       const sizesJson = JSON.stringify(
@@ -864,9 +874,7 @@ export async function bulkSyncProducts(req: Request, res: Response) {
       const variantsJson = JSON.stringify(
         Array.isArray(p.variants) ? p.variants : typeof p.variants === "string" ? JSON.parse(p.variants) : [],
       );
-      const imagesJson = JSON.stringify(
-        Array.isArray(p.images) && p.images.length > 0 ? p.images : [image],
-      );
+      const imagesJson = JSON.stringify(resolvedSyncImages);
       const colour = p.colour || "Custom";
 
       // Check if product with this ID or SKU exists

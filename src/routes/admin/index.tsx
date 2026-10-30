@@ -584,45 +584,44 @@ function AdminDashboardPage() {
   const handleAddImageFromUrl = () => {
     const trimmed = manualImageInput.trim();
     if (!trimmed) return;
-    setProdImages((prev) => Array.from(new Set([...prev, trimmed])));
-    if (!prodImage) setProdImage(trimmed);
+    setProdImages((prev) => {
+      const withoutNew = prev.filter((img) => img !== trimmed);
+      return [trimmed, ...withoutNew];
+    });
+    setProdImage(trimmed);
     setManualImageInput("");
-    toast.success("Image URL added to gallery!");
+    toast.success("Image URL added and set as cover!");
   };
 
   const handleRemoveGalleryImage = (indexToRemove: number) => {
-    setProdImages((prev) => {
-      const removed = prev[indexToRemove];
-      const next = prev.filter((_, i) => i !== indexToRemove);
-      
-      // Update primary cover image strictly to the first remaining image (next[0])
-      const newCover = next[0] || "";
-      setProdImage(newCover);
+    const removed = prodImages[indexToRemove];
+    const next = prodImages.filter((_, i) => i !== indexToRemove);
+    setProdImages(next);
+    
+    // Update primary cover image strictly to the first remaining image (next[0])
+    const newCover = next[0] || "";
+    setProdImage(newCover);
 
-      // Clean the removed image from prodVariants so it NEVER resurrects!
-      if (removed) {
-        setProdVariants((vList) =>
-          vList.map((v) => ({
-            ...v,
-            image: v.image === removed ? undefined : v.image,
-            images: Array.isArray(v.images) ? v.images.filter((img) => img !== removed) : [],
-          }))
-        );
-      }
-      return next;
-    });
+    // Clean the removed image from prodVariants so it NEVER resurrects!
+    if (removed) {
+      setProdVariants((vList) =>
+        vList.map((v) => ({
+          ...v,
+          image: v.image === removed ? undefined : v.image,
+          images: Array.isArray(v.images) ? v.images.filter((img) => img !== removed) : [],
+        }))
+      );
+    }
     toast.success("Photo removed from gallery");
   };
 
   const handleSetPrimaryImage = (index: number) => {
-    setProdImages((prev) => {
-      if (index === 0 || !prev[index]) return prev;
-      const target = prev[index]!;
-      const rest = prev.filter((_, i) => i !== index);
-      const next = [target, ...rest];
-      setProdImage(target);
-      return next;
-    });
+    const target = prodImages[index];
+    if (!target) return;
+    const rest = prodImages.filter((_, i) => i !== index);
+    const next = [target, ...rest];
+    setProdImages(next);
+    setProdImage(target);
     toast.success("Primary cover image updated!");
   };
 
@@ -702,33 +701,27 @@ function AdminDashboardPage() {
           if (uploadRes && uploadRes.success && (uploadRes.secure_url || uploadRes.url)) {
             const cloudUrl = uploadRes.secure_url || uploadRes.url;
             setProdImages((prev) => {
-              const updated = Array.from(new Set([...prev, cloudUrl]));
-              if (!prodImage || prev.length === 0) {
-                setProdImage(updated[0] || cloudUrl);
-              }
-              return updated;
+              const withoutNew = prev.filter((img) => img !== cloudUrl);
+              return [cloudUrl, ...withoutNew];
             });
+            setProdImage(cloudUrl);
             setImageUploadStatus(`Cloudinary: ${file.name || "Pasted photo"} (uploaded)`);
-            toast.success("Photo uploaded to Cloudinary (padma_products)!");
+            toast.success("Photo uploaded to Cloudinary & set as cover!");
           } else {
             setProdImages((prev) => {
-              const updated = Array.from(new Set([...prev, base64Data]));
-              if (!prodImage || prev.length === 0) {
-                setProdImage(updated[0] || base64Data);
-              }
-              return updated;
+              const withoutNew = prev.filter((img) => img !== base64Data);
+              return [base64Data, ...withoutNew];
             });
+            setProdImage(base64Data);
             setImageUploadStatus(`${file.name || "Pasted photo"} (local preview)`);
           }
         } catch (uploadErr: any) {
           console.warn("Cloudinary upload fallback to local preview:", uploadErr);
           setProdImages((prev) => {
-            const updated = Array.from(new Set([...prev, base64Data]));
-            if (!prodImage || prev.length === 0) {
-              setProdImage(updated[0] || base64Data);
-            }
-            return updated;
+            const withoutNew = prev.filter((img) => img !== base64Data);
+            return [base64Data, ...withoutNew];
           });
+          setProdImage(base64Data);
           setImageUploadStatus(`${file.name || "Pasted photo"} (local preview)`);
         } finally {
           setIsUploadingImage(false);
@@ -736,12 +729,10 @@ function AdminDashboardPage() {
       };
       img.onerror = () => {
         setProdImages((prev) => {
-          const updated = Array.from(new Set([...prev, result]));
-          if (!prodImage || prev.length === 0) {
-            setProdImage(updated[0] || result);
-          }
-          return updated;
+          const withoutNew = prev.filter((img) => img !== result);
+          return [result, ...withoutNew];
         });
+        setProdImage(result);
         setImageUploadStatus(`${file.name || "Pasted photo"}`);
         setIsUploadingImage(false);
       };
@@ -1049,12 +1040,13 @@ function AdminDashboardPage() {
         ? p.sizes.map((s) => (s === "XXL" ? "2XL" : s))
         : [],
     );
-    setProdImage(p.image);
     const existingImages = Array.isArray((p as any).images) && (p as any).images.length > 0
       ? (p as any).images
       : p.image
         ? [p.image]
         : [];
+    const primaryImg = existingImages[0] || p.image || "";
+    setProdImage(primaryImg);
     setProdImages(existingImages);
     setProdVariants(Array.isArray((p as any).variants) ? (p as any).variants : []);
     setVariantColourInput("");
@@ -1074,7 +1066,7 @@ function AdminDashboardPage() {
 
     // Cover image is STRICTLY the first image in prodImages (if available) or prodImage
     const activeCover = (prodImages.length > 0 ? prodImages[0] : prodImage) || "";
-    let finalImage = activeCover || (editingProduct ? editingProduct.image : productsList[0]?.image || "");
+    let finalImage = activeCover || (editingProduct ? ((editingProduct as any).images?.[0] || editingProduct.image) : productsList[0]?.image || "");
     if (finalImage && finalImage.startsWith("data:")) {
       try {
         toast.loading("Saving photo to Cloudinary...", { id: "cloud-save" });
@@ -1139,6 +1131,8 @@ function AdminDashboardPage() {
           sku: prodSku,
           sizes: prodSizes,
           image: finalImage,
+          imageUrl: finalImage,
+          image_url: finalImage,
           images: galleryToSave,
           variants: processedVariants,
           status: editingProduct.status || "active",
@@ -1159,6 +1153,8 @@ function AdminDashboardPage() {
           sku: prodSku,
           sizes: prodSizes,
           image: finalImage,
+          imageUrl: finalImage,
+          image_url: finalImage,
           images: galleryToSave,
           variants: processedVariants,
           status: "active",
