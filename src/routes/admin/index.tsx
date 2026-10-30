@@ -27,6 +27,7 @@ import {
   Package,
   Plus,
   FolderPlus,
+  MapPin,
   Tag,
   RefreshCw,
   Search,
@@ -1477,12 +1478,15 @@ function AdminDashboardPage() {
   // Filtered orders list
   const filteredOrders = useMemo(() => {
     return orders.filter((o) => {
+      if (!o) return false;
       const matchStatus = orderStatusFilter === "All" || o.status === orderStatusFilter;
-      const matchSearch =
-        o.id.toLowerCase().includes(orderSearch.toLowerCase()) ||
-        o.customerName.toLowerCase().includes(orderSearch.toLowerCase()) ||
-        o.customerPhone.includes(orderSearch);
-      return matchStatus && matchSearch;
+      const q = (orderSearch || "").trim().toLowerCase();
+      if (!q) return matchStatus;
+      const idMatch = (o.id || "").toLowerCase().includes(q);
+      const nameMatch = (o.customerName || "").toLowerCase().includes(q);
+      const phoneMatch = (o.customerPhone || "").includes(q);
+      const orderNumMatch = (o.orderNumber || "").toLowerCase().includes(q);
+      return matchStatus && (idMatch || nameMatch || phoneMatch || orderNumMatch);
     });
   }, [orders, orderStatusFilter, orderSearch]);
 
@@ -3055,10 +3059,219 @@ function AdminDashboardPage() {
               </div>
             </div>
 
-            {/* Orders Table */}
-            <div className="bg-card border border-border overflow-hidden">
+            {/* Mobile Orders Card View (Visible on screens < 768px) */}
+            <div className="md:hidden space-y-3.5">
+              {paginatedOrders.map((o) => {
+                const tracking = computeOrderTracking(o);
+                const currentDays = o.deliveryDays || 5;
+                const isCancelled = o.status === "Cancelled";
+                const orderItemsList = Array.isArray(o.items) ? o.items : [];
+
+                return (
+                  <div
+                    key={o.id}
+                    className={`bg-card border rounded-xl p-4 space-y-3 shadow-xs ${
+                      isCancelled
+                        ? "border-red-500/40 bg-red-500/5 dark:bg-red-950/20"
+                        : "border-border"
+                    }`}
+                  >
+                    {/* Header: Order ID, Status Badge & Date */}
+                    <div className="flex items-center justify-between gap-2 border-b border-border/60 pb-2.5">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className={`font-sans font-bold text-sm tracking-tight ${isCancelled ? "text-red-700 dark:text-red-400" : "text-foreground"}`}>
+                          {o.id}
+                        </span>
+                        {o.status === "Pending" && (
+                          <span className="px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-amber-500/15 text-amber-700 dark:text-amber-400 border border-amber-500/30">
+                            New
+                          </span>
+                        )}
+                        {isCancelled && (
+                          <span className="px-1.5 py-0.5 rounded text-[9px] bg-red-600 text-white font-extrabold uppercase tracking-wide">
+                            Cancelled
+                          </span>
+                        )}
+                      </div>
+                      <span className="text-xs font-sans tabular-nums text-muted-foreground font-medium">
+                        {o.date || (o.createdAt ? o.createdAt.split("T")[0] : new Date().toISOString().split("T")[0])}
+                      </span>
+                    </div>
+
+                    {/* Customer & Price */}
+                    <div className="space-y-1 text-xs">
+                      <div className="flex items-baseline justify-between gap-2">
+                        <span className="font-semibold text-foreground text-sm truncate">
+                          {o.customerName || "Customer"}
+                        </span>
+                        <span className="font-sans font-bold tabular-nums text-primary text-base shrink-0">
+                          {money(o.total)}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-1.5 text-muted-foreground font-sans tabular-nums">
+                        <Phone className="size-3 shrink-0 text-muted-foreground" />
+                        <a href={`tel:${o.customerPhone}`} className="hover:text-primary hover:underline">
+                          {o.customerPhone || "N/A"}
+                        </a>
+                      </div>
+                      {o.customerEmail && (
+                        <div className="flex items-center gap-1.5 text-muted-foreground truncate">
+                          <Mail className="size-3 shrink-0 text-muted-foreground" />
+                          <span className="truncate">{o.customerEmail}</span>
+                        </div>
+                      )}
+                      {o.shippingAddress && (
+                        <div className="flex items-start gap-1.5 text-muted-foreground pt-0.5">
+                          <MapPin className="size-3 shrink-0 text-muted-foreground mt-0.5" />
+                          <span className="line-clamp-2 leading-relaxed">{o.shippingAddress}</span>
+                        </div>
+                      )}
+                      {isCancelled && o.notes && (
+                        <div className="mt-1.5 p-2 rounded bg-red-500/10 border border-red-500/20 text-red-700 dark:text-red-300 text-[11px] font-mono">
+                          Note: {o.notes}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Items Summary */}
+                    <div className="bg-secondary/30 rounded-lg p-2.5 text-xs text-foreground/85 border border-border/40">
+                      <div className="text-[10px] uppercase font-bold tracking-wider text-muted-foreground mb-1">
+                        Ordered Items ({orderItemsList.length})
+                      </div>
+                      <p className="line-clamp-2 leading-relaxed">
+                        {orderItemsList.length > 0
+                          ? orderItemsList.map((i) => `${i.quantity || 1}x ${i.productName || i.productId || "Product"}`).join(", ")
+                          : "No items listed"}
+                      </p>
+                    </div>
+
+                    {/* Dropdowns & Days in Mobile Grid */}
+                    <div className="grid grid-cols-2 gap-2 pt-1">
+                      <div className="space-y-1">
+                        <label className="text-[10px] uppercase tracking-wider font-semibold text-muted-foreground block">
+                          Payment
+                        </label>
+                        <select
+                          value={o.paymentStatus}
+                          onChange={(e) => updatePaymentStatus(o.id, e.target.value as Order["paymentStatus"])}
+                          className={`w-full px-2 py-1.5 text-xs font-medium border border-border rounded focus:outline-none ${
+                            o.paymentStatus === "Paid"
+                              ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300"
+                              : o.paymentStatus === "Pending"
+                                ? "bg-amber-500/10 text-amber-700 dark:text-amber-300"
+                                : "bg-destructive/10 text-destructive"
+                          }`}
+                        >
+                          <option value="Paid">Paid</option>
+                          <option value="Pending">Pending</option>
+                          <option value="Failed">Failed</option>
+                        </select>
+                      </div>
+
+                      <div className="space-y-1">
+                        <label className="text-[10px] uppercase tracking-wider font-semibold text-muted-foreground block">
+                          Delivery Days
+                        </label>
+                        <div className="flex items-center gap-1.5 bg-background border border-border px-2 py-1 rounded h-[31px]">
+                          <input
+                            type="number"
+                            min="1"
+                            max="30"
+                            value={currentDays}
+                            onChange={(e) => {
+                              const val = parseInt(e.target.value, 10);
+                              if (!isNaN(val) && val > 0) {
+                                updateOrderDays(o.id, val);
+                              }
+                            }}
+                            className="w-10 h-full text-xs text-center font-bold font-sans tabular-nums bg-transparent border-0 focus:outline-none focus:ring-1 focus:ring-primary rounded"
+                          />
+                          <span className="text-[11px] font-sans text-muted-foreground">days</span>
+                        </div>
+                      </div>
+
+                      <div className="col-span-2 space-y-1">
+                        <label className="text-[10px] uppercase tracking-wider font-semibold text-muted-foreground block">
+                          Fulfillment Status
+                        </label>
+                        <select
+                          value={tracking.effectiveStatus}
+                          onChange={(e) => updateOrderStatus(o.id, e.target.value as Order["status"], true)}
+                          className={`w-full px-2.5 py-1.5 text-xs font-medium border border-border rounded focus:outline-none ${
+                            tracking.effectiveStatus === "Delivered"
+                              ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-emerald-500/30"
+                              : tracking.effectiveStatus === "Shipped"
+                                ? "bg-indigo-500/15 text-indigo-700 dark:text-indigo-300 border-indigo-500/30 font-semibold"
+                                : tracking.effectiveStatus === "Processing"
+                                  ? "bg-blue-500/15 text-blue-700 dark:text-blue-300 border-blue-500/30"
+                                  : tracking.effectiveStatus === "Cancelled"
+                                    ? "bg-destructive/15 text-destructive border-destructive/30"
+                                    : "bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-500/30"
+                          }`}
+                        >
+                          <option value="Pending">Pending (Day 1)</option>
+                          <option value="Confirmed">Confirmed</option>
+                          <option value="Processing">Processing (Day 2)</option>
+                          <option value="Shipped">Shipped (Day 3+)</option>
+                          <option value="Delivered">Delivered</option>
+                          <option value="Cancelled">Cancelled</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    {/* Action Buttons Row */}
+                    <div className="flex items-center justify-between gap-1.5 pt-2 border-t border-border/60">
+                      <button
+                        type="button"
+                        onClick={() => handleDownloadSingleOrder(o)}
+                        className="flex-1 py-1.5 px-2 text-xs rounded border border-border bg-background hover:border-gold hover:bg-gold/15 text-gold flex items-center justify-center gap-1 transition-colors cursor-pointer"
+                        title="Download Invoice"
+                      >
+                        <Download className="size-3.5" />
+                        <span>Invoice</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setEditingOrder(o)}
+                        className="flex-1 py-1.5 px-2 text-xs rounded border border-border bg-background hover:border-gold hover:bg-gold/15 text-gold flex items-center justify-center gap-1 transition-colors cursor-pointer"
+                        title="Edit Order"
+                      >
+                        <Edit className="size-3.5" />
+                        <span>Edit</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setSelectedOrder(o)}
+                        className="flex-1 py-1.5 px-2 text-xs rounded border border-border bg-background hover:bg-secondary text-foreground flex items-center justify-center gap-1 transition-colors cursor-pointer"
+                        title="View Details"
+                      >
+                        <Eye className="size-3.5" />
+                        <span>View</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setDeleteOrderConfirm(o)}
+                        className="py-1.5 px-2.5 text-xs rounded border border-border bg-background hover:border-destructive/40 hover:bg-destructive/10 text-destructive flex items-center justify-center transition-colors cursor-pointer"
+                        title="Delete Order"
+                      >
+                        <Trash2 className="size-3.5" />
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+
+              {filteredOrders.length === 0 && (
+                <div className="bg-card border border-border p-8 text-center text-muted-foreground text-sm rounded-xl">
+                  No orders found matching the filter.
+                </div>
+              )}
+            </div>
+
+            {/* Desktop Orders Table (Visible on screens >= 768px) */}
+            <div className="hidden md:block bg-card border border-border overflow-hidden">
               <div className="overflow-x-auto">
-                <table className="w-full text-left text-sm">
+                <table className="w-full text-left text-sm min-w-[950px]">
                   <thead className="bg-secondary/40 text-muted-foreground border-b border-border">
                     <tr>
                       <th className="p-3.5 text-xs font-semibold uppercase tracking-wider">Order ID</th>
@@ -3156,7 +3369,7 @@ function AdminDashboardPage() {
                           </td>
 
                           <td className="p-3.5 text-sm text-muted-foreground">
-                            {o.items.map((i) => `${i.quantity}x ${i.productName}`).join(", ")}
+                            {(Array.isArray(o.items) ? o.items : []).map((i) => `${i.quantity || 1}x ${i.productName || i.productId || "Product"}`).join(", ")}
                           </td>
                           <td className="p-3.5 font-sans font-bold tabular-nums text-sm text-primary">{money(o.total)}</td>
                           <td className="p-3.5">
@@ -3214,7 +3427,7 @@ function AdminDashboardPage() {
                               <button
                                 type="button"
                                 onClick={() => handleDownloadSingleOrder(o)}
-                                className="size-8 rounded flex items-center justify-center border border-border bg-background hover:border-gold hover:bg-gold/15 text-gold transition-colors"
+                                className="size-8 rounded flex items-center justify-center border border-border bg-background hover:border-gold hover:bg-gold/15 text-gold transition-colors cursor-pointer"
                                 title="Download Order Invoice (HTML)"
                                 aria-label="Download Order Invoice"
                               >
@@ -3225,7 +3438,7 @@ function AdminDashboardPage() {
                               <button
                                 type="button"
                                 onClick={() => setEditingOrder(o)}
-                                className="size-8 rounded flex items-center justify-center border border-border bg-background hover:border-gold hover:bg-gold/15 text-gold transition-colors"
+                                className="size-8 rounded flex items-center justify-center border border-border bg-background hover:border-gold hover:bg-gold/15 text-gold transition-colors cursor-pointer"
                                 title="Edit Order & Delivery Days"
                                 aria-label="Edit Order"
                               >
@@ -3236,7 +3449,7 @@ function AdminDashboardPage() {
                               <button
                                 type="button"
                                 onClick={() => setSelectedOrder(o)}
-                                className="size-8 rounded flex items-center justify-center border border-border bg-background hover:bg-secondary text-foreground hover:text-primary transition-colors"
+                                className="size-8 rounded flex items-center justify-center border border-border bg-background hover:bg-secondary text-foreground hover:text-primary transition-colors cursor-pointer"
                                 title="View Order Details & Tracking"
                                 aria-label="View Order"
                               >
@@ -3247,7 +3460,7 @@ function AdminDashboardPage() {
                               <button
                                 type="button"
                                 onClick={() => setDeleteOrderConfirm(o)}
-                                className="size-8 rounded flex items-center justify-center border border-border bg-background hover:border-destructive/40 hover:bg-destructive/10 text-destructive transition-colors"
+                                className="size-8 rounded flex items-center justify-center border border-border bg-background hover:border-destructive/40 hover:bg-destructive/10 text-destructive transition-colors cursor-pointer"
                                 title="Delete Order"
                                 aria-label="Delete Order"
                               >
@@ -3268,10 +3481,11 @@ function AdminDashboardPage() {
                   </tbody>
                 </table>
               </div>
+            </div>
 
-              {/* Pagination Controls (10 orders per page) */}
-              {filteredOrders.length > 0 && (
-                <div className="p-4 border-t border-border bg-secondary/10 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
+            {/* Pagination Controls (10 orders per page) - Visible for both Mobile and Desktop */}
+            {filteredOrders.length > 0 && (
+              <div className="p-4 border border-border bg-card flex flex-col sm:flex-row items-center justify-between gap-3 text-xs rounded-xl">
                   <div className="text-muted-foreground">
                     Showing{" "}
                     <strong className="text-foreground font-sans tabular-nums">
@@ -3348,7 +3562,6 @@ function AdminDashboardPage() {
                   </div>
                 </div>
               )}
-            </div>
           </div>
         )}
 
