@@ -1026,7 +1026,7 @@ function AdminDashboardPage() {
       img.onload = async () => {
         try {
           const canvas = document.createElement("canvas");
-          const maxDim = folder === "padma_banners" ? 1200 : 500;
+          const maxDim = folder === "padma_banners" ? 1920 : 500;
           let width = img.width;
           let height = img.height;
           if (width > maxDim || height > maxDim) {
@@ -4117,7 +4117,7 @@ function AdminDashboardPage() {
                       <ImageIcon className="size-4 text-primary" /> Hero Carousel Banner Slides
                     </h3>
                     <p className="text-[11px] text-muted-foreground">
-                      Upload and manage the full-width banners in the top carousel. You can add new promotional banners or replace existing slides.
+                      Upload and manage the hero banners. Add both a desktop horizontal banner (recommended: 1920 × 800 px) and a mobile vertical banner (recommended: 1080 × 1350 px, 4:5 ratio).
                     </p>
                   </div>
                   <Button
@@ -4129,8 +4129,11 @@ function AdminDashboardPage() {
                       const newBanner: HeroBannerSlide = {
                         id: `banner-${Date.now()}`,
                         image: "/hero-banner-1.jpg",
+                        desktopImage: "/hero-banner-1.jpg",
+                        mobileImage: "",
                         alt: "Padmanabha Fabrics - New Collection Banner",
                         href: "/shop",
+                        buttonText: "",
                       };
                       const newHome = {
                         ...homeDraft,
@@ -4147,89 +4150,31 @@ function AdminDashboardPage() {
                   </Button>
                 </div>
 
-                <div className="space-y-3.5">
-                  {(homeDraft.heroBanners || DEFAULT_HERO_BANNERS).map((banner, index) => (
-                    <div
-                      key={banner.id || index}
-                      className="p-3.5 border border-border rounded-lg bg-background/50 flex flex-col sm:flex-row items-start sm:items-center gap-4"
-                    >
-                      <div className="relative w-full sm:w-44 aspect-[2/1] rounded overflow-hidden border border-border shrink-0 bg-muted/40">
-                        <img
-                          src={banner.image}
-                          alt={banner.alt}
-                          className="w-full h-full object-cover"
-                          onError={(e) => {
-                            (e.currentTarget as HTMLImageElement).src = "/placeholder.svg";
-                          }}
-                        />
-                      </div>
+                <div className="space-y-4">
+                  {(homeDraft.heroBanners || DEFAULT_HERO_BANNERS).map((banner, index) => {
+                    const desktopImg = banner.desktopImage || banner.image;
+                    const mobileImg = banner.mobileImage || "";
 
-                      <div className="flex-1 w-full grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
-                        <div className="space-y-1">
-                          <label className="font-medium text-[11px] text-muted-foreground">
-                            Banner Description / Alt Text
-                          </label>
-                          <Input
-                            value={banner.alt}
-                            onChange={(e) => {
-                              const updated = [...(homeDraft.heroBanners || DEFAULT_HERO_BANNERS)];
-                              updated[index] = { ...updated[index], alt: e.target.value };
-                              const newHome = { ...homeDraft, heroBanners: updated };
-                              setHomeDraft(newHome);
-                              updateHomeContent(newHome);
-                            }}
-                            placeholder="Banner title or description"
-                            className="text-xs h-8"
-                          />
-                        </div>
-
-                        <div className="space-y-1">
-                          <label className="font-medium text-[11px] text-muted-foreground">
-                            Redirect Link on Click
-                          </label>
-                          <Input
-                            value={banner.href}
-                            onChange={(e) => {
-                              const updated = [...(homeDraft.heroBanners || DEFAULT_HERO_BANNERS)];
-                              updated[index] = { ...updated[index], href: e.target.value };
-                              const newHome = { ...homeDraft, heroBanners: updated };
-                              setHomeDraft(newHome);
-                              updateHomeContent(newHome);
-                            }}
-                            placeholder="/shop or /shop?category=Saree"
-                            className="text-xs h-8"
-                          />
-                        </div>
-
-                        <div className="md:col-span-2 flex flex-wrap items-center gap-2 pt-1">
-                          <label className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded border border-border hover:bg-muted text-[11px] font-semibold cursor-pointer transition-colors shadow-2xs">
-                            <Upload className="size-3 text-primary" />
-                            <span>{isUploadingHomeMedia ? "Uploading..." : "Upload New Banner Photo"}</span>
-                            <input
-                              type="file"
-                              accept="image/*"
-                              className="hidden"
-                              disabled={isUploadingHomeMedia}
-                              onChange={(e) => {
-                                const file = e.target.files?.[0];
-                                if (file) {
-                                  handleUploadHomeMedia(file, "padma_banners", (url) => {
-                                    const updated = [...(homeDraft.heroBanners || DEFAULT_HERO_BANNERS)];
-                                    const bannerItem = { ...updated[index], image: url };
-                                    delete bannerItem.mobileImage;
-                                    updated[index] = bannerItem;
-                                    const newHome = { ...homeDraft, heroBanners: updated };
-                                    setHomeDraft(newHome);
-                                    updateHomeContent(newHome);
-                                  });
-                                }
-                              }}
-                            />
-                          </label>
-
-                          <span className="text-[10px] text-muted-foreground truncate max-w-[200px]" title={banner.image}>
-                            {banner.image}
-                          </span>
+                    return (
+                      <div
+                        key={banner.id || index}
+                        className="p-4 border border-border rounded-lg bg-background/50 space-y-3.5"
+                      >
+                        <div className="flex items-center justify-between pb-2 border-b border-border/60">
+                          <div className="flex items-center gap-2">
+                            <span className="font-semibold text-xs text-foreground">
+                              Slide #{index + 1}
+                            </span>
+                            {mobileImg?.trim() ? (
+                              <span className="text-[10px] bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300 font-medium px-2 py-0.5 rounded-full border border-emerald-200 dark:border-emerald-800">
+                                ✓ Desktop + Mobile Vertical Ready
+                              </span>
+                            ) : (
+                              <span className="text-[10px] bg-muted text-muted-foreground font-medium px-2 py-0.5 rounded-full border border-border">
+                                Desktop Only (Mobile uses Desktop fallback)
+                              </span>
+                            )}
+                          </div>
 
                           {(homeDraft.heroBanners || DEFAULT_HERO_BANNERS).length > 1 && (
                             <Button
@@ -4243,16 +4188,229 @@ function AdminDashboardPage() {
                                 updateHomeContent(newHome);
                                 toast.success("Banner slide removed!");
                               }}
-                              className="ml-auto text-rose-600 hover:text-rose-700 hover:bg-rose-50 h-7 text-xs px-2"
+                              className="text-rose-600 hover:text-rose-700 hover:bg-rose-50 h-7 text-xs px-2"
                             >
                               <Trash2 className="size-3 mr-1" />
                               <span>Remove Slide</span>
                             </Button>
                           )}
                         </div>
+
+                        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
+                          {/* Previews: Desktop (horizontal 2:1) and Mobile (vertical 4:5) */}
+                          <div className="lg:col-span-4 flex items-start gap-3">
+                            <div className="flex-1 space-y-1">
+                              <span className="text-[11px] font-medium text-muted-foreground block">
+                                Desktop (1920×800)
+                              </span>
+                              <div className="relative aspect-[2/1] rounded overflow-hidden border border-border bg-muted/40 shadow-2xs">
+                                <img
+                                  src={desktopImg}
+                                  alt={banner.alt || "Desktop preview"}
+                                  className="w-full h-full object-cover"
+                                  onError={(e) => {
+                                    (e.currentTarget as HTMLImageElement).src = "/placeholder.svg";
+                                  }}
+                                />
+                              </div>
+                            </div>
+
+                            <div className="w-20 sm:w-24 shrink-0 space-y-1">
+                              <span className="text-[11px] font-medium text-muted-foreground block">
+                                Mobile (1080×1350)
+                              </span>
+                              <div className="relative aspect-[4/5] rounded overflow-hidden border border-border bg-muted/40 shadow-2xs">
+                                <img
+                                  src={mobileImg?.trim() ? mobileImg : desktopImg}
+                                  alt={banner.alt || "Mobile preview"}
+                                  className="w-full h-full object-cover"
+                                  onError={(e) => {
+                                    (e.currentTarget as HTMLImageElement).src = "/placeholder.svg";
+                                  }}
+                                />
+                                {!mobileImg?.trim() && (
+                                  <div className="absolute inset-x-0 bottom-0 bg-black/60 text-[9px] text-white text-center py-0.5 font-medium">
+                                    Fallback
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Two Image Upload Fields & Inputs */}
+                          <div className="lg:col-span-8 space-y-3 text-xs">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                              {/* Desktop Image */}
+                              <div className="space-y-1.5 p-2 rounded-md border border-border/80 bg-background">
+                                <div className="flex items-center justify-between">
+                                  <label className="font-semibold text-[11px] text-foreground">
+                                    Desktop Image (horizontal)
+                                  </label>
+                                  <span className="text-[10px] text-muted-foreground">
+                                    1920 × 800 px
+                                  </span>
+                                </div>
+                                <div className="flex items-center gap-1.5">
+                                  <Input
+                                    value={desktopImg}
+                                    onChange={(e) => {
+                                      const updated = [...(homeDraft.heroBanners || DEFAULT_HERO_BANNERS)];
+                                      updated[index] = {
+                                        ...updated[index],
+                                        image: e.target.value,
+                                        desktopImage: e.target.value,
+                                      };
+                                      const newHome = { ...homeDraft, heroBanners: updated };
+                                      setHomeDraft(newHome);
+                                      updateHomeContent(newHome);
+                                    }}
+                                    placeholder="URL or /hero-banner-1.jpg"
+                                    className="text-xs h-8"
+                                  />
+                                  <label className="shrink-0 inline-flex items-center gap-1 px-2.5 h-8 rounded border border-border hover:bg-muted text-[11px] font-medium cursor-pointer transition-colors shadow-2xs">
+                                    <Upload className="size-3 text-primary" />
+                                    <span>Upload</span>
+                                    <input
+                                      type="file"
+                                      accept="image/*"
+                                      className="hidden"
+                                      disabled={isUploadingHomeMedia}
+                                      onChange={(e) => {
+                                        const file = e.target.files?.[0];
+                                        if (file) {
+                                          handleUploadHomeMedia(file, "padma_banners", (url) => {
+                                            const updated = [...(homeDraft.heroBanners || DEFAULT_HERO_BANNERS)];
+                                            updated[index] = {
+                                              ...updated[index],
+                                              image: url,
+                                              desktopImage: url,
+                                            };
+                                            const newHome = { ...homeDraft, heroBanners: updated };
+                                            setHomeDraft(newHome);
+                                            updateHomeContent(newHome);
+                                          });
+                                        }
+                                      }}
+                                    />
+                                  </label>
+                                </div>
+                              </div>
+
+                              {/* Mobile Image */}
+                              <div className="space-y-1.5 p-2 rounded-md border border-border/80 bg-background">
+                                <div className="flex items-center justify-between">
+                                  <label className="font-semibold text-[11px] text-foreground">
+                                    Mobile Image (vertical)
+                                  </label>
+                                  <span className="text-[10px] text-muted-foreground">
+                                    1080 × 1350 px (4:5)
+                                  </span>
+                                </div>
+                                <div className="flex items-center gap-1.5">
+                                  <Input
+                                    value={mobileImg}
+                                    onChange={(e) => {
+                                      const updated = [...(homeDraft.heroBanners || DEFAULT_HERO_BANNERS)];
+                                      updated[index] = {
+                                        ...updated[index],
+                                        mobileImage: e.target.value,
+                                      };
+                                      const newHome = { ...homeDraft, heroBanners: updated };
+                                      setHomeDraft(newHome);
+                                      updateHomeContent(newHome);
+                                    }}
+                                    placeholder="Optional: 4:5 vertical URL"
+                                    className="text-xs h-8"
+                                  />
+                                  <label className="shrink-0 inline-flex items-center gap-1 px-2.5 h-8 rounded border border-border hover:bg-muted text-[11px] font-medium cursor-pointer transition-colors shadow-2xs">
+                                    <Upload className="size-3 text-primary" />
+                                    <span>Upload</span>
+                                    <input
+                                      type="file"
+                                      accept="image/*"
+                                      className="hidden"
+                                      disabled={isUploadingHomeMedia}
+                                      onChange={(e) => {
+                                        const file = e.target.files?.[0];
+                                        if (file) {
+                                          handleUploadHomeMedia(file, "padma_banners", (url) => {
+                                            const updated = [...(homeDraft.heroBanners || DEFAULT_HERO_BANNERS)];
+                                            updated[index] = {
+                                              ...updated[index],
+                                              mobileImage: url,
+                                            };
+                                            const newHome = { ...homeDraft, heroBanners: updated };
+                                            setHomeDraft(newHome);
+                                            updateHomeContent(newHome);
+                                          });
+                                        }
+                                      }}
+                                    />
+                                  </label>
+                                </div>
+                              </div>
+                            </div>
+
+                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                              <div className="space-y-1">
+                                <label className="font-medium text-[11px] text-muted-foreground">
+                                  Banner Description / Alt Text
+                                </label>
+                                <Input
+                                  value={banner.alt}
+                                  onChange={(e) => {
+                                    const updated = [...(homeDraft.heroBanners || DEFAULT_HERO_BANNERS)];
+                                    updated[index] = { ...updated[index], alt: e.target.value };
+                                    const newHome = { ...homeDraft, heroBanners: updated };
+                                    setHomeDraft(newHome);
+                                    updateHomeContent(newHome);
+                                  }}
+                                  placeholder="Banner title or description"
+                                  className="text-xs h-8"
+                                />
+                              </div>
+
+                              <div className="space-y-1">
+                                <label className="font-medium text-[11px] text-muted-foreground">
+                                  Redirect Link on Click
+                                </label>
+                                <Input
+                                  value={banner.href}
+                                  onChange={(e) => {
+                                    const updated = [...(homeDraft.heroBanners || DEFAULT_HERO_BANNERS)];
+                                    updated[index] = { ...updated[index], href: e.target.value };
+                                    const newHome = { ...homeDraft, heroBanners: updated };
+                                    setHomeDraft(newHome);
+                                    updateHomeContent(newHome);
+                                  }}
+                                  placeholder="/shop or /shop?category=Saree"
+                                  className="text-xs h-8"
+                                />
+                              </div>
+
+                              <div className="space-y-1">
+                                <label className="font-medium text-[11px] text-muted-foreground">
+                                  Button Label (Optional)
+                                </label>
+                                <Input
+                                  value={(banner as any).buttonText || ""}
+                                  onChange={(e) => {
+                                    const updated = [...(homeDraft.heroBanners || DEFAULT_HERO_BANNERS)];
+                                    updated[index] = { ...updated[index], buttonText: e.target.value };
+                                    const newHome = { ...homeDraft, heroBanners: updated };
+                                    setHomeDraft(newHome);
+                                    updateHomeContent(newHome);
+                                  }}
+                                  placeholder="e.g. Explore Festive Collection"
+                                  className="text-xs h-8"
+                                />
+                              </div>
+                            </div>
+                          </div>
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
 

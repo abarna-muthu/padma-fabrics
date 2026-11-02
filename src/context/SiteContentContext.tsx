@@ -10,10 +10,14 @@ import comboDressesImg from "@/assets/girls-party-frock.jpg";
 
 export interface HeroBannerSlide {
   id: string | number;
-  image: string;
-  mobileImage?: string;
+  image: string; // Desktop Image (horizontal, 1920x800)
+  desktopImage?: string; // Desktop Image alias
+  mobileImage?: string; // Mobile Image (vertical, 1080x1350, 4:5 ratio)
   alt: string;
   href: string;
+  title?: string;
+  subtitle?: string;
+  buttonText?: string;
 }
 
 export interface PopularCategoryItem {
@@ -80,20 +84,29 @@ export const DEFAULT_HERO_BANNERS: HeroBannerSlide[] = [
   {
     id: 1,
     image: "/hero-banner-3.jpg",
+    desktopImage: "/hero-banner-3.jpg",
+    mobileImage: "",
     alt: "Padmanabha Fabrics - Diwali Edit, Silhouettes to Host, Shine & Celebrate In",
     href: "/shop",
+    buttonText: "",
   },
   {
     id: 2,
     image: "/hero-banner-2.png",
+    desktopImage: "/hero-banner-2.png",
+    mobileImage: "",
     alt: "Padmanabha Fabrics - Timeless Ethnic Elegance, Explore Collection",
     href: "/shop",
+    buttonText: "",
   },
   {
     id: 3,
     image: "/hero-banner-1.jpg",
+    desktopImage: "/hero-banner-1.jpg",
+    mobileImage: "",
     alt: "Padmanabha Fabrics - Timeless Ethnic Elegance, Style Woven With Tradition",
     href: "/shop",
+    buttonText: "",
   },
 ];
 
@@ -279,12 +292,23 @@ const SiteContentContext = createContext<SiteContentContextType | null>(null);
 
 const sanitizeHeroBanners = (banners: any[]): HeroBannerSlide[] => {
   if (!Array.isArray(banners)) return DEFAULT_HERO_BANNERS;
-  return banners.map((b) => {
-    if (b && b.mobileImage === "/hero-banner-mobile.jpg") {
-      const { mobileImage, ...rest } = b;
-      return rest;
-    }
-    return b;
+  return banners.map((b, idx) => {
+    const desktopImg = b.desktopImage || b.image || "/hero-banner-1.jpg";
+    const mobImg =
+      typeof b.mobileImage === "string" && b.mobileImage !== "/hero-banner-mobile.jpg"
+        ? b.mobileImage
+        : "";
+    return {
+      id: b.id || `banner-${idx + 1}`,
+      image: desktopImg,
+      desktopImage: desktopImg,
+      mobileImage: mobImg,
+      alt: b.alt || "Padmanabha Fabrics Banner",
+      href: b.href || "/shop",
+      title: b.title || "",
+      subtitle: b.subtitle || "",
+      buttonText: b.buttonText || "",
+    };
   });
 };
 
