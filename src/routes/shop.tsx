@@ -72,16 +72,70 @@ function ShopPage() {
   const queryFilter = searchParams?.filter;
   const querySale = searchParams?.sale;
 
-  const { filter, setFilter, activeProducts = [], categoriesList = [] } = useStore();
-  const rawCats = categoriesList && categoriesList.length > 0 ? categoriesList : (categories as readonly string[]);
+  const { filter, setFilter, activeProducts = [], categoriesList = [], deletedCategories = [] } = useStore();
 
-  // Collect distinct categories, avoiding duplicate "ALL"
+  const normalize = (s?: string) => (s || "").toLowerCase().replace(/[^a-z0-9]/g, "");
+
+  // Collect distinct categories, avoiding duplicate variants, ALL, and deleted categories
   const distinctCategories = useMemo(() => {
-    const list = rawCats.map((c: any) => (typeof c === "string" ? c : c?.name || String(c)));
-    const productCats = (activeProducts || []).map((p) => p.category).filter(Boolean);
-    const combined = Array.from(new Set([...list, ...productCats]));
-    return combined.filter((c) => c && c.trim().toLowerCase() !== "all");
-  }, [rawCats, activeProducts]);
+    const map = new Map<string, string>(); // normKey -> DisplayName
+
+    const isDeleted = (norm: string) => {
+      return (
+        Array.isArray(deletedCategories) &&
+        deletedCategories.some(
+          (d) => (d || "").toLowerCase().replace(/[^a-z0-9]/g, "") === norm,
+        )
+      );
+    };
+
+    const addCat = (c: any) => {
+      if (!c || typeof c !== "string") return;
+      const trimmed = c.trim();
+      if (!trimmed) return;
+      const lower = trimmed.toLowerCase();
+      if (lower === "all" || lower === "all categories" || lower === ALL.toLowerCase()) {
+        return;
+      }
+      const norm = lower.replace(/[^a-z0-9]/g, "");
+      if (!norm || isDeleted(norm)) {
+        return;
+      }
+      if (!map.has(norm)) {
+        const display =
+          trimmed.includes("-") && !trimmed.includes(" ")
+            ? trimmed
+                .split("-")
+                .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+                .join(" ")
+            : trimmed;
+        map.set(norm, display);
+      }
+    };
+
+    // 1. Static base categories from catalog
+    for (const c of categories) {
+      addCat(c);
+    }
+
+    // 2. Dynamic categories from StoreContext
+    if (Array.isArray(categoriesList)) {
+      for (const c of categoriesList) {
+        addCat(typeof c === "string" ? c : (c as any)?.name);
+      }
+    }
+
+    // 3. Products categories from activeProducts
+    if (Array.isArray(activeProducts)) {
+      for (const p of activeProducts) {
+        addCat(p.category);
+        if ((p as any).categoryId) addCat((p as any).categoryId);
+        if ((p as any).category_id) addCat((p as any).category_id);
+      }
+    }
+
+    return Array.from(map.values());
+  }, [categoriesList, activeProducts, deletedCategories]);
 
   // Pattern Filter state
   const [selectedPattern, setSelectedPattern] = useState<string | null>(queryPattern || null);
@@ -101,10 +155,10 @@ function ShopPage() {
 
   useEffect(() => {
     if (queryCategory) {
-      const matched = distinctCategories.find((c) => c.toLowerCase() === queryCategory.toLowerCase());
+      const matched = distinctCategories.find((c) => normalize(c) === normalize(queryCategory));
       setFilter(matched || queryCategory);
     }
-  }, [queryCategory]);
+  }, [queryCategory, distinctCategories]);
 
   useEffect(() => {
     if (queryPattern) {
@@ -113,8 +167,6 @@ function ShopPage() {
   }, [queryPattern]);
 
   const patternItem = selectedPattern ? PATTERNS_DATA.find((p) => p.slug === selectedPattern) : null;
-
-  const normalize = (s?: string) => (s || "").trim().toLowerCase();
 
   const visible = (activeProducts || []).filter((p) => {
     if (!p) return false;
@@ -230,17 +282,18 @@ function ShopPage() {
         <div className="flex items-center gap-2 overflow-x-auto pb-3 mb-6 no-scrollbar">
           <Button
             variant="filter"
-            data-active={filter === ALL || normalize(filter) === "all"}
+            data-active={filter === ALL || normalize(filter) === "all" || !filter}
             onClick={() => handleCategoryClick(ALL)}
           >
             All Categories ({(activeProducts || []).length})
           </Button>
           {distinctCategories.map((c) => {
             const count = (activeProducts || []).filter((p) => {
+              const pNorm = normalize(p.category);
+              const cNorm = normalize(c);
               return (
-                normalize(p.category) === normalize(c) ||
-                normalize(p.category).includes(normalize(c)) ||
-                normalize(c).includes(normalize(p.category))
+                pNorm === cNorm ||
+                (pNorm.length > 2 && cNorm.length > 2 && (pNorm.includes(cNorm) || cNorm.includes(pNorm)))
               );
             }).length;
 
