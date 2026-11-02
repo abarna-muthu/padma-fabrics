@@ -257,6 +257,7 @@ function AdminDashboardPage() {
       for (const p of productsList) {
         addCat(p.category);
         if ((p as any).categoryId) addCat((p as any).categoryId);
+        if ((p as any).category_id) addCat((p as any).category_id);
       }
     }
 
@@ -569,8 +570,19 @@ function AdminDashboardPage() {
       return;
     }
 
-    if (activeCategoriesList.some((c) => c.toLowerCase() === trimmed.toLowerCase())) {
-      toast.error(`Category "${trimmed}" already exists!`);
+    const existing = activeCategoriesList.find(
+      (c) =>
+        c !== ALL &&
+        c.toLowerCase().replace(/[^a-z0-9]/g, "") ===
+          trimmed.toLowerCase().replace(/[^a-z0-9]/g, ""),
+    );
+    if (existing) {
+      toast.info(`Category "${existing}" selected!`);
+      setProdCategory(existing);
+      setProductCategoryFilter(existing);
+      setNewCatName("");
+      setNewCatDesc("");
+      setIsCategoryModalOpen(false);
       return;
     }
 
@@ -1205,7 +1217,24 @@ function AdminDashboardPage() {
   const handleOpenEditProduct = (p: Product) => {
     setEditingProduct(p);
     setProdName(p.name);
-    setProdCategory(p.category);
+
+    // Resolve saved category accurately (resilient to case, slug, or formatting)
+    const rawCat = String(
+      p.category || (p as any).categoryId || (p as any).category_id || "",
+    ).trim();
+    const normTarget = rawCat.toLowerCase().replace(/[^a-z0-9]/g, "");
+    const matched = activeCategoriesList.find(
+      (c) => c !== ALL && c.toLowerCase().replace(/[^a-z0-9]/g, "") === normTarget,
+    );
+    const formattedFallback =
+      rawCat.includes("-") && !rawCat.includes(" ")
+        ? rawCat
+            .split("-")
+            .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+            .join(" ")
+        : rawCat;
+
+    setProdCategory(matched || formattedFallback || rawCat || "Saree");
     setProdColour(p.colour);
     setProdPrice(p.price.toString());
     setProdUnit(p.unit);
@@ -2307,11 +2336,11 @@ function AdminDashboardPage() {
         {/* ----------------- TAB 2: PRODUCTS ----------------- */}
         {activeTab === "products" && (
           <div className="space-y-6">
-            {/* Top Toolbar: Search, Category, New Category, Add Product - Single Clean Line */}
+            {/* Top Toolbar: Search, Category, New Category, Add Product - Clean Responsive Layout */}
             <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 w-full">
-              <div className="flex flex-wrap sm:flex-nowrap items-center gap-2.5 w-full lg:w-auto flex-1">
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 w-full lg:w-auto flex-1">
                 {/* Search */}
-                <div className="relative flex-1 sm:w-80 min-w-[200px]">
+                <div className="relative flex-1 sm:w-80 min-w-0 sm:min-w-[200px]">
                   <Search className="size-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-[#0E0E0E]/40" />
                   <Input
                     placeholder="Search products, colours, SKU…"
@@ -2324,7 +2353,7 @@ function AdminDashboardPage() {
                 <select
                   value={productCategoryFilter}
                   onChange={(e) => setProductCategoryFilter(e.target.value)}
-                  className="h-10 px-4 text-xs rounded-full bg-white border border-[rgba(14,14,14,0.15)] text-[#0E0E0E] focus:outline-none focus:ring-1 focus:ring-[#D15608] focus:border-[#D15608] shrink-0"
+                  className="h-10 px-4 text-xs rounded-full bg-white border border-[rgba(14,14,14,0.15)] text-[#0E0E0E] focus:outline-none focus:ring-1 focus:ring-[#D15608] focus:border-[#D15608] w-full sm:w-auto shrink-0"
                 >
                   {activeCategoriesList.map((c) => (
                     <option key={c} value={c}>
@@ -2334,12 +2363,12 @@ function AdminDashboardPage() {
                 </select>
               </div>
 
-              <div className="flex items-center gap-2.5 shrink-0 self-end sm:self-auto">
+              <div className="flex items-center gap-2.5 w-full sm:w-auto justify-end shrink-0">
                 <Button
                   type="button"
                   variant="outline"
                   size="sm"
-                  className="h-10 text-xs font-medium rounded-full border-[rgba(14,14,14,0.18)] bg-white text-[#0E0E0E] hover:border-[#D15608] hover:bg-[#FAF7F2] shadow-2xs px-4 whitespace-nowrap"
+                  className="h-10 text-xs font-medium rounded-full border-[rgba(14,14,14,0.18)] bg-white text-[#0E0E0E] hover:border-[#D15608] hover:bg-[#FAF7F2] shadow-2xs px-4 flex-1 sm:flex-initial whitespace-nowrap justify-center"
                   onClick={() => {
                     setNewCatName("");
                     setNewCatDesc("");
@@ -2351,7 +2380,7 @@ function AdminDashboardPage() {
                 <button
                   type="button"
                   onClick={handleOpenAddProduct}
-                  className="h-10 px-5 text-xs font-medium uppercase tracking-[0.14em] rounded-full bg-[#D15608] hover:bg-[#9F160A] text-[#F4F0E8] flex items-center gap-1.5 transition-all shadow-sm cursor-pointer active:scale-95 whitespace-nowrap"
+                  className="h-10 px-5 text-xs font-medium uppercase tracking-[0.14em] rounded-full bg-[#D15608] hover:bg-[#9F160A] text-[#F4F0E8] flex items-center justify-center gap-1.5 transition-all shadow-sm cursor-pointer active:scale-95 whitespace-nowrap flex-1 sm:flex-initial"
                 >
                   <Plus className="size-3.5" />
                   <span>Add Product</span>
@@ -5527,10 +5556,10 @@ function AdminDashboardPage() {
 
       {/* ----------------- MODAL: ADD / EDIT PRODUCT ----------------- */}
       {isProductModalOpen && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-card border border-border w-full max-w-2xl sm:max-w-3xl max-h-[90vh] overflow-y-auto p-6 shadow-xl">
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-2.5 sm:p-4">
+          <div className="bg-card border border-border w-full max-w-2xl sm:max-w-3xl max-h-[92vh] overflow-y-auto p-4 sm:p-6 shadow-xl">
             <div className="flex justify-between items-center pb-4 border-b border-border">
-              <h2 className="font-display text-xl font-medium">
+              <h2 className="font-display text-lg sm:text-xl font-medium">
                 {editingProduct ? "Edit Product Details" : "Add New Catalog Fabric / Apparel"}
               </h2>
               <Button
@@ -5555,7 +5584,7 @@ function AdminDashboardPage() {
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div className="space-y-1.5">
                   <div className="flex items-center justify-between">
                     <label className="text-sm font-medium">Category</label>
@@ -5566,16 +5595,34 @@ function AdminDashboardPage() {
                         setNewCatDesc("");
                         setIsCategoryModalOpen(true);
                       }}
-                      className="text-xs text-primary hover:underline font-medium flex items-center gap-0.5"
+                      className="text-xs text-primary hover:underline font-medium flex items-center gap-0.5 cursor-pointer"
                     >
                       <Plus className="size-3" /> New
                     </button>
                   </div>
                   <select
-                    value={prodCategory}
+                    value={
+                      activeCategoriesList.find(
+                        (c) =>
+                          c !== ALL &&
+                          c.toLowerCase().replace(/[^a-z0-9]/g, "") ===
+                            prodCategory.toLowerCase().replace(/[^a-z0-9]/g, "")
+                      ) || prodCategory
+                    }
                     onChange={(e) => setProdCategory(e.target.value)}
                     className="w-full h-10 px-3 text-sm bg-background border border-border"
                   >
+                    {prodCategory &&
+                      !activeCategoriesList.some(
+                        (c) =>
+                          c !== ALL &&
+                          c.toLowerCase().replace(/[^a-z0-9]/g, "") ===
+                            prodCategory.toLowerCase().replace(/[^a-z0-9]/g, "")
+                      ) && (
+                        <option key={prodCategory} value={prodCategory}>
+                          {prodCategory}
+                        </option>
+                      )}
                     {activeCategoriesList
                       .filter((c) => c !== ALL)
                       .map((c) => (
@@ -5598,7 +5645,7 @@ function AdminDashboardPage() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-3 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div className="space-y-1.5">
                   <label className="text-sm font-medium">Price (₹) *</label>
                   <Input
@@ -5638,7 +5685,7 @@ function AdminDashboardPage() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div className="space-y-1.5">
                   <label className="text-sm font-medium">Badge Label</label>
                   <Input
@@ -6186,12 +6233,12 @@ function AdminDashboardPage() {
                 />
               </div>
 
-              <div className="pt-4 flex items-center justify-between gap-3 border-t border-border">
+              <div className="pt-4 flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-between gap-3 border-t border-border">
                 {editingProduct ? (
                   <Button
                     type="button"
                     variant="outline"
-                    className="text-destructive hover:bg-destructive/10 hover:text-destructive border-destructive/30 text-xs font-medium cursor-pointer"
+                    className="text-destructive hover:bg-destructive/10 hover:text-destructive border-destructive/30 text-xs font-medium cursor-pointer w-full sm:w-auto justify-center"
                     onClick={() => {
                       const toDelete = editingProduct;
                       setIsProductModalOpen(false);
@@ -6204,15 +6251,16 @@ function AdminDashboardPage() {
                 ) : (
                   <div />
                 )}
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2.5 w-full sm:w-auto">
                   <Button
                     type="button"
                     variant="outline"
                     onClick={() => setIsProductModalOpen(false)}
+                    className="flex-1 sm:flex-initial"
                   >
                     Cancel
                   </Button>
-                  <Button type="submit" variant="editorial">
+                  <Button type="submit" variant="editorial" className="flex-1 sm:flex-initial">
                     {editingProduct ? "Save Changes" : "Create Product"}
                   </Button>
                 </div>

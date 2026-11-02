@@ -154,7 +154,13 @@ const CATEGORY_MIGRATION: Record<string, string> = {
 };
 
 export function normalizeProduct(p: any): Product {
-  const cat = CATEGORY_MIGRATION[p.category] || p.category || "Chudithar Top";
+  const rawCat = String(p.category || (p as any).categoryId || (p as any).category_id || "").trim();
+  const cat =
+    CATEGORY_MIGRATION[rawCat] ||
+    (rawCat.includes("-") && !rawCat.includes(" ")
+      ? rawCat.split("-").map((w: string) => w.charAt(0).toUpperCase() + w.slice(1)).join(" ")
+      : rawCat) ||
+    "Chudithar Top";
   const rawImages: string[] = Array.isArray(p.images) && p.images.length > 0
     ? p.images.filter(Boolean)
     : (typeof p.images === "string" ? (() => { try { const parsed = JSON.parse(p.images); return Array.isArray(parsed) ? parsed.filter(Boolean) : []; } catch { return []; } })() : []);

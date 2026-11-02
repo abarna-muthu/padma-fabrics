@@ -461,7 +461,16 @@ export async function createProduct(req: Request, res: Response) {
       sku: productSku,
       name,
       slug: productSlug,
-      category: CATEGORY_ID_TO_NAME[finalCategory] || finalCategory,
+      category:
+        CATEGORY_ID_TO_NAME[finalCategory] ||
+        (rawCat && !rawCat.includes("-")
+          ? rawCat
+          : finalCategory.includes("-")
+            ? finalCategory
+                .split("-")
+                .map((w: string) => w.charAt(0).toUpperCase() + w.slice(1))
+                .join(" ")
+            : finalCategory),
       categoryId: finalCategory,
       colour: colour || "Custom",
       price: Number(price),
@@ -550,6 +559,25 @@ export async function updateProduct(req: Request, res: Response) {
     const rawCat = categoryId || category || rows[0]?.category_id || "sarees";
     const finalCategory =
       CATEGORY_NAME_TO_ID[rawCat] || rawCat.toLowerCase().replace(/[^a-z0-9]+/g, "-");
+
+    // Ensure category exists in categories table to satisfy FOREIGN KEY constraint
+    const catCheck = await db.query("SELECT id FROM categories WHERE id = ?", [finalCategory]);
+    if (!catCheck || catCheck.length === 0) {
+      const catName =
+        rawCat && !rawCat.includes("-")
+          ? rawCat
+          : finalCategory.includes("-")
+            ? finalCategory
+                .split("-")
+                .map((w: string) => w.charAt(0).toUpperCase() + w.slice(1))
+                .join(" ")
+            : finalCategory;
+      await db.execute(
+        "INSERT IGNORE INTO categories (id, name, slug, description, display_order) VALUES (?, ?, ?, ?, ?)",
+        [finalCategory, catName, finalCategory, `${catName} collection`, 99],
+      ).catch(() => {});
+    }
+
     const activeVal =
       is_active !== undefined
         ? is_active ? 1 : 0
@@ -671,7 +699,16 @@ export async function updateProduct(req: Request, res: Response) {
     const updatedProduct = {
       id: rows[0]?.id || id,
       name: name || rows[0]?.name,
-      category: CATEGORY_ID_TO_NAME[finalCategory] || finalCategory,
+      category:
+        CATEGORY_ID_TO_NAME[finalCategory] ||
+        (rawCat && !rawCat.includes("-")
+          ? rawCat
+          : finalCategory.includes("-")
+            ? finalCategory
+                .split("-")
+                .map((w: string) => w.charAt(0).toUpperCase() + w.slice(1))
+                .join(" ")
+            : finalCategory),
       categoryId: finalCategory,
       colour: colour || rows[0]?.colour || "Custom",
       price: price !== undefined ? Number(price) : rows[0]?.price,
