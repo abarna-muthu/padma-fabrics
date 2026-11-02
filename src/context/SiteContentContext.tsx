@@ -231,7 +231,7 @@ export const DEFAULT_BESTSELLER_TABS: BestsellerCategoryTabItem[] = [
 ];
 
 const DEFAULT_HOME_CONTENT: HomeContent = {
-  announcementText: "Beautiful fabrics. Beyond borders. | Retail · Wholesale · Import & Export",
+  announcementText: "Beautiful fabrics. Beyond borders. | Wholesale and Retail",
   heroKicker: "The Padmanabha collection",
   heroTitle: "A world of beautiful fabrics.",
   heroSubtitle:
@@ -312,10 +312,21 @@ const sanitizeHeroBanners = (banners: any[]): HeroBannerSlide[] => {
   });
 };
 
+const sanitizeAnnouncementText = (text: any): string => {
+  if (typeof text !== "string" || !text.trim()) {
+    return DEFAULT_HOME_CONTENT.announcementText;
+  }
+  if (text.includes("Import & Export") || text.includes("Retail · Wholesale")) {
+    return DEFAULT_HOME_CONTENT.announcementText;
+  }
+  return text.trim();
+};
+
 const mergeHomeContent = (rawHome: any): HomeContent => {
   return {
     ...DEFAULT_HOME_CONTENT,
     ...(rawHome || {}),
+    announcementText: sanitizeAnnouncementText(rawHome?.announcementText),
     heroBanners:
       Array.isArray(rawHome?.heroBanners) && rawHome.heroBanners.length > 0
         ? sanitizeHeroBanners(rawHome.heroBanners)

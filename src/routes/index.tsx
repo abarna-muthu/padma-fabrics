@@ -8,7 +8,7 @@ export const Route = createFileRoute("/")({
       {
         name: "description",
         content:
-          "Explore silks, cottons, coordsets and ready-to-wear at Padmanabha Fabrics, Menambedu, Ambattur, Chennai. Retail · Wholesale · Import & Export.",
+          "Explore silks, cottons, coordsets and ready-to-wear at Padmanabha Fabrics, Menambedu, Ambattur, Chennai. Wholesale and Retail.",
       },
       { property: "og:title", content: "Padmanabha Fabrics | A World of Beautiful Fabrics · Chennai" },
       {

@@ -23,7 +23,7 @@ try {
 
 export const DEFAULT_SITE_CONTENT = {
   home: {
-    announcementText: "Beautiful fabrics. Beyond borders. | Retail · Wholesale · Import & Export",
+    announcementText: "Beautiful fabrics. Beyond borders. | Wholesale and Retail",
     heroKicker: "The Padmanabha collection",
     heroTitle: "A world of beautiful fabrics.",
     heroSubtitle:
@@ -250,6 +250,16 @@ export const DEFAULT_SITE_CONTENT = {
   },
 };
 
+function sanitizeAnnouncement(text?: any): string {
+  if (typeof text !== "string" || !text.trim()) {
+    return DEFAULT_SITE_CONTENT.home.announcementText;
+  }
+  if (text.includes("Import & Export") || text.includes("Retail · Wholesale")) {
+    return DEFAULT_SITE_CONTENT.home.announcementText;
+  }
+  return text.trim();
+}
+
 function readPersistedContent() {
   try {
     if (fs.existsSync(CONTENT_FILE)) {
@@ -261,6 +271,7 @@ function readPersistedContent() {
         home: {
           ...DEFAULT_SITE_CONTENT.home,
           ...(parsed.home || {}),
+          announcementText: sanitizeAnnouncement(parsed?.home?.announcementText),
           heroBanners:
             Array.isArray(parsed?.home?.heroBanners) && parsed.home.heroBanners.length > 0
               ? parsed.home.heroBanners
@@ -315,6 +326,7 @@ router.get("/", async (req: Request, res: Response) => {
         home: {
           ...DEFAULT_SITE_CONTENT.home,
           ...(parsed.home || {}),
+          announcementText: sanitizeAnnouncement(parsed?.home?.announcementText),
           heroBanners:
             Array.isArray(parsed?.home?.heroBanners) && parsed.home.heroBanners.length > 0
               ? parsed.home.heroBanners
