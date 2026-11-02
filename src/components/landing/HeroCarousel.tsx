@@ -16,27 +16,18 @@ const HERO_BANNERS: HeroBanner[] = [
   {
     id: 1,
     image: "/hero-banner-3.jpg",
-    mobileImage: "/hero-banner-mobile.jpg",
-    title: "Timeless Ethnic Elegance",
-    subtitle: "Style woven with tradition",
-    alt: "Padmanabha Fabrics - Timeless Ethnic Elegance",
+    alt: "Padmanabha Fabrics - Diwali Edit, Silhouettes to Host, Shine & Celebrate In",
     href: "/shop",
   },
   {
     id: 2,
     image: "/hero-banner-2.png",
-    mobileImage: "/hero-banner-mobile.jpg",
-    title: "Timeless Ethnic Elegance",
-    subtitle: "Style woven with tradition",
     alt: "Padmanabha Fabrics - Timeless Ethnic Elegance, Explore Collection",
     href: "/shop",
   },
   {
     id: 3,
     image: "/hero-banner-1.jpg",
-    mobileImage: "/hero-banner-mobile.jpg",
-    title: "Timeless Ethnic Elegance",
-    subtitle: "Style woven with tradition",
     alt: "Padmanabha Fabrics - Timeless Ethnic Elegance, Style Woven With Tradition",
     href: "/shop",
   },
@@ -95,15 +86,15 @@ export function HeroCarousel() {
       onTouchEnd={handleTouchEnd}
       className="relative w-full bg-[#FAF7F2] overflow-hidden select-none border-b border-[rgba(14,14,14,0.06)] m-0 p-0"
     >
-      {/* 
-        1. BANNER SIZE & RATIO (Mobile: aspect-[3/4] h-[75vh] max-h-[85vh], full width; Desktop: md:aspect-[2/1] md:max-h-[640px])
-      */}
-      <div className="relative w-full aspect-[3/4] h-[75vh] max-h-[85vh] md:h-auto md:aspect-[2/1] md:max-h-[640px] overflow-hidden bg-[#FAF7F2]">
+      <div className="relative w-full aspect-[16/9] sm:aspect-[2/1] md:max-h-[640px] overflow-hidden bg-[#FAF7F2]">
         {banners.map((banner, index) => {
           const isActive = index === currentSlide;
-          const mobileSrc = (banner as any).mobileImage || banner.image || "/hero-banner-mobile.jpg";
-          const headline = (banner as any).title || "Timeless Ethnic Elegance";
-          const tagline = (banner as any).subtitle || "Style woven with tradition";
+          const mobileSrc =
+            banner.mobileImage && banner.mobileImage !== "/hero-banner-mobile.jpg"
+              ? banner.mobileImage
+              : banner.image;
+          const headline = (banner as any).title;
+          const tagline = (banner as any).subtitle;
 
           return (
             <div
@@ -117,60 +108,57 @@ export function HeroCarousel() {
                 className="block w-full h-full relative cursor-pointer"
                 aria-label={banner.alt}
               >
-                {/* 2. IMAGE FITTING & PERFORMANCE */}
                 <picture className="w-full h-full block">
-                  <source media="(max-width: 768px)" srcSet={mobileSrc} />
+                  {mobileSrc && mobileSrc !== banner.image && (
+                    <source media="(max-width: 768px)" srcSet={mobileSrc} />
+                  )}
                   <img
                     src={banner.image}
-                    alt={banner.alt}
-                    className="w-full h-full object-cover object-[center_top] md:object-center"
+                    alt={banner.alt || "Padmanabha Fabrics"}
+                    className="w-full h-full object-cover object-center"
                     loading={index === 0 ? "eager" : "lazy"}
                     fetchPriority={index === 0 ? "high" : "auto"}
                   />
                 </picture>
 
-                {/* 
-                  3. TEXT OVERLAY (Active on mobile <= 768px, hidden on desktop md:hidden):
-                  - Headline: clamp(32px, 8.5vw, 44px)
-                  - Tagline: clamp(14px, 4vw, 18px)
-                  - Bottom-center aligned, soft dark gradient
-                */}
-                <div
-                  className="md:hidden absolute inset-x-0 bottom-0 pt-24 pb-8 px-4 flex flex-col items-center justify-end text-center pointer-events-none"
-                  style={{
-                    background:
-                      "linear-gradient(to top, rgba(0,0,0,0.65) 0%, rgba(0,0,0,0.40) 50%, transparent 100%)",
-                  }}
-                >
-                  <h2
-                    className="font-['Playfair_Display',serif] font-bold text-[#FAF6EE] tracking-tight leading-[1.1] drop-shadow-md max-w-[92%]"
+                {/* Text overlay only if explicitly defined */}
+                {(headline || tagline) && (
+                  <div
+                    className="md:hidden absolute inset-x-0 bottom-0 pt-24 pb-8 px-4 flex flex-col items-center justify-end text-center pointer-events-none"
                     style={{
-                      fontSize: "clamp(32px, 8.5vw, 44px)",
+                      background:
+                        "linear-gradient(to top, rgba(0,0,0,0.65) 0%, rgba(0,0,0,0.40) 50%, transparent 100%)",
                     }}
                   >
-                    {headline}
-                  </h2>
-                  <p
-                    className="text-[#FAF6EE]/90 font-light tracking-wide mt-1.5 drop-shadow-sm max-w-[90%]"
-                    style={{
-                      fontSize: "clamp(14px, 4vw, 18px)",
-                    }}
-                  >
-                    {tagline}
-                  </p>
-                </div>
+                    {headline && (
+                      <h2
+                        className="font-['Playfair_Display',serif] font-bold text-[#FAF6EE] tracking-tight leading-[1.1] drop-shadow-md max-w-[92%]"
+                        style={{
+                          fontSize: "clamp(24px, 6vw, 36px)",
+                        }}
+                      >
+                        {headline}
+                      </h2>
+                    )}
+                    {tagline && (
+                      <p
+                        className="text-[#FAF6EE]/90 font-light tracking-wide mt-1.5 drop-shadow-sm max-w-[90%]"
+                        style={{
+                          fontSize: "clamp(12px, 3.5vw, 16px)",
+                        }}
+                      >
+                        {tagline}
+                      </p>
+                    )}
+                  </div>
+                )}
               </Link>
             </div>
           );
         })}
 
-        {/* 
-          4. SLIDER BEHAVIOR:
-          - Dots/indicators centered at bottom, above mobile text area (bottom-28 on mobile, bottom-5 on desktop)
-          - Prev/next arrow buttons hidden on mobile
-        */}
         {banners.length > 1 && (
-          <div className="absolute bottom-28 md:bottom-5 left-1/2 -translate-x-1/2 z-20 flex items-center justify-center gap-1.5 md:gap-2 pointer-events-auto">
+          <div className="absolute bottom-3 md:bottom-5 left-1/2 -translate-x-1/2 z-20 flex items-center justify-center gap-1.5 md:gap-2 pointer-events-auto">
             {banners.map((_, i) => (
               <button
                 key={i}

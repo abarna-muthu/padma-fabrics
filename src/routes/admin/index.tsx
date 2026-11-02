@@ -4215,7 +4215,9 @@ function AdminDashboardPage() {
                                 if (file) {
                                   handleUploadHomeMedia(file, "padma_banners", (url) => {
                                     const updated = [...(homeDraft.heroBanners || DEFAULT_HERO_BANNERS)];
-                                    updated[index] = { ...updated[index], image: url };
+                                    const bannerItem = { ...updated[index], image: url };
+                                    delete bannerItem.mobileImage;
+                                    updated[index] = bannerItem;
                                     const newHome = { ...homeDraft, heroBanners: updated };
                                     setHomeDraft(newHome);
                                     updateHomeContent(newHome);

@@ -80,21 +80,18 @@ export const DEFAULT_HERO_BANNERS: HeroBannerSlide[] = [
   {
     id: 1,
     image: "/hero-banner-3.jpg",
-    mobileImage: "/hero-banner-mobile.jpg",
     alt: "Padmanabha Fabrics - Diwali Edit, Silhouettes to Host, Shine & Celebrate In",
     href: "/shop",
   },
   {
     id: 2,
     image: "/hero-banner-2.png",
-    mobileImage: "/hero-banner-mobile.jpg",
     alt: "Padmanabha Fabrics - Timeless Ethnic Elegance, Explore Collection",
     href: "/shop",
   },
   {
     id: 3,
     image: "/hero-banner-1.jpg",
-    mobileImage: "/hero-banner-mobile.jpg",
     alt: "Padmanabha Fabrics - Timeless Ethnic Elegance, Style Woven With Tradition",
     href: "/shop",
   },
@@ -280,13 +277,24 @@ const STORAGE_KEY = "pf_site_content_v1";
 
 const SiteContentContext = createContext<SiteContentContextType | null>(null);
 
+const sanitizeHeroBanners = (banners: any[]): HeroBannerSlide[] => {
+  if (!Array.isArray(banners)) return DEFAULT_HERO_BANNERS;
+  return banners.map((b) => {
+    if (b && b.mobileImage === "/hero-banner-mobile.jpg") {
+      const { mobileImage, ...rest } = b;
+      return rest;
+    }
+    return b;
+  });
+};
+
 const mergeHomeContent = (rawHome: any): HomeContent => {
   return {
     ...DEFAULT_HOME_CONTENT,
     ...(rawHome || {}),
     heroBanners:
       Array.isArray(rawHome?.heroBanners) && rawHome.heroBanners.length > 0
-        ? rawHome.heroBanners
+        ? sanitizeHeroBanners(rawHome.heroBanners)
         : DEFAULT_HERO_BANNERS,
     popularCategories:
       Array.isArray(rawHome?.popularCategories) && rawHome.popularCategories.length > 0
