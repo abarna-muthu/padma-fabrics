@@ -113,11 +113,11 @@ export function ProductCard({ product, light = false, badgeText, onQuickView }: 
           }}
         />
 
-        {/* Tiny Pill Badge Top-Left (Suppressed if numeric/1) */}
+        {/* Tiny Pill Badge Bottom-Left (Suppressed if numeric/1) */}
         {isDisplayBadge ? (
-          <div className="absolute top-3 left-3 z-10">
+          <div className="absolute bottom-3 left-3 z-10 transition-opacity duration-200 group-hover:opacity-0 pointer-events-none">
             <span
-              className={`inline-block px-2.5 py-0.5 rounded-full text-[10px] font-medium uppercase tracking-[0.15em] ${
+              className={`inline-block px-2.5 py-0.5 rounded-full text-[10px] font-medium uppercase tracking-[0.15em] shadow-xs ${
                 badgeLower.includes("sale") || badgeLower.includes("discount") || badgeLower.includes("off")
                   ? "bg-[#9F160A] text-white"
                   : badgeLower.includes("bestseller") || badgeLower.includes("trending") || badgeLower.includes("new")
