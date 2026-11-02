@@ -318,6 +318,58 @@ export async function createCategory(req: Request, res: Response) {
   }
 }
 
+export async function deleteCategory(req: Request, res: Response) {
+  try {
+    const { id } = req.params;
+    if (!id) {
+      return res.status(400).json({ success: false, error: "Category ID or name is required." });
+    }
+
+    const db = await getDb();
+    const decoded = decodeURIComponent(id).trim();
+    const slug = decoded.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
+
+    // 1. Find category in database
+    const existing = await db.query(
+      "SELECT * FROM categories WHERE id = ? OR slug = ? OR LOWER(name) = LOWER(?)",
+      [decoded, slug, decoded],
+    );
+
+    const targetId = existing?.[0]?.id || slug;
+    const targetName = existing?.[0]?.name || decoded;
+
+    // 2. Reassign any existing products in this category to 'saree' (or base category)
+    try {
+      await db.execute(
+        "UPDATE products SET category_id = 'saree' WHERE category_id = ? OR category_id = ?",
+        [targetId, slug],
+      );
+    } catch (reassignErr) {
+      console.warn("Could not reassign products on category deletion:", reassignErr);
+    }
+
+    // 3. Delete from categories table
+    await db.execute(
+      "DELETE FROM categories WHERE id = ? OR slug = ? OR LOWER(name) = LOWER(?)",
+      [targetId, slug, decoded],
+    );
+
+    // 4. Remove from in-memory mappings
+    delete CATEGORY_ID_TO_NAME[targetId];
+    delete CATEGORY_ID_TO_NAME[slug];
+    delete CATEGORY_NAME_TO_ID[targetName];
+    delete CATEGORY_NAME_TO_ID[decoded];
+
+    return res.status(200).json({
+      success: true,
+      message: `Category "${targetName}" deleted successfully.`,
+    });
+  } catch (err: any) {
+    console.error("[ProductController] deleteCategory error:", err);
+    return res.status(500).json({ success: false, error: "Failed to delete product category." });
+  }
+}
+
 export async function createProduct(req: Request, res: Response) {
   try {
     const {

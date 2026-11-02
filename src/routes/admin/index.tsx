@@ -166,6 +166,8 @@ function AdminDashboardPage() {
     productsList,
     categoriesList,
     addCategory,
+    deleteCategory,
+    deletedCategories,
     addProduct,
     updateProduct,
     deleteProduct,
@@ -219,6 +221,15 @@ function AdminDashboardPage() {
   const activeCategoriesList = useMemo(() => {
     const map = new Map<string, string>(); // normalizedKey -> DisplayName
 
+    const isDeleted = (norm: string) => {
+      return (
+        Array.isArray(deletedCategories) &&
+        deletedCategories.some(
+          (d) => d.toLowerCase().replace(/[^a-z0-9]/g, "") === norm,
+        )
+      );
+    };
+
     const addCat = (c: any) => {
       if (!c || typeof c !== "string") return;
       const trimmed = c.trim();
@@ -228,7 +239,10 @@ function AdminDashboardPage() {
         return;
       }
       const norm = lower.replace(/[^a-z0-9]/g, "");
-      if (norm && !map.has(norm)) {
+      if (!norm || isDeleted(norm)) {
+        return;
+      }
+      if (!map.has(norm)) {
         const display =
           trimmed.includes("-") && !trimmed.includes(" ")
             ? trimmed
@@ -262,7 +276,7 @@ function AdminDashboardPage() {
     }
 
     return [ALL, ...Array.from(map.values())];
-  }, [categoriesList, productsList]);
+  }, [categoriesList, productsList, deletedCategories]);
 
   const [activeTab, setActiveTab] = useState<AdminTab>("dashboard");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -603,6 +617,35 @@ function AdminDashboardPage() {
       toast.error(err?.message || "Failed to add category");
     } finally {
       setIsSubmittingCategory(false);
+    }
+  };
+
+  // Delete category state and handler
+  const [categoryToDelete, setCategoryToDelete] = useState<{ name: string; count: number } | null>(null);
+  const [isDeletingCategory, setIsDeletingCategory] = useState(false);
+
+  const handleConfirmDeleteCategory = async () => {
+    if (!categoryToDelete) return;
+    const cat = categoryToDelete.name;
+    setIsDeletingCategory(true);
+    try {
+      const ok = await deleteCategory(cat);
+      if (ok) {
+        toast.success(`Category "${cat}" deleted successfully!`);
+        if (productCategoryFilter.toLowerCase() === cat.toLowerCase()) {
+          setProductCategoryFilter(ALL);
+        }
+        if (prodCategory.toLowerCase() === cat.toLowerCase()) {
+          setProdCategory("Saree");
+        }
+        setCategoryToDelete(null);
+      } else {
+        toast.error(`Failed to delete category "${cat}"`);
+      }
+    } catch (err: any) {
+      toast.error(err?.message || "Failed to delete category");
+    } finally {
+      setIsDeletingCategory(false);
     }
   };
 
@@ -2375,7 +2418,7 @@ function AdminDashboardPage() {
                     setIsCategoryModalOpen(true);
                   }}
                 >
-                  <FolderPlus className="size-3.5 mr-1.5 text-[#D15608]" /> New Category
+                  <FolderPlus className="size-3.5 mr-1.5 text-[#D15608]" /> Manage Categories
                 </Button>
                 <button
                   type="button"
@@ -6270,10 +6313,10 @@ function AdminDashboardPage() {
         </div>
       )}
 
-      {/* ----------------- MODAL: ADD NEW CATEGORY ----------------- */}
+      {/* ----------------- MODAL: MANAGE & ADD CATEGORIES ----------------- */}
       {isCategoryModalOpen && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-card border border-border w-full max-w-md p-6 shadow-xl animate-in fade-in zoom-in-95 duration-150">
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4">
+          <div className="bg-card border border-border w-full max-w-lg p-5 sm:p-6 shadow-xl animate-in fade-in zoom-in-95 duration-150 max-h-[92vh] overflow-y-auto">
             <div className="flex justify-between items-center pb-3 border-b border-border">
               <div className="flex items-center gap-2">
                 <div className="p-2 bg-primary/10 rounded">
@@ -6281,10 +6324,10 @@ function AdminDashboardPage() {
                 </div>
                 <div>
                   <h2 className="font-display text-lg font-semibold text-foreground">
-                    Add New Category
+                    Manage Categories
                   </h2>
                   <p className="text-xs text-muted-foreground">
-                    Create a new apparel or fabric category
+                    Add new category or delete categories you no longer need
                   </p>
                 </div>
               </div>
@@ -6298,10 +6341,10 @@ function AdminDashboardPage() {
               </Button>
             </div>
 
-            <form onSubmit={handleCreateCategory} className="space-y-4 mt-4">
-              <div className="space-y-1.5">
-                <label className="text-sm font-medium text-foreground">
-                  Category Name *
+            <form onSubmit={handleCreateCategory} className="space-y-3.5 mt-4">
+              <div className="space-y-1">
+                <label className="text-xs font-semibold uppercase tracking-wider text-foreground">
+                  New Category Name *
                 </label>
                 <Input
                   required
@@ -6313,9 +6356,9 @@ function AdminDashboardPage() {
                 />
               </div>
 
-              <div className="space-y-1.5">
-                <label className="text-sm font-medium text-foreground">
-                  Description / Subtitle <span className="text-xs text-muted-foreground font-normal">(Optional)</span>
+              <div className="space-y-1">
+                <label className="text-xs font-semibold uppercase tracking-wider text-foreground">
+                  Description / Subtitle <span className="text-xs text-muted-foreground font-normal lowercase">(optional)</span>
                 </label>
                 <Input
                   value={newCatDesc}
@@ -6325,43 +6368,142 @@ function AdminDashboardPage() {
                 />
               </div>
 
-              {/* Current Active Categories Preview */}
-              <div className="space-y-1.5 pt-2 border-t border-border/60">
-                <label className="text-xs text-muted-foreground uppercase tracking-wider font-semibold">
-                  Existing Categories ({activeCategoriesList.filter((c) => c !== ALL).length})
-                </label>
-                <div className="flex flex-wrap gap-1.5 max-h-24 overflow-y-auto p-2 bg-secondary/20 border border-border rounded text-xs">
-                  {activeCategoriesList
-                    .filter((c) => c !== ALL)
-                    .map((cat) => (
-                      <span
-                        key={cat}
-                        className="px-2 py-0.5 bg-background border border-border rounded text-[11px] text-muted-foreground font-medium"
-                      >
-                        {cat}
-                      </span>
-                    ))}
-                </div>
-              </div>
-
-              <div className="flex justify-end gap-2 pt-2 border-t border-border">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setIsCategoryModalOpen(false)}
-                  disabled={isSubmittingCategory}
-                >
-                  Cancel
-                </Button>
+              <div className="flex justify-end pt-1">
                 <Button
                   type="submit"
                   variant="editorial"
+                  className="w-full sm:w-auto h-9 text-xs px-4"
                   disabled={isSubmittingCategory || !newCatName.trim()}
                 >
-                  {isSubmittingCategory ? "Adding Category..." : "+ Add Category"}
+                  <Plus className="size-3.5 mr-1" />
+                  {isSubmittingCategory ? "Adding..." : "Add Category"}
                 </Button>
               </div>
             </form>
+
+            {/* Current Active Categories with Delete Option */}
+            <div className="space-y-2 pt-4 mt-4 border-t border-border/70">
+              <div className="flex items-center justify-between">
+                <label className="text-xs text-foreground uppercase tracking-wider font-semibold">
+                  Existing Categories ({activeCategoriesList.filter((c) => c !== ALL).length})
+                </label>
+                <span className="text-[11px] text-muted-foreground">
+                  Click <Trash2 className="size-3 inline text-destructive mx-0.5" /> to delete
+                </span>
+              </div>
+
+              <div className="space-y-1.5 max-h-56 overflow-y-auto pr-1">
+                {activeCategoriesList
+                  .filter((c) => c !== ALL)
+                  .map((cat) => {
+                    const prodCount = productsList.filter((p) => {
+                      const normP = String(p.category || (p as any).categoryId || "").toLowerCase().replace(/[^a-z0-9]/g, "");
+                      const normC = cat.toLowerCase().replace(/[^a-z0-9]/g, "");
+                      return normP === normC;
+                    }).length;
+                    const isDefault = cat.toLowerCase() === "saree";
+
+                    return (
+                      <div
+                        key={cat}
+                        className="flex items-center justify-between px-3 py-2 bg-secondary/30 hover:bg-secondary/50 border border-border rounded-md text-xs transition-colors"
+                      >
+                        <div className="flex items-center gap-2">
+                          <span className="font-semibold text-foreground">{cat}</span>
+                          <span className="text-[10px] px-2 py-0.5 rounded-full bg-background border border-border text-muted-foreground tabular-nums">
+                            {prodCount} {prodCount === 1 ? "product" : "products"}
+                          </span>
+                        </div>
+
+                        <div className="flex items-center gap-1">
+                          {isDefault ? (
+                            <span className="text-[10px] text-muted-foreground italic px-2 py-0.5">
+                              Base default
+                            </span>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => setCategoryToDelete({ name: cat, count: prodCount })}
+                              className="size-7 rounded flex items-center justify-center text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors cursor-pointer"
+                              title={`Delete category "${cat}"`}
+                            >
+                              <Trash2 className="size-3.5" />
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-2 pt-4 mt-3 border-t border-border">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => setIsCategoryModalOpen(false)}
+              >
+                Close
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ----------------- MODAL: DELETE CATEGORY CONFIRMATION ----------------- */}
+      {categoryToDelete && (
+        <div className="fixed inset-0 z-60 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-card border border-border w-full max-w-sm p-6 shadow-2xl space-y-4 animate-in fade-in zoom-in-95 duration-150">
+            <div className="flex items-center gap-3">
+              <div className="size-10 rounded-full bg-destructive/10 text-destructive flex items-center justify-center shrink-0">
+                <Trash2 className="size-5" />
+              </div>
+              <div>
+                <h3 className="font-display text-lg font-semibold text-foreground">
+                  Delete Category?
+                </h3>
+                <p className="text-xs text-muted-foreground">
+                  Remove category "{categoryToDelete.name}"
+                </p>
+              </div>
+            </div>
+
+            <div className="text-xs text-foreground/80 bg-secondary/30 border border-border rounded p-3 space-y-1.5 leading-relaxed">
+              <p>
+                Are you sure you want to delete the category <span className="font-bold text-foreground">"{categoryToDelete.name}"</span>?
+              </p>
+              {categoryToDelete.count > 0 ? (
+                <p className="text-amber-600 dark:text-amber-400 font-medium">
+                  Notice: {categoryToDelete.count} product(s) in this category will automatically be moved to "Saree".
+                </p>
+              ) : (
+                <p className="text-muted-foreground">
+                  This category will be permanently removed from all filters and dropdowns.
+                </p>
+              )}
+            </div>
+
+            <div className="flex justify-end gap-2.5 pt-2">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => setCategoryToDelete(null)}
+                disabled={isDeletingCategory}
+              >
+                Cancel
+              </Button>
+              <Button
+                type="button"
+                variant="destructive"
+                size="sm"
+                onClick={handleConfirmDeleteCategory}
+                disabled={isDeletingCategory}
+              >
+                {isDeletingCategory ? "Deleting..." : "Delete Category"}
+              </Button>
+            </div>
           </div>
         </div>
       )}

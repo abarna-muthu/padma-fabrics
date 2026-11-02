@@ -161,6 +161,12 @@ export const productApi = {
     });
   },
 
+  async deleteCategory(idOrName: string) {
+    return apiRequest<any>(`/api/admin/categories/${encodeURIComponent(idOrName)}`, {
+      method: "DELETE",
+    });
+  },
+
   async getById(id: string) {
     return apiRequest<any>(`/api/products/${id}`);
   },

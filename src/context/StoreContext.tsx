@@ -56,6 +56,8 @@ interface StoreContextType {
   // Dynamic categories & products list (Admin + Public Storefront sync)
   categoriesList: string[];
   addCategory: (name: string, description?: string) => Promise<boolean>;
+  deleteCategory: (name: string) => Promise<boolean>;
+  deletedCategories: string[];
   productsList: Product[];
   activeProducts: Product[];
   addProduct: (newP: Omit<Product, "id"> & { id?: string }) => Promise<Product> | Product;
@@ -106,6 +108,7 @@ const STORAGE_CATEGORIES_KEY = "pf_admin_categories";
 const STORAGE_ORDERS_KEY = "pf_admin_orders";
 const STORAGE_STOCK_LOGS_KEY = "pf_admin_stock_logs";
 const STORAGE_DELETED_PRODUCTS_KEY = "pf_admin_deleted_product_ids";
+const STORAGE_DELETED_CATEGORIES_KEY = "pf_admin_deleted_categories";
 
 export const DEMO_PRODUCT_IDS = new Set([
   "wine-silk",
@@ -255,6 +258,19 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     setIsCustomerPortalOpen(true);
   };
 
+  // Deleted categories list
+  const [deletedCategories, setDeletedCategories] = useState<string[]>(() => {
+    if (typeof window === "undefined") return [];
+    try {
+      const stored = localStorage.getItem(STORAGE_DELETED_CATEGORIES_KEY);
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (Array.isArray(parsed)) return parsed;
+      }
+    } catch {}
+    return [];
+  });
+
   // Catalog categories (Dynamic admin additions + storefront sync)
   const [categoriesList, setCategoriesList] = useState<string[]>(() => {
     if (typeof window !== "undefined") {
@@ -286,6 +302,20 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const addCategory = async (rawName: string, description?: string): Promise<boolean> => {
     const name = rawName.trim();
     if (!name) return false;
+    const norm = name.toLowerCase().replace(/[^a-z0-9]/g, "");
+
+    // If previously deleted, un-delete it
+    if (deletedCategories.some((d) => d.toLowerCase().replace(/[^a-z0-9]/g, "") === norm)) {
+      const nextDeleted = deletedCategories.filter(
+        (d) => d.toLowerCase().replace(/[^a-z0-9]/g, "") !== norm,
+      );
+      setDeletedCategories(nextDeleted);
+      if (typeof window !== "undefined") {
+        try {
+          localStorage.setItem(STORAGE_DELETED_CATEGORIES_KEY, JSON.stringify(nextDeleted));
+        } catch {}
+      }
+    }
 
     // Check if category already exists (case-insensitive)
     if (categoriesList.some((c) => c.toLowerCase() === name.toLowerCase())) {
@@ -300,6 +330,59 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       await productApi.createCategory({ name, ...(description ? { description } : {}) });
     } catch (err) {
       console.warn("Could not sync created category to backend API:", err);
+    }
+
+    return true;
+  };
+
+  const deleteCategory = async (rawName: string): Promise<boolean> => {
+    const name = rawName.trim();
+    if (!name) return false;
+    const norm = name.toLowerCase().replace(/[^a-z0-9]/g, "");
+
+    // 1. Add to deletedCategories
+    const updatedDeleted = Array.from(new Set([...deletedCategories, norm, name.toLowerCase()]));
+    setDeletedCategories(updatedDeleted);
+    if (typeof window !== "undefined") {
+      try {
+        localStorage.setItem(STORAGE_DELETED_CATEGORIES_KEY, JSON.stringify(updatedDeleted));
+      } catch (err) {
+        console.warn("Could not save deleted categories to localStorage:", err);
+      }
+    }
+
+    // 2. Remove from categoriesList
+    const updated = categoriesList.filter(
+      (c) => c.trim().toLowerCase().replace(/[^a-z0-9]/g, "") !== norm,
+    );
+    saveCategories(updated);
+
+    // 3. Reassign any active products using this category to "Saree"
+    setProductsList((currentList) => {
+      let changed = false;
+      const next = currentList.map((p) => {
+        const pNorm = String(p.category || (p as any).categoryId || "").trim().toLowerCase().replace(/[^a-z0-9]/g, "");
+        if (pNorm === norm) {
+          changed = true;
+          return {
+            ...p,
+            category: "Saree",
+            categoryId: "saree",
+          };
+        }
+        return p;
+      });
+      if (changed) {
+        saveProducts(next);
+      }
+      return next;
+    });
+
+    // 4. Sync deletion to backend API
+    try {
+      await productApi.deleteCategory(name);
+    } catch (err) {
+      console.warn("Could not sync deleted category to backend API:", err);
     }
 
     return true;
@@ -1483,6 +1566,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         // Admin & dynamic catalog
         categoriesList,
         addCategory,
+        deleteCategory,
+        deletedCategories,
         productsList,
         activeProducts,
         addProduct,

@@ -8,6 +8,7 @@ import {
   deleteProduct,
   toggleProductStatus,
   createCategory,
+  deleteCategory,
   bulkSyncProducts,
   removeDefaultProducts,
 } from "../controllers/productController";
@@ -60,6 +61,8 @@ router.patch("/products/:id/toggle", toggleProductStatus);
 router.patch("/products/:id/toggle-status", toggleProductStatus);
 router.post("/categories", createCategory);
 router.post("/products/categories", createCategory);
+router.delete("/categories/:id", deleteCategory);
+router.delete("/products/categories/:id", deleteCategory);
 router.post("/upload", uploadImage);
 router.post("/products/upload-image", uploadImage);
 router.get("/upload/signature", getUploadSignature);
