@@ -143,7 +143,7 @@ export async function getProducts(req: Request, res: Response) {
         name: p.name,
         slug: p.slug || p.name.toLowerCase().replace(/[^a-z0-9]+/g, "-"),
         sku: p.sku || `PF-${p.id}`,
-        category: CATEGORY_ID_TO_NAME[catId] || catId,
+        category: CATEGORY_ID_TO_NAME[catId] || (p.category && !p.category.includes("-") ? p.category : (catId.includes("-") ? catId.split("-").map((w: string) => w.charAt(0).toUpperCase() + w.slice(1)).join(" ") : catId)),
         categoryId: catId,
         colour: p.colour || "Custom",
         price: Number(p.price) || 0,
@@ -214,7 +214,7 @@ export async function getProductById(req: Request, res: Response) {
       name: p.name,
       slug: p.slug || p.name.toLowerCase().replace(/[^a-z0-9]+/g, "-"),
       sku: p.sku || `PF-${p.id}`,
-      category: CATEGORY_ID_TO_NAME[catId] || catId,
+      category: CATEGORY_ID_TO_NAME[catId] || (p.category && !p.category.includes("-") ? p.category : (catId.includes("-") ? catId.split("-").map((w: string) => w.charAt(0).toUpperCase() + w.slice(1)).join(" ") : catId)),
       categoryId: catId,
       colour: p.colour || "Custom",
       price: Number(p.price) || 0,
@@ -249,6 +249,14 @@ export async function getCategories(req: Request, res: Response) {
   try {
     const db = await getDb();
     const categories = await db.query("SELECT * FROM categories ORDER BY display_order ASC");
+    if (Array.isArray(categories)) {
+      for (const c of categories) {
+        if (c.id && c.name) {
+          CATEGORY_ID_TO_NAME[c.id] = c.name;
+          CATEGORY_NAME_TO_ID[c.name] = c.id;
+        }
+      }
+    }
     return res.status(200).json({ success: true, categories });
   } catch (err: any) {
     console.error("[ProductController] getCategories error:", err);

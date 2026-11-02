@@ -215,10 +215,53 @@ function AdminDashboardPage() {
     }
   };
 
-  const activeCategoriesList =
-    categoriesList && categoriesList.length > 0
-      ? categoriesList
-      : (categories as readonly string[]);
+  // Dynamically computed categories list: merges base categories, user-created categories, and any product category
+  const activeCategoriesList = useMemo(() => {
+    const map = new Map<string, string>(); // normalizedKey -> DisplayName
+
+    const addCat = (c: any) => {
+      if (!c || typeof c !== "string") return;
+      const trimmed = c.trim();
+      if (!trimmed) return;
+      const lower = trimmed.toLowerCase();
+      if (lower === "all" || lower === "all categories" || lower === ALL.toLowerCase()) {
+        return;
+      }
+      const norm = lower.replace(/[^a-z0-9]/g, "");
+      if (norm && !map.has(norm)) {
+        const display =
+          trimmed.includes("-") && !trimmed.includes(" ")
+            ? trimmed
+                .split("-")
+                .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+                .join(" ")
+            : trimmed;
+        map.set(norm, display);
+      }
+    };
+
+    // 1. Static base categories
+    for (const c of categories) {
+      addCat(c);
+    }
+
+    // 2. Dynamic categories from StoreContext
+    if (Array.isArray(categoriesList)) {
+      for (const c of categoriesList) {
+        addCat(c);
+      }
+    }
+
+    // 3. Any category present on existing products in productsList
+    if (Array.isArray(productsList)) {
+      for (const p of productsList) {
+        addCat(p.category);
+        if ((p as any).categoryId) addCat((p as any).categoryId);
+      }
+    }
+
+    return [ALL, ...Array.from(map.values())];
+  }, [categoriesList, productsList]);
 
   const [activeTab, setActiveTab] = useState<AdminTab>("dashboard");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -537,6 +580,7 @@ function AdminDashboardPage() {
       if (ok) {
         toast.success(`Category "${trimmed}" added successfully!`);
         setProdCategory(trimmed);
+        setProductCategoryFilter(trimmed);
         setNewCatName("");
         setNewCatDesc("");
         setIsCategoryModalOpen(false);
@@ -1577,14 +1621,40 @@ function AdminDashboardPage() {
     }
   };
 
-  // Filtered products list
+  // Filtered products list with resilient category matching
   const filteredProducts = useMemo(() => {
+    const isAll =
+      !productCategoryFilter ||
+      productCategoryFilter === ALL ||
+      productCategoryFilter.trim().toLowerCase() === "all" ||
+      productCategoryFilter.trim().toLowerCase() === "all categories";
+
+    const normFilter = isAll
+      ? ""
+      : productCategoryFilter.toLowerCase().trim().replace(/[^a-z0-9]/g, "");
+
     return productsList.filter((p) => {
-      const matchCategory = productCategoryFilter === ALL || p.category === productCategoryFilter;
+      let matchCategory = isAll;
+      if (!isAll) {
+        const pCat = p.category ? String(p.category).toLowerCase().trim().replace(/[^a-z0-9]/g, "") : "";
+        const pCatId = (p as any).categoryId ? String((p as any).categoryId).toLowerCase().trim().replace(/[^a-z0-9]/g, "") : "";
+
+        matchCategory =
+          pCat === normFilter ||
+          pCatId === normFilter ||
+          (pCat.length > 3 && normFilter.length > 3 && (pCat.includes(normFilter) || normFilter.includes(pCat))) ||
+          pCat + "s" === normFilter ||
+          normFilter + "s" === pCat ||
+          pCat + "es" === normFilter ||
+          normFilter + "es" === pCat;
+      }
+
       const matchSearch =
+        !productSearch ||
         p.name.toLowerCase().includes(productSearch.toLowerCase()) ||
         p.colour.toLowerCase().includes(productSearch.toLowerCase()) ||
         (p.sku && p.sku.toLowerCase().includes(productSearch.toLowerCase()));
+
       return matchCategory && matchSearch;
     });
   }, [productsList, productCategoryFilter, productSearch]);
@@ -2258,7 +2328,7 @@ function AdminDashboardPage() {
                 >
                   {activeCategoriesList.map((c) => (
                     <option key={c} value={c}>
-                      {c === ALL ? "All Categories" : c}
+                      {c === ALL || c.toLowerCase() === "all" ? "All Categories" : c}
                     </option>
                   ))}
                 </select>

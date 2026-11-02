@@ -858,6 +858,14 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     // 1. Immediately save to IndexedDB with full images and variants
     idbSaveSingleProduct(product).catch(() => {});
 
+    // Ensure category is registered in categoriesList
+    if (product.category && typeof product.category === "string" && product.category.trim()) {
+      const cTrim = product.category.trim();
+      if (!categoriesList.some((c) => c.toLowerCase() === cTrim.toLowerCase())) {
+        saveCategories([...categoriesList, cTrim]);
+      }
+    }
+
     // 2. Remove from deleted IDs
     try {
       const deletedIds: string[] = JSON.parse(
@@ -1000,6 +1008,14 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
     if (nextList.length > 0) {
       saveProducts(nextList);
+    }
+
+    // Ensure updated category is registered in categoriesList
+    if (updates.category && typeof updates.category === "string" && updates.category.trim()) {
+      const cTrim = updates.category.trim();
+      if (!categoriesList.some((c) => c.toLowerCase() === cTrim.toLowerCase())) {
+        saveCategories([...categoriesList, cTrim]);
+      }
     }
 
     // Also update in STORAGE_CUSTOM_PRODUCTS_KEY if present
