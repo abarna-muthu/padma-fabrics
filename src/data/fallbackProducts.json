@@ -3903,29 +3903,6 @@
     "isActive": true
   },
   {
-    "id": "pf-mvtfhbti",
-    "name": "The Royal Indigo Silk Saree",
-    "sku": "PF-249",
-    "category": "saree",
-    "categoryId": "saree",
-    "colour": "Indigo & Silver",
-    "price": 4900,
-    "unit": "piece",
-    "stock": 15,
-    "badge": "Signature",
-    "description": "Fine indigo silk with handwoven silver zari motif border.",
-    "image": "/assets/burgundy-silk.jpg",
-    "imageUrl": "/assets/burgundy-silk.jpg",
-    "images": [
-      "/assets/burgundy-silk.jpg"
-    ],
-    "sizes": [
-      "Free Size"
-    ],
-    "status": "active",
-    "isActive": true
-  },
-  {
     "id": "pf-mvs2tfj0",
     "name": "western top",
     "sku": "PF-986",

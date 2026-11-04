@@ -134,7 +134,13 @@ export async function getProducts(req: Request, res: Response) {
     }
 
     const DEMO_IDS_SET = new Set(DEFAULT_PRODUCT_IDS);
-    products = products.filter((p) => !DEMO_IDS_SET.has(p.id) && !p.id.startsWith("test-"));
+    products = products.filter(
+      (p) =>
+        !DEMO_IDS_SET.has(p.id) &&
+        !p.id.startsWith("test-") &&
+        p.id !== "pf-mvtfhbti" &&
+        p.name !== "The Royal Indigo Silk Saree",
+    );
 
     if (search && typeof search === "string") {
       const q = search.toLowerCase();
@@ -896,6 +902,7 @@ export const DEFAULT_PRODUCT_IDS = [
   "navy-tee",
   "maroon-anarkali",
   "pattu-pavadai",
+  "pf-mvtfhbti",
 ];
 
 export async function removeDefaultProducts(req: Request, res: Response) {

@@ -378,6 +378,9 @@ async function runMigrations(pool: mysql.Pool) {
       await pool.query("ALTER TABLE cart_items ADD COLUMN image_url TEXT").catch(() => {});
       await pool.query("CREATE TABLE IF NOT EXISTS site_settings (setting_key VARCHAR(50) PRIMARY KEY, setting_value LONGTEXT NOT NULL, updated_at BIGINT NOT NULL)").catch(() => {});
       await pool.query("CREATE TABLE IF NOT EXISTS product_reviews (id VARCHAR(36) PRIMARY KEY, product_id VARCHAR(50) NOT NULL, customer_name VARCHAR(150) NOT NULL, rating INT NOT NULL DEFAULT 5, comment TEXT NOT NULL, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, INDEX idx_review_product (product_id))").catch(() => {});
+      await pool.query("DELETE FROM products WHERE id = 'pf-mvtfhbti' OR name = 'The Royal Indigo Silk Saree'").catch(() => {});
+      await pool.query("DELETE FROM product_images WHERE product_id = 'pf-mvtfhbti'").catch(() => {});
+      await pool.query("DELETE FROM inventory_logs WHERE product_id = 'pf-mvtfhbti'").catch(() => {});
       
       // Ensure shipping_rates table and orders shipping columns exist
       await pool.query(`

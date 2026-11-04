@@ -119,12 +119,18 @@ export const DEMO_PRODUCT_IDS = new Set([
   "navy-tee",
   "maroon-anarkali",
   "pattu-pavadai",
+  "pf-mvtfhbti",
 ]);
 
 export function isDemoProduct(p: any): boolean {
   if (!p) return false;
   const id = String(p.id || "");
-  return DEMO_PRODUCT_IDS.has(id);
+  const name = String(p.name || "").trim().toLowerCase();
+  return (
+    DEMO_PRODUCT_IDS.has(id) ||
+    name === "the royal indigo silk saree" ||
+    id === "pf-mvtfhbti"
+  );
 }
 
 const CATEGORY_MIGRATION: Record<string, string> = {
