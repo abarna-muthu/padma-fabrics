@@ -691,11 +691,40 @@ export async function getOrders(req: Request, res: Response) {
 export async function deleteOrder(req: Request, res: Response) {
   try {
     const { id } = req.params;
-    console.log(`[OrderController] Deleting order ${id}...`);
+    const cleanId = String(id || "").replace(/^#/, "").trim();
+    console.log(`[OrderController] Deleting order ${cleanId}...`);
     const db = await getDb();
-    await db.execute("DELETE FROM order_items WHERE order_id = ?", [id]);
-    await db.execute("DELETE FROM orders WHERE id = ?", [id]);
-    console.log(`[OrderController] Order ${id} deleted successfully.`);
+
+    // 1. Locate the order by ID or order_number
+    const orderRows = await db.query(
+      "SELECT id, order_number FROM orders WHERE id = ? OR order_number = ?",
+      [cleanId, cleanId],
+    );
+
+    if (orderRows.length === 0) {
+      console.log(`[OrderController] Order ${cleanId} not found in database or already deleted.`);
+      return res.status(200).json({ success: true, message: "Order already deleted or not found." });
+    }
+
+    const internalId = orderRows[0].id;
+    const orderNum = orderRows[0].order_number;
+
+    // 2. Clean up child records first to satisfy foreign key constraints
+    try {
+      await db.execute("DELETE FROM payments WHERE order_id = ? OR order_id = ?", [internalId, orderNum]);
+    } catch (pErr) {
+      console.warn("[OrderController] Note deleting payments:", pErr);
+    }
+
+    try {
+      await db.execute("DELETE FROM order_items WHERE order_id = ? OR order_id = ?", [internalId, orderNum]);
+    } catch (iErr) {
+      console.warn("[OrderController] Note deleting order_items:", iErr);
+    }
+
+    // 3. Delete from orders table
+    await db.execute("DELETE FROM orders WHERE id = ? OR order_number = ?", [internalId, orderNum]);
+    console.log(`[OrderController] Order ${cleanId} (internal ID: ${internalId}) deleted successfully.`);
     return res.status(200).json({ success: true, message: "Order deleted successfully." });
   } catch (err: any) {
     console.error("[OrderController] deleteOrder error:", err);
@@ -736,6 +765,7 @@ export async function getOrderById(req: Request, res: Response) {
         total: Number(o.total_amount),
         totalAmount: Number(o.total_amount),
         status: o.order_status,
+        orderStatus: o.order_status,
         paymentMethod: o.payment_method,
         paymentStatus: o.payment_status,
         notes: o.notes,
@@ -767,7 +797,8 @@ export async function getOrderById(req: Request, res: Response) {
 export async function updateOrderStatus(req: Request, res: Response) {
   try {
     const { id } = req.params;
-    const { status } = req.body;
+    const cleanId = String(id || "").replace(/^#/, "").trim();
+    const rawStatus = String(req.body.status || req.body.orderStatus || req.body.fulfillmentStatus || "").trim();
 
     const validStatuses = [
       "Pending",
@@ -777,7 +808,12 @@ export async function updateOrderStatus(req: Request, res: Response) {
       "Delivered",
       "Cancelled",
     ];
-    if (!status || !validStatuses.includes(status)) {
+
+    const matchedStatus = validStatuses.find(
+      (s) => s.toLowerCase() === rawStatus.toLowerCase(),
+    );
+
+    if (!matchedStatus) {
       return res.status(400).json({
         success: false,
         error: `Invalid status. Must be one of: ${validStatuses.join(", ")}`,
@@ -785,19 +821,20 @@ export async function updateOrderStatus(req: Request, res: Response) {
     }
 
     const db = await getDb();
-    const rows = await db.query("SELECT * FROM orders WHERE id = ?", [id]);
+    const rows = await db.query("SELECT * FROM orders WHERE id = ? OR order_number = ?", [cleanId, cleanId]);
     if (rows.length === 0) {
       return res.status(404).json({ success: false, error: "Order not found." });
     }
 
     const order = rows[0];
+    const internalId = order.id;
     const previousStatus = order.order_status;
 
-    await db.execute("UPDATE orders SET order_status = ? WHERE id = ?", [status, id]);
+    await db.execute("UPDATE orders SET order_status = ? WHERE id = ?", [matchedStatus, internalId]);
 
     // If order was cancelled and previous status wasn't cancelled, restore stock!
-    if (status === "Cancelled" && previousStatus !== "Cancelled") {
-      const items = await db.query("SELECT * FROM order_items WHERE order_id = ?", [id]);
+    if (matchedStatus === "Cancelled" && previousStatus !== "Cancelled") {
+      const items = await db.query("SELECT * FROM order_items WHERE order_id = ?", [internalId]);
       for (const item of items) {
         const prodRows = await db.query("SELECT stock_quantity, name FROM products WHERE id = ?", [
           item.product_id,
@@ -828,8 +865,11 @@ export async function updateOrderStatus(req: Request, res: Response) {
 
     return res.status(200).json({
       success: true,
-      message: `Order status updated to '${status}'.`,
-      status,
+      message: `Order status updated to ${matchedStatus}.`,
+      status: matchedStatus,
+      orderStatus: matchedStatus,
+      orderId: internalId,
+      orderNumber: order.order_number,
     });
   } catch (err: any) {
     console.error("[OrderController] updateOrderStatus error:", err);

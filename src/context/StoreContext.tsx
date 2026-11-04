@@ -109,6 +109,7 @@ const STORAGE_ORDERS_KEY = "pf_admin_orders";
 const STORAGE_STOCK_LOGS_KEY = "pf_admin_stock_logs";
 const STORAGE_DELETED_PRODUCTS_KEY = "pf_admin_deleted_product_ids";
 const STORAGE_DELETED_CATEGORIES_KEY = "pf_admin_deleted_categories";
+const STORAGE_DELETED_ORDERS_KEY = "pf_admin_deleted_orders";
 
 export const DEMO_PRODUCT_IDS = new Set([
   "wine-silk",
@@ -727,6 +728,11 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         const ordersRes = await orderApi.getAll();
         const serverOrders = (ordersRes as any)?.orders || ordersRes.data;
         if (ordersRes.success && Array.isArray(serverOrders)) {
+          let deletedOrderIds: string[] = [];
+          try {
+            deletedOrderIds = JSON.parse(localStorage.getItem(STORAGE_DELETED_ORDERS_KEY) || "[]");
+          } catch {}
+
           const isDummyOrder = (o: any) =>
             o?.customerEmail?.includes("@example.com") ||
             o?.customerName === "Pooja Venkatesh" ||
@@ -734,7 +740,13 @@ export function StoreProvider({ children }: { children: ReactNode }) {
             o?.id?.startsWith("PF-TEST-") ||
             ["PF-1081", "PF-1082", "PF-1083"].includes(o?.id);
 
-          const cleanOrders = serverOrders.filter((o: any) => !isDummyOrder(o));
+          const cleanOrders = serverOrders
+            .filter((o: any) => !isDummyOrder(o))
+            .filter(
+              (o: any) =>
+                !deletedOrderIds.includes(String(o.id || "")) &&
+                !deletedOrderIds.includes(String((o as any).orderNumber || "")),
+            );
           setOrders(cleanOrders);
           localStorage.setItem(STORAGE_ORDERS_KEY, JSON.stringify(cleanOrders));
         }
@@ -1311,11 +1323,16 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
   // Orders actions
   const updateOrderStatus = (orderId: string, status: Order["status"], manualOverride: boolean = true) => {
+    const cleanId = String(orderId || "").replace(/^#/, "").trim();
     const updated = orders.map((o) =>
-      o.id === orderId
+      o.id === orderId ||
+      o.id === cleanId ||
+      (o as any).orderNumber === orderId ||
+      (o as any).orderNumber === cleanId
         ? {
             ...o,
             status,
+            orderStatus: status,
             manualStatusOverride: manualOverride,
           }
         : o,
@@ -1323,17 +1340,25 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     saveOrders(updated);
 
     // Persist to backend database API
-    orderApi.updateStatus(orderId, status).catch((err) => {
+    orderApi.updateStatus(cleanId, status).catch((err) => {
       console.warn("Could not sync order status to backend API:", err);
     });
   };
 
   const updatePaymentStatus = (orderId: string, paymentStatus: Order["paymentStatus"]) => {
-    const updated = orders.map((o) => (o.id === orderId ? { ...o, paymentStatus } : o));
+    const cleanId = String(orderId || "").replace(/^#/, "").trim();
+    const updated = orders.map((o) =>
+      o.id === orderId ||
+      o.id === cleanId ||
+      (o as any).orderNumber === orderId ||
+      (o as any).orderNumber === cleanId
+        ? { ...o, paymentStatus }
+        : o,
+    );
     saveOrders(updated);
 
     // Persist to backend database API
-    orderApi.updatePaymentStatus(orderId, paymentStatus).catch((err) => {
+    orderApi.updatePaymentStatus(cleanId, paymentStatus).catch((err) => {
       console.warn("Could not sync payment status to backend API:", err);
     });
   };
@@ -1345,20 +1370,48 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   };
 
   const updateOrderDetails = (orderId: string, updates: Partial<Order>) => {
-    const updated = orders.map((o) => (o.id === orderId ? { ...o, ...updates } : o));
+    const cleanId = String(orderId || "").replace(/^#/, "").trim();
+    const updated = orders.map((o) =>
+      o.id === orderId ||
+      o.id === cleanId ||
+      (o as any).orderNumber === orderId ||
+      (o as any).orderNumber === cleanId
+        ? { ...o, ...updates }
+        : o,
+    );
     saveOrders(updated);
 
     if (updates.status) {
-      orderApi.updateStatus(orderId, updates.status).catch(() => {});
+      orderApi.updateStatus(cleanId, updates.status).catch(() => {});
     }
     if (updates.paymentStatus) {
-      orderApi.updatePaymentStatus(orderId, updates.paymentStatus).catch(() => {});
+      orderApi.updatePaymentStatus(cleanId, updates.paymentStatus).catch(() => {});
     }
   };
 
   const deleteOrder = (orderId: string) => {
-    const updated = orders.filter((o) => o.id !== orderId);
+    const cleanId = String(orderId || "").replace(/^#/, "").trim();
+    const updated = orders.filter(
+      (o) =>
+        o.id !== orderId &&
+        o.id !== cleanId &&
+        (o as any).orderNumber !== orderId &&
+        (o as any).orderNumber !== cleanId,
+    );
     saveOrders(updated);
+
+    try {
+      const existing: string[] = JSON.parse(
+        localStorage.getItem(STORAGE_DELETED_ORDERS_KEY) || "[]",
+      );
+      if (!existing.includes(cleanId)) existing.push(cleanId);
+      if (orderId && !existing.includes(orderId)) existing.push(orderId);
+      localStorage.setItem(STORAGE_DELETED_ORDERS_KEY, JSON.stringify(existing));
+    } catch {}
+
+    orderApi.delete(cleanId).catch((err) => {
+      console.warn("Could not delete order from backend API:", err);
+    });
   };
 
   const cancelOrder = async (
@@ -1443,6 +1496,11 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
   const refreshOrders = async () => {
     try {
+      let deletedOrderIds: string[] = [];
+      try {
+        deletedOrderIds = JSON.parse(localStorage.getItem(STORAGE_DELETED_ORDERS_KEY) || "[]");
+      } catch {}
+
       const ordersRes = await orderApi.getAll();
       const serverOrders = (ordersRes as any)?.orders || ordersRes.data;
       if (ordersRes.success && Array.isArray(serverOrders)) {
@@ -1453,7 +1511,13 @@ export function StoreProvider({ children }: { children: ReactNode }) {
           o?.id?.startsWith("PF-TEST-") ||
           ["PF-1081", "PF-1082", "PF-1083"].includes(o?.id);
 
-        const cleanOrders = serverOrders.filter((o: any) => !isDummyOrder(o));
+        const cleanOrders = serverOrders
+          .filter((o: any) => !isDummyOrder(o))
+          .filter(
+            (o: any) =>
+              !deletedOrderIds.includes(String(o.id || "")) &&
+              !deletedOrderIds.includes(String((o as any).orderNumber || "")),
+          );
         setOrders(cleanOrders);
         localStorage.setItem(STORAGE_ORDERS_KEY, JSON.stringify(cleanOrders));
       }

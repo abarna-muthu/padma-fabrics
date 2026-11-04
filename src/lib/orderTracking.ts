@@ -40,13 +40,14 @@ export function computeOrderTracking(order: Order): OrderTrackingInfo {
   const diffMs = Math.max(0, today.getTime() - orderDate.getTime());
   const elapsedDays = Math.max(1, Math.floor(diffMs / (1000 * 60 * 60 * 24)) + 1);
 
-  const isCancelled = order.status === "Cancelled";
+  // Read status directly from order
+  const rawStatus = String(
+    order.status || (order as any).orderStatus || (order as any).order_status || "",
+  ).trim();
 
-  // Auto-calculated step based on user specifications:
-  // Day 1: Pending / Order Confirmed
-  // Day 2: Processing
-  // Day 3+: Shipped
-  // Day >= totalDays: Delivered
+  const isCancelled = rawStatus.toLowerCase() === "cancelled";
+
+  // Fallback auto status only when no status was explicitly assigned
   let autoStatus: Order["status"] = "Pending";
   if (elapsedDays === 1) {
     autoStatus = "Pending";
@@ -58,18 +59,33 @@ export function computeOrderTracking(order: Order): OrderTrackingInfo {
     autoStatus = "Delivered";
   }
 
-  // If status is Cancelled, it stays Cancelled.
-  // If admin manually marked as Shipped or Delivered or has an override, honor admin's override.
+  // Authoritative effectiveStatus:
+  // Whatever status admin updated (Pending, Processing, Shipped, Delivered, Cancelled)
+  // MUST directly be reflected for customers and in tracking.
   let effectiveStatus: Order["status"] = autoStatus;
   if (isCancelled) {
     effectiveStatus = "Cancelled";
-  } else if (order.manualStatusOverride && order.status) {
-    effectiveStatus = order.status;
-  } else if (order.status === "Shipped" || order.status === "Delivered") {
-    effectiveStatus = order.status;
+  } else if (rawStatus) {
+    const lower = rawStatus.toLowerCase();
+    if (lower === "delivered") {
+      effectiveStatus = "Delivered";
+    } else if (lower === "shipped") {
+      effectiveStatus = "Shipped";
+    } else if (lower === "processing" || lower === "packing") {
+      effectiveStatus = "Processing";
+    } else if (lower === "pending" || lower === "confirmed") {
+      effectiveStatus = "Pending";
+    } else {
+      effectiveStatus = rawStatus as Order["status"];
+    }
   }
 
   // Determine current step index (1 to 5)
+  // Step 1: Pending (Order Confirmed)
+  // Step 2: Processing & Quality Packed
+  // Step 3: Shipped · In Transit
+  // Step 4: Out for Delivery (if Shipped and close to delivery date)
+  // Step 5: Delivered
   let currentStep = 1;
   if (!isCancelled) {
     if (effectiveStatus === "Delivered") {

@@ -207,9 +207,12 @@ export function OrdersPage() {
       return `Delivered ${tracking.estimatedDeliveryDate || "May 10"}`;
     }
     if (tracking.effectiveStatus === "Shipped") {
-      return `Expected Delivery by ${tracking.estimatedDeliveryDate || "May 10"}`;
+      return `Shipped · Expected Delivery by ${tracking.estimatedDeliveryDate || "May 10"}`;
     }
-    return `Arriving by ${tracking.estimatedDeliveryDate || "in 3-5 days"}`;
+    if (tracking.effectiveStatus === "Processing") {
+      return `Processing & Quality Packed · Expected Delivery by ${tracking.estimatedDeliveryDate || "in 3-5 days"}`;
+    }
+    return `Order Confirmed · Arriving by ${tracking.estimatedDeliveryDate || "in 3-5 days"}`;
   };
 
   const formatEligibleDate = (dateVal?: string) => {
@@ -513,6 +516,12 @@ export function OrdersPage() {
                     )}
                     {tracking.effectiveStatus === "Shipped" && (
                       <Truck className="size-4 text-indigo-600 dark:text-indigo-400 animate-pulse" />
+                    )}
+                    {tracking.effectiveStatus === "Processing" && (
+                      <Package className="size-4 text-blue-600 dark:text-blue-400 animate-pulse" />
+                    )}
+                    {tracking.effectiveStatus === "Pending" && (
+                      <Clock className="size-4 text-amber-600 dark:text-amber-400" />
                     )}
                     {tracking.isCancelled && (
                       <AlertCircle className="size-4 text-destructive" />

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Package,
   Truck,
@@ -45,10 +45,36 @@ export function OrderTrackingModal({
 }: OrderTrackingModalProps) {
   const [copiedAwb, setCopiedAwb] = useState(false);
   const [isDownloadingInvoice, setIsDownloadingInvoice] = useState(false);
+  const [liveOrder, setLiveOrder] = useState<Order | null>(order);
+
+  useEffect(() => {
+    setLiveOrder(order);
+  }, [order]);
+
+  useEffect(() => {
+    if (!isOpen || !order?.id) return;
+    let cancelled = false;
+    orderApi
+      .getById(order.id)
+      .then((res: any) => {
+        if (!cancelled && res?.success && res.order) {
+          setLiveOrder((prev) => ({
+            ...(prev || order),
+            ...res.order,
+            status: res.order.orderStatus || res.order.status || (prev ? prev.status : order.status),
+          }));
+        }
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [isOpen, order?.id]);
 
   if (!order) return null;
 
-  const tracking = computeOrderTracking(order);
+  const currentOrder = liveOrder || order;
+  const tracking = computeOrderTracking(currentOrder);
 
   const handleCopyAwb = () => {
     if (tracking.trackingNumber) {
@@ -60,16 +86,16 @@ export function OrderTrackingModal({
   };
 
   const handleDownloadInvoice = async () => {
-    if (!order) return;
-    if (order.status === "Cancelled" || order.paymentStatus === "Failed") {
+    if (!currentOrder) return;
+    if (currentOrder.status === "Cancelled" || currentOrder.paymentStatus === "Failed") {
       toast.error("Invoice is not available for cancelled or payment-failed orders.");
       return;
     }
     try {
       setIsDownloadingInvoice(true);
-      toast.info(`Generating invoice for Order #${order.id}...`);
-      await orderApi.downloadInvoice(order.id, order.customerEmail, order.customerPhone);
-      toast.success(`Invoice for Order #${order.id} downloaded successfully!`);
+      toast.info(`Generating invoice for Order #${currentOrder.id}...`);
+      await orderApi.downloadInvoice(currentOrder.id, currentOrder.customerEmail, currentOrder.customerPhone);
+      toast.success(`Invoice for Order #${currentOrder.id} downloaded successfully!`);
     } catch (err: any) {
       console.error("Invoice download error:", err);
       toast.error(err.message || "Failed to download invoice.");
@@ -78,12 +104,12 @@ export function OrderTrackingModal({
     }
   };
 
-  const orderItemsList = Array.isArray(order.items)
-    ? order.items
-    : typeof order.items === "string"
+  const orderItemsList = Array.isArray(currentOrder.items)
+    ? currentOrder.items
+    : typeof currentOrder.items === "string"
       ? (() => {
           try {
-            return JSON.parse(order.items);
+            return JSON.parse(currentOrder.items);
           } catch {
             return [];
           }
@@ -103,10 +129,10 @@ export function OrderTrackingModal({
                 <span>Live Shipment Tracking</span>
               </div>
               <h2 className="font-['Cormorant_Garamond'] text-2xl sm:text-3xl font-medium tracking-tight text-white">
-                Order #{order.id}
+                Order #{currentOrder.id}
               </h2>
               <p className="text-xs text-white/70">
-                Placed on <strong className="text-white font-medium">{order.date || order.createdAt?.split("T")[0]}</strong> · Estimated Delivery in <strong className="text-[#EDBC3D] font-semibold">{tracking.totalDays} Days</strong>
+                Placed on <strong className="text-white font-medium">{currentOrder.date || currentOrder.createdAt?.split("T")[0]}</strong> · Estimated Delivery in <strong className="text-[#EDBC3D] font-semibold">{tracking.totalDays} Days</strong>
               </p>
             </div>
 
@@ -165,10 +191,10 @@ export function OrderTrackingModal({
               </div>
               <div className="text-right shrink-0">
                 <span className="text-xs font-sans tabular-nums font-bold text-foreground block">
-                  Total: {money(order.total)}
+                  Total: {money(currentOrder.total)}
                 </span>
                 <span className="text-[11px] text-muted-foreground">
-                  {order.paymentStatus === "Paid" ? "Paid Online" : "Cash on Delivery"}
+                  {currentOrder.paymentStatus === "Paid" ? "Paid Online" : "Cash on Delivery"}
                 </span>
               </div>
             </div>
@@ -182,7 +208,7 @@ export function OrderTrackingModal({
                 <span>This order was cancelled</span>
               </div>
               <p className="text-destructive/80 pl-6">
-                {order.notes || "This shipment has been cancelled by the administrator. Any online payment will be refunded to the source account."}
+                {currentOrder.notes || "This shipment has been cancelled by the administrator. Any online payment will be refunded to the source account."}
               </p>
             </div>
           )}
@@ -308,11 +334,11 @@ export function OrderTrackingModal({
             <div className="space-y-0.5">
               <span className="font-semibold text-foreground">Delivery Destination:</span>
               <p className="text-muted-foreground leading-relaxed">
-                {order.shippingAddress || "Showroom Pickup, Ambattur, Chennai"}
+                {currentOrder.shippingAddress || "Showroom Pickup, Ambattur, Chennai"}
               </p>
               <div className="text-[11px] text-muted-foreground pt-1 flex flex-wrap gap-3">
-                <span>Receiver: <strong className="text-foreground">{order.customerName}</strong></span>
-                <span>Phone: <strong className="text-foreground">{order.customerPhone}</strong></span>
+                <span>Receiver: <strong className="text-foreground">{currentOrder.customerName}</strong></span>
+                <span>Phone: <strong className="text-foreground">{currentOrder.customerPhone}</strong></span>
               </div>
             </div>
           </div>
@@ -321,7 +347,7 @@ export function OrderTrackingModal({
         {/* Footer Actions */}
         <div className="p-4 border-t border-border bg-card flex flex-col sm:flex-row items-center justify-between gap-3">
           <a
-            href={`https://wa.me/919940135700?text=Hi%20Padmanabha%20Fabrics%2C%20I%20would%20like%20to%20track%20my%20order%20%23${encodeURIComponent(order.id)}`}
+            href={`https://wa.me/919940135700?text=Hi%20Padmanabha%20Fabrics%2C%20I%20would%20like%20to%20track%20my%20order%20%23${encodeURIComponent(currentOrder.id)}`}
             target="_blank"
             rel="noreferrer"
             className="inline-flex items-center gap-2 text-xs font-semibold text-[#25D366] hover:underline"
@@ -331,7 +357,7 @@ export function OrderTrackingModal({
           </a>
 
           <div className="flex items-center gap-2 flex-wrap">
-            {order.status !== "Cancelled" && order.paymentStatus !== "Failed" && (
+            {currentOrder.status !== "Cancelled" && currentOrder.paymentStatus !== "Failed" && (
               <Button
                 type="button"
                 variant="outline"

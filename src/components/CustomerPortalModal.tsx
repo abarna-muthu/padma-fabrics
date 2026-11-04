@@ -438,8 +438,8 @@ export function CustomerPortalModal() {
                                       ? "Delivered"
                                       : order.status === "Shipped"
                                         ? "In Transit"
-                                        : order.status === "Packing"
-                                          ? "Packing"
+                                        : order.status === "Processing" || order.status === "Packing"
+                                          ? "Processing & Packing"
                                           : "Order Placed"}
                                   </span>
                                 </div>
