@@ -21,6 +21,9 @@ export const categories = [
   "Combo Dresses",
   "palazzo",
   "Western Top",
+  "Short Top",
+  "Double Side Pocket Pants",
+  "Chudithar Set",
 ] as const;
 
 export const collections = [

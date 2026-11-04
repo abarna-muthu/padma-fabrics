@@ -391,7 +391,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   // Catalog products (shared with public storefront)
   const [productsList, setProductsList] = useState<Product[]>(() => {
     if (typeof window === "undefined") {
-      return [];
+      return (staticProducts as Product[]) || [];
     }
     try {
       // Purge legacy sample/demo products once as requested by user
@@ -401,7 +401,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         localStorage.removeItem(STORAGE_DELETED_PRODUCTS_KEY);
         localStorage.setItem(STORAGE_PURGE_LEGACY_KEY, "true");
         idbClearProducts().catch(() => {});
-        return [];
+        return (staticProducts as Product[]) || [];
       }
 
       let deletedIds: string[] = [];
@@ -437,9 +437,18 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         }
       }
 
+      // 3. Bundled real catalog fallback: Ensures mobile devices and fresh browsers get all 208 products immediately
+      if (initialMap.size === 0 && Array.isArray(staticProducts) && staticProducts.length > 0) {
+        for (const sp of staticProducts) {
+          if (sp && sp.id && !deletedIds.includes(sp.id) && !isDemoProduct(sp)) {
+            initialMap.set(sp.id, normalizeProduct(sp));
+          }
+        }
+      }
+
       return Array.from(initialMap.values());
     } catch {
-      return [];
+      return (staticProducts as Product[]) || [];
     }
   });
 
@@ -464,7 +473,9 @@ export function StoreProvider({ children }: { children: ReactNode }) {
           localStorage.setItem(STORAGE_PURGE_LEGACY_KEY, "true");
           await idbClearProducts().catch(() => {});
           if (!isCancelled) {
-            setProductsList([]);
+            const bundled = (staticProducts as Product[]) || [];
+            setProductsList(bundled);
+            saveProducts(bundled);
           }
           return;
         }
@@ -536,6 +547,15 @@ export function StoreProvider({ children }: { children: ReactNode }) {
           }
         } catch (idbErr) {
           console.warn("[IndexedDB Hydration Notice]", idbErr);
+        }
+
+        // Fallback to staticProducts if unifiedMap is empty
+        if (unifiedMap.size === 0 && Array.isArray(staticProducts) && staticProducts.length > 0) {
+          for (const sp of staticProducts) {
+            if (sp && sp.id && !deletedIds.includes(sp.id) && !isDemoProduct(sp)) {
+              unifiedMap.set(sp.id, normalizeProduct(sp));
+            }
+          }
         }
 
         const merged = Array.from(unifiedMap.values());
@@ -624,7 +644,14 @@ export function StoreProvider({ children }: { children: ReactNode }) {
           const merged = [...prev];
           for (const bc of backendCats) {
             const catName = bc.name || bc.id;
-            if (catName && !merged.some((m) => m.toLowerCase() === catName.toLowerCase())) {
+            if (
+              catName &&
+              !merged.some(
+                (m) =>
+                  m.toLowerCase().replace(/[^a-z0-9]/g, "") ===
+                  catName.toLowerCase().replace(/[^a-z0-9]/g, ""),
+              )
+            ) {
               merged.push(catName);
             }
           }

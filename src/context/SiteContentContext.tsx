@@ -83,29 +83,35 @@ export interface SiteContent {
 export const DEFAULT_HERO_BANNERS: HeroBannerSlide[] = [
   {
     id: 1,
-    image: "/hero-banner-3.jpg",
-    desktopImage: "/hero-banner-3.jpg",
-    mobileImage: "",
-    alt: "Padmanabha Fabrics - Diwali Edit, Silhouettes to Host, Shine & Celebrate In",
+    image: "https://res.cloudinary.com/ugzb1wup/image/upload/v1793339639/padma_banners/lxa5slzsltdjsufz3ihk.jpg",
+    desktopImage: "https://res.cloudinary.com/ugzb1wup/image/upload/v1793339639/padma_banners/lxa5slzsltdjsufz3ihk.jpg",
+    mobileImage: "https://res.cloudinary.com/ugzb1wup/image/upload/v1793601959/padma_banners/w0i1cra7fhpvwmrjuw6d.jpg",
+    alt: "Padmanabha Fabrics - Timeless Elegance in Every Thread, Premium Sarees",
     href: "/shop",
+    title: "",
+    subtitle: "",
     buttonText: "",
   },
   {
     id: 2,
-    image: "/hero-banner-2.png",
-    desktopImage: "/hero-banner-2.png",
-    mobileImage: "",
+    image: "https://res.cloudinary.com/ugzb1wup/image/upload/v1793339404/padma_banners/noygpkbnsv0mwzlthjia.jpg",
+    desktopImage: "https://res.cloudinary.com/ugzb1wup/image/upload/v1793339404/padma_banners/noygpkbnsv0mwzlthjia.jpg",
+    mobileImage: "https://res.cloudinary.com/ugzb1wup/image/upload/v1793601969/padma_banners/sgy8luit0xj8wpxqlbf2.jpg",
     alt: "Padmanabha Fabrics - Timeless Ethnic Elegance, Explore Collection",
     href: "/shop",
+    title: "",
+    subtitle: "",
     buttonText: "",
   },
   {
     id: 3,
-    image: "/hero-banner-1.jpg",
-    desktopImage: "/hero-banner-1.jpg",
-    mobileImage: "",
+    image: "https://res.cloudinary.com/ugzb1wup/image/upload/v1793339651/padma_banners/a8jq6ydq0qtsm8k3aa3y.jpg",
+    desktopImage: "https://res.cloudinary.com/ugzb1wup/image/upload/v1793339651/padma_banners/a8jq6ydq0qtsm8k3aa3y.jpg",
+    mobileImage: "https://res.cloudinary.com/ugzb1wup/image/upload/v1793601978/padma_banners/le45tyymfeykd90im4hv.jpg",
     alt: "Padmanabha Fabrics - Timeless Ethnic Elegance, Style Woven With Tradition",
     href: "/shop",
+    title: "",
+    subtitle: "",
     buttonText: "",
   },
 ];
@@ -291,19 +297,30 @@ const STORAGE_KEY = "pf_site_content_v1";
 const SiteContentContext = createContext<SiteContentContextType | null>(null);
 
 const sanitizeHeroBanners = (banners: any[]): HeroBannerSlide[] => {
-  if (!Array.isArray(banners)) return DEFAULT_HERO_BANNERS;
+  if (!Array.isArray(banners) || banners.length === 0) return DEFAULT_HERO_BANNERS;
   return banners.map((b, idx) => {
-    const desktopImg = b.desktopImage || b.image || "/hero-banner-1.jpg";
+    const fallbackBanner = DEFAULT_HERO_BANNERS[idx] || DEFAULT_HERO_BANNERS[0];
+    const isOldLocalBanner = (url?: string) =>
+      !url ||
+      url.includes("/hero-banner-") ||
+      url.includes("hero-banner-3") ||
+      url.startsWith("/assets/");
+
+    const desktopImg = isOldLocalBanner(b.desktopImage || b.image)
+      ? fallbackBanner.desktopImage
+      : (b.desktopImage || b.image);
+
     const mobImg =
-      typeof b.mobileImage === "string" && b.mobileImage !== "/hero-banner-mobile.jpg"
+      typeof b.mobileImage === "string" && !isOldLocalBanner(b.mobileImage) && b.mobileImage !== "/hero-banner-mobile.jpg"
         ? b.mobileImage
-        : "";
+        : (fallbackBanner.mobileImage || desktopImg);
+
     return {
-      id: b.id || `banner-${idx + 1}`,
+      id: b.id || fallbackBanner.id || `banner-${idx + 1}`,
       image: desktopImg,
       desktopImage: desktopImg,
       mobileImage: mobImg,
-      alt: b.alt || "Padmanabha Fabrics Banner",
+      alt: b.alt || fallbackBanner.alt || "Padmanabha Fabrics Banner",
       href: b.href || "/shop",
       title: b.title || "",
       subtitle: b.subtitle || "",
@@ -343,10 +360,26 @@ const mergeHomeContent = (rawHome: any): HomeContent => {
 };
 
 export function SiteContentProvider({ children }: { children: ReactNode }) {
-  const [content, setContent] = useState<SiteContent>({
-    home: DEFAULT_HOME_CONTENT,
-    about: DEFAULT_ABOUT_CONTENT,
-    contact: DEFAULT_CONTACT_CONTENT,
+  const [content, setContent] = useState<SiteContent>(() => {
+    const defaults: SiteContent = {
+      home: DEFAULT_HOME_CONTENT,
+      about: DEFAULT_ABOUT_CONTENT,
+      contact: DEFAULT_CONTACT_CONTENT,
+    };
+    if (typeof window === "undefined") return defaults;
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        return {
+          home: mergeHomeContent(parsed.home),
+          about: { ...DEFAULT_ABOUT_CONTENT, ...(parsed.about || {}) },
+          contact: { ...DEFAULT_CONTACT_CONTENT, ...(parsed.contact || {}) },
+          updatedAt: Number(parsed.updatedAt) || 0,
+        };
+      }
+    } catch {}
+    return defaults;
   });
 
   // Load saved content from localStorage and server API

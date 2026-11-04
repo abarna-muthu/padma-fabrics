@@ -134,7 +134,16 @@ function ShopPage() {
       }
     }
 
-    return Array.from(map.values());
+    const seen = new Set<string>();
+    const result: string[] = [];
+    for (const display of map.values()) {
+      const cleanKey = display.toLowerCase().replace(/[^a-z0-9]/g, "");
+      if (!seen.has(cleanKey)) {
+        seen.add(cleanKey);
+        result.push(display);
+      }
+    }
+    return result;
   }, [categoriesList, activeProducts, deletedCategories]);
 
   // Pattern Filter state

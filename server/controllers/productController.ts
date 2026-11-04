@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { getDb } from "../config/db";
+import { getDb, loadPersistedProducts } from "../config/db";
 
 const CATEGORY_ID_TO_NAME: Record<string, string> = {
   "saree": "Saree",
@@ -94,6 +94,10 @@ function parseSafeImages(val: any, fallbackImg: string = ""): string[] {
 }
 
 export async function getProducts(req: Request, res: Response) {
+  res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
+  res.setHeader("Pragma", "no-cache");
+  res.setHeader("Expires", "0");
+
   try {
     const { category, search, featured, active_only = "true" } = req.query;
     const db = await getDb();
@@ -116,6 +120,18 @@ export async function getProducts(req: Request, res: Response) {
     }
 
     let products = await db.query(sql, params);
+
+    // If query returned no products, fallback to persisted local file
+    if (!products || products.length === 0) {
+      const persisted = loadPersistedProducts();
+      if (persisted && persisted.length > 0) {
+        products = persisted.filter((p: any) => p.is_active === 1 || p.isActive !== false);
+        if (category && category !== "All") {
+          const catSlug = CATEGORY_NAME_TO_ID[category as string] || (category as string).toLowerCase().replace(/[^a-z0-9]+/g, "-");
+          products = products.filter((p: any) => p.category_id === catSlug || p.categoryId === catSlug);
+        }
+      }
+    }
 
     const DEMO_IDS_SET = new Set(DEFAULT_PRODUCT_IDS);
     products = products.filter((p) => !DEMO_IDS_SET.has(p.id) && !p.id.startsWith("test-"));

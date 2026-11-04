@@ -22,6 +22,13 @@ interface StoreCategoryTab {
 
 const STORE_CATEGORY_TABS: StoreCategoryTab[] = [
   {
+    id: "short-top",
+    label: "SHORT TOP",
+    categoryKey: "Short Top",
+    defaultImage:
+      "https://res.cloudinary.com/ugzb1wup/image/upload/v1792584958/padma_products/v9quby0cest8zrupfzqc.jpg",
+  },
+  {
     id: "chudithar-top",
     label: "CHUDITHAR TOP",
     categoryKey: "Chudithar Top",
@@ -90,6 +97,13 @@ const STORE_CATEGORY_TABS: StoreCategoryTab[] = [
     categoryKey: "Combo Dresses",
     defaultImage:
       "https://res.cloudinary.com/ugzb1wup/image/upload/v1793207440/padma_categories/tysvr2pz2dttrsnubnf7.jpg",
+  },
+  {
+    id: "double-side-pocket-pants",
+    label: "DOUBLE SIDE POCKET PANTS",
+    categoryKey: "Double Side Pocket Pants",
+    defaultImage:
+      "https://res.cloudinary.com/ugzb1wup/image/upload/v1792664369/padma_products/nb32h1yqb7bhl2xuvsr5.jpg",
   },
 ];
 
@@ -176,16 +190,39 @@ export function OurBestsellers({ onOpenQuickSize }: OurBestsellersProps) {
   const { content } = useSiteContent();
 
   const categoryTabs: StoreCategoryTab[] = useMemo(() => {
+    let tabs: StoreCategoryTab[] = STORE_CATEGORY_TABS;
     if (content.home.bestsellerTabs && content.home.bestsellerTabs.length > 0) {
-      return content.home.bestsellerTabs.map((t) => ({
+      tabs = content.home.bestsellerTabs.map((t) => ({
         id: t.id,
         label: t.label,
         categoryKey: t.categoryKey || t.label,
         defaultImage: t.image,
       }));
     }
-    return STORE_CATEGORY_TABS;
-  }, [content.home.bestsellerTabs]);
+
+    // Dynamically include any custom category with active products
+    const existingNorms = new Set(
+      tabs.map((t) => (t.categoryKey || t.label).toLowerCase().replace(/[^a-z0-9]/g, "")),
+    );
+    const dynamicTabs: StoreCategoryTab[] = [];
+    const sourceProds = (activeProducts && activeProducts.length > 0) ? activeProducts : (productsList || []);
+    for (const p of sourceProds) {
+      const cat = (p.category || "").trim();
+      if (!cat) continue;
+      const norm = cat.toLowerCase().replace(/[^a-z0-9]/g, "");
+      if (!existingNorms.has(norm)) {
+        existingNorms.add(norm);
+        dynamicTabs.push({
+          id: norm,
+          label: cat.toUpperCase(),
+          categoryKey: cat,
+          defaultImage: p.image || "/placeholder.svg",
+        });
+      }
+    }
+
+    return [...tabs, ...dynamicTabs];
+  }, [content.home.bestsellerTabs, activeProducts, productsList]);
 
   const [activeTab, setActiveTab] = useState(categoryTabs[0]?.id || "chudithar-top");
 

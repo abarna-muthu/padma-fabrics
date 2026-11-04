@@ -157,8 +157,8 @@ export const ProductCard = memo(function ProductCard({
           />
         </div>
 
-        {/* Top-left Badges: NEW IN + Fabric Tag */}
-        <div className="absolute top-2.5 left-2.5 z-10 flex flex-col items-start gap-1">
+        {/* Bottom-left Badges: NEW IN + Fabric Tag */}
+        <div className="absolute bottom-2.5 left-2.5 z-10 flex flex-col items-start gap-1">
           {product.isNew !== false && (
             <Badge label="NEW IN" variant="red" />
           )}
