@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { getDb, loadPersistedProducts } from "../config/db";
+import { getDb, loadPersistedProducts, savePersistedProducts } from "../config/db";
 
 const CATEGORY_ID_TO_NAME: Record<string, string> = {
   "saree": "Saree",
@@ -555,6 +555,12 @@ export async function createProduct(req: Request, res: Response) {
       sizes: Array.isArray(sizes) ? sizes : (typeof sizes === "string" ? JSON.parse(sizes || "[]") : []),
     };
 
+    try {
+      const persisted = loadPersistedProducts();
+      persisted.unshift(createdProduct);
+      savePersistedProducts(persisted);
+    } catch {}
+
     return res.status(201).json({
       success: true,
       message: "Product created successfully.",
@@ -796,6 +802,17 @@ export async function updateProduct(req: Request, res: Response) {
       updatedAt: new Date().toISOString(),
     };
 
+    try {
+      const persisted = loadPersistedProducts();
+      const updatedPersisted = persisted.map((p: any) =>
+        String(p.id) === String(updatedProduct.id) ? { ...p, ...updatedProduct } : p
+      );
+      if (!updatedPersisted.some((p: any) => String(p.id) === String(updatedProduct.id))) {
+        updatedPersisted.unshift(updatedProduct);
+      }
+      savePersistedProducts(updatedPersisted);
+    } catch {}
+
     return res.status(200).json({
       success: true,
       message: "Product updated successfully.",
@@ -828,6 +845,12 @@ export async function deleteProduct(req: Request, res: Response) {
     await db.execute("DELETE FROM inventory_logs WHERE product_id = ?", [id]).catch(() => {});
     await db.execute("DELETE FROM product_images WHERE product_id = ?", [id]).catch(() => {});
     await db.execute("DELETE FROM products WHERE id = ?", [id]);
+
+    try {
+      const persisted = loadPersistedProducts();
+      savePersistedProducts(persisted.filter((p: any) => String(p.id) !== String(id)));
+    } catch {}
+
     return res.status(200).json({
       success: true,
       message: "Product deleted from catalog successfully.",

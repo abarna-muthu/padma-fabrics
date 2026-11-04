@@ -663,7 +663,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       }
     }).catch(() => {});
 
-    // 4. Background sync with database API
+    // 4. Background sync with database API (Live sync: Admin edits on laptop instantly reflect on mobile)
     const syncWithBackend = async () => {
       try {
         let deletedIds: string[] = [];
@@ -671,29 +671,9 @@ export function StoreProvider({ children }: { children: ReactNode }) {
           deletedIds = JSON.parse(localStorage.getItem(STORAGE_DELETED_PRODUCTS_KEY) || "[]");
         } catch {}
 
-        // Read all current products including custom ones from local storage
-        const currentLocal = localStorage.getItem(STORAGE_PRODUCTS_KEY);
-        let localList: Product[] = [];
-        try {
-          if (currentLocal) localList = JSON.parse(currentLocal);
-        } catch {}
-
-        // If user has custom products locally, auto-sync them to TiDB Cloud
-        if (Array.isArray(localList) && localList.length > 0) {
-          const hasUserAddedProducts = localList.some((p) => !isDemoProduct(p));
-          if (hasUserAddedProducts) {
-            try {
-              console.log("[TiDB Auto-Sync] Safely syncing custom products to database...");
-              await productApi.bulkSync(localList, false);
-            } catch (syncErr) {
-              console.warn("[TiDB Auto-Sync] Background sync notice:", syncErr);
-            }
-          }
-        }
-
         const prodRes = await productApi.getAll();
         const serverProds = (prodRes as any).products || prodRes.data;
-        if (prodRes.success && Array.isArray(serverProds)) {
+        if (prodRes.success && Array.isArray(serverProds) && serverProds.length > 0) {
           // Filter out deleted items and demo items from server response
           const activeServerProds = serverProds
             .filter((sp: any) => !deletedIds.includes(sp.id) && !DEMO_PRODUCT_IDS.has(sp.id))
@@ -702,32 +682,22 @@ export function StoreProvider({ children }: { children: ReactNode }) {
           setProductsList((currentList) => {
             const mergedMap = new Map<string, Product>();
 
-            // 1. Overlay server products
+            // 1. Overlay server products as authoritative live source (from Admin updates)
             for (const sp of activeServerProds) {
               if (!deletedIds.includes(sp.id)) {
                 mergedMap.set(sp.id, sp);
               }
             }
 
-            // 2. Intelligently preserve current local user products (user uploaded products must NEVER be lost)
+            // 2. Only preserve local offline draft products that don't yet exist in the database
             for (const cl of currentList) {
               if (DEMO_PRODUCT_IDS.has(cl.id) || deletedIds.includes(cl.id)) continue;
-              const sp = mergedMap.get(cl.id);
-              if (!sp) {
+              if (!mergedMap.has(cl.id)) {
                 mergedMap.set(cl.id, cl);
-              } else {
-                const clTime = cl.updatedAt ? new Date(cl.updatedAt).getTime() : 0;
-                const spTime =
-                  (sp as any).updatedAt || (sp as any).updated_at
-                    ? new Date((sp as any).updatedAt || (sp as any).updated_at).getTime()
-                    : 0;
-                if (clTime >= spTime) {
-                  mergedMap.set(cl.id, { ...sp, ...cl });
-                }
               }
             }
 
-            // 3. Also check STORAGE_CUSTOM_PRODUCTS_KEY to ensure NO custom product is omitted
+            // 3. Also check STORAGE_CUSTOM_PRODUCTS_KEY for any unsynced offline additions
             try {
               const customStored = localStorage.getItem(STORAGE_CUSTOM_PRODUCTS_KEY);
               if (customStored) {
@@ -775,12 +745,27 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
     syncWithBackend();
 
+    // 5. Real-time background sync: Refresh when tab becomes visible or gains focus (mobile browser app switcher / tab switch)
+    const onVisibilityChange = () => {
+      if (typeof document !== "undefined" && document.visibilityState === "visible") {
+        syncWithBackend();
+      }
+    };
+    window.addEventListener("focus", syncWithBackend);
+    document.addEventListener("visibilitychange", onVisibilityChange);
+
+    // 6. Polling interval: Auto-fetch live admin updates every 15 seconds
+    const pollTimer = setInterval(syncWithBackend, 15000);
+
     return () => {
       isCancelled = true;
+      clearInterval(pollTimer);
       window.removeEventListener("storage", handleStorageChange);
       window.removeEventListener("pf_products_updated", handleCustomProductUpdate);
       window.removeEventListener("pf_categories_updated", handleCustomCategoryUpdate);
       window.removeEventListener("pf_orders_updated", handleCustomOrderUpdate);
+      window.removeEventListener("focus", syncWithBackend);
+      document.removeEventListener("visibilitychange", onVisibilityChange);
     };
   }, []);
 

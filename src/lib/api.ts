@@ -42,6 +42,8 @@ export async function apiRequest<T = any>(
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
     "x-admin-fallback": "true",
+    "Cache-Control": "no-cache, no-store, must-revalidate",
+    Pragma: "no-cache",
     ...(options.headers as Record<string, string>),
   };
 
@@ -138,9 +140,12 @@ export const productApi = {
     if (params?.category) query.set("category", params.category);
     if (params?.search) query.set("search", params.search);
     if (params?.featured) query.set("featured", "true");
+    query.set("_t", Date.now().toString());
 
     const qs = query.toString();
-    const res = await apiRequest<any>(`/api/products${qs ? `?${qs}` : ""}`);
+    const res = await apiRequest<any>(`/api/products${qs ? `?${qs}` : ""}`, {
+      cache: "no-store",
+    });
     const prods = (res as any)?.products || res.data;
     return {
       ...res,
@@ -168,7 +173,9 @@ export const productApi = {
   },
 
   async getById(id: string) {
-    return apiRequest<any>(`/api/products/${id}`);
+    return apiRequest<any>(`/api/products/${encodeURIComponent(id)}?_t=${Date.now()}`, {
+      cache: "no-store",
+    });
   },
 
   async create(data: any) {

@@ -68,13 +68,8 @@ export function ProductDetailPage({ id }: ProductDetailPageProps) {
     productApi.getById(id).then((res) => {
       const serverProd = (res as any)?.product || res?.data;
       if (serverProd && serverProd.id) {
-        // If server returned variants or gallery images, update store state
-        if (
-          (Array.isArray(serverProd.variants) && serverProd.variants.length > 0) ||
-          (Array.isArray(serverProd.images) && serverProd.images.length > 1)
-        ) {
-          updateProduct(serverProd.id, serverProd);
-        }
+        // Keep storefront product in sync with live server details (image, price, stock, variants, gallery)
+        updateProduct(serverProd.id, serverProd);
       }
     }).catch(() => {});
   }, [id]);
