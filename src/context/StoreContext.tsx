@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
+import { createContext, useContext, useEffect, useState, useMemo, type ReactNode } from "react";
 import {
   ALL,
   categories as staticCategories,
@@ -123,12 +123,19 @@ export const DEMO_PRODUCT_IDS = new Set([
   "pf-mvtfhbti",
 ]);
 
+export const DUPLICATE_PRODUCT_IDS = new Set([
+  "pf-mvyzhdva",
+  "pf-mvyze70t",
+  "pf-mvz6utzp",
+]);
+
 export function isDemoProduct(p: any): boolean {
   if (!p) return false;
   const id = String(p.id || "");
   const name = String(p.name || "").trim().toLowerCase();
   return (
     DEMO_PRODUCT_IDS.has(id) ||
+    DUPLICATE_PRODUCT_IDS.has(id) ||
     name === "the royal indigo silk saree" ||
     id === "pf-mvtfhbti"
   );
@@ -422,6 +429,20 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       } catch {}
 
       const initialMap = new Map<string, Product>();
+      const seenCards = new Set<string>();
+
+      const addInitialItem = (raw: any) => {
+        if (!raw || !raw.id || deletedIds.includes(raw.id) || isDemoProduct(raw)) return;
+        const norm = normalizeProduct(raw);
+        if (initialMap.has(norm.id)) return;
+        const rawImg = norm.image || norm.imageUrl || (norm as any).image_url || "";
+        const imgKey = rawImg.replace(/v\d+\//, "").split("?")[0].split("/").pop() || "";
+        const nameKey = (norm.name || "").trim().toLowerCase();
+        const cardKey = `${nameKey}:::${imgKey}`;
+        if (imgKey && seenCards.has(cardKey)) return;
+        initialMap.set(norm.id, norm);
+        if (imgKey) seenCards.add(cardKey);
+      };
 
       // 1. Read custom user-added products (guaranteed persistence across refreshes)
       const customStored = localStorage.getItem(STORAGE_CUSTOM_PRODUCTS_KEY);
@@ -429,9 +450,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         const parsedCustom = JSON.parse(customStored);
         if (Array.isArray(parsedCustom)) {
           for (const cp of parsedCustom) {
-            if (cp && cp.id && !deletedIds.includes(cp.id) && !isDemoProduct(cp)) {
-              initialMap.set(cp.id, normalizeProduct(cp));
-            }
+            addInitialItem(cp);
           }
         }
       }
@@ -442,19 +461,15 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         const parsed = JSON.parse(stored);
         if (Array.isArray(parsed)) {
           for (const p of parsed) {
-            if (p && p.id && !deletedIds.includes(p.id) && !isDemoProduct(p)) {
-              initialMap.set(p.id, normalizeProduct(p));
-            }
+            addInitialItem(p);
           }
         }
       }
 
-      // 3. Bundled real catalog fallback: Ensures mobile devices and fresh browsers get all 208 products immediately
+      // 3. Bundled real catalog fallback: Ensures mobile devices and fresh browsers get real products immediately
       if (initialMap.size === 0 && Array.isArray(staticProducts) && staticProducts.length > 0) {
         for (const sp of staticProducts) {
-          if (sp && sp.id && !deletedIds.includes(sp.id) && !isDemoProduct(sp)) {
-            initialMap.set(sp.id, normalizeProduct(sp));
-          }
+          addInitialItem(sp);
         }
       }
 
@@ -498,6 +513,20 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         } catch {}
 
         const unifiedMap = new Map<string, Product>();
+        const seenCards = new Set<string>();
+
+        const addUnifiedItem = (raw: any) => {
+          if (!raw || !raw.id || deletedIds.includes(raw.id) || isDemoProduct(raw)) return;
+          const norm = normalizeProduct(raw);
+          if (unifiedMap.has(norm.id)) return;
+          const rawImg = norm.image || norm.imageUrl || (norm as any).image_url || "";
+          const imgKey = rawImg.replace(/v\d+\//, "").split("?")[0].split("/").pop() || "";
+          const nameKey = (norm.name || "").trim().toLowerCase();
+          const cardKey = `${nameKey}:::${imgKey}`;
+          if (imgKey && seenCards.has(cardKey)) return;
+          unifiedMap.set(norm.id, norm);
+          if (imgKey) seenCards.add(cardKey);
+        };
 
         // Step A: Dedicated user custom products (always preserves newly uploaded items)
         try {
@@ -506,9 +535,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
             const parsed = JSON.parse(customStored);
             if (Array.isArray(parsed)) {
               for (const cp of parsed) {
-                if (cp && cp.id && !deletedIds.includes(cp.id) && !isDemoProduct(cp)) {
-                  unifiedMap.set(cp.id, normalizeProduct(cp));
-                }
+                addUnifiedItem(cp);
               }
             }
           }
@@ -521,9 +548,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
             const parsed = JSON.parse(storedCatalog);
             if (Array.isArray(parsed)) {
               for (const p of parsed) {
-                if (p && p.id && !deletedIds.includes(p.id) && !isDemoProduct(p)) {
-                  unifiedMap.set(p.id, normalizeProduct(p));
-                }
+                addUnifiedItem(p);
               }
             }
           }
@@ -538,7 +563,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
                 const norm = normalizeProduct(ip);
                 const existing = unifiedMap.get(norm.id);
                 if (!existing) {
-                  unifiedMap.set(norm.id, norm);
+                  addUnifiedItem(norm);
                 } else {
                   const hasBetterImg =
                     typeof norm.image === "string" &&
@@ -564,9 +589,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         // Fallback to staticProducts if unifiedMap is empty
         if (unifiedMap.size === 0 && Array.isArray(staticProducts) && staticProducts.length > 0) {
           for (const sp of staticProducts) {
-            if (sp && sp.id && !deletedIds.includes(sp.id) && !isDemoProduct(sp)) {
-              unifiedMap.set(sp.id, normalizeProduct(sp));
-            }
+            addUnifiedItem(sp);
           }
         }
 
@@ -676,7 +699,10 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     }).catch(() => {});
 
     // 4. Background sync with database API (Live sync: Admin edits on laptop instantly reflect on mobile)
+    let isSyncingProducts = false;
     const syncWithBackend = async () => {
+      if (isSyncingProducts) return;
+      isSyncingProducts = true;
       try {
         let deletedIds: string[] = [];
         try {
@@ -688,36 +714,51 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         if (prodRes.success && Array.isArray(serverProds) && serverProds.length > 0) {
           // Filter out deleted items and demo items from server response
           const activeServerProds = serverProds
-            .filter((sp: any) => !deletedIds.includes(sp.id) && !DEMO_PRODUCT_IDS.has(sp.id))
+            .filter((sp: any) => !deletedIds.includes(sp.id) && !isDemoProduct(sp))
             .map(normalizeProduct);
 
-          setProductsList((currentList) => {
+          setProductsList(() => {
             const mergedMap = new Map<string, Product>();
+            const seenCards = new Set<string>();
 
-            // 1. Overlay server products as authoritative live source (from Admin updates)
+            // 1. Overlay server products as authoritative live source (from Admin database)
             for (const sp of activeServerProds) {
-              if (!deletedIds.includes(sp.id)) {
-                mergedMap.set(sp.id, sp);
+              if (deletedIds.includes(sp.id) || isDemoProduct(sp)) continue;
+              if (mergedMap.has(sp.id)) continue;
+
+              const rawImg = sp.image || sp.imageUrl || (sp as any).image_url || "";
+              const imgKey = rawImg.replace(/v\d+\//, "").split("?")[0].split("/").pop() || "";
+              const nameKey = (sp.name || "").trim().toLowerCase();
+              const cardKey = `${nameKey}:::${imgKey}`;
+
+              if (imgKey && seenCards.has(cardKey)) {
+                continue;
+              }
+
+              mergedMap.set(sp.id, sp);
+              if (imgKey) {
+                seenCards.add(cardKey);
               }
             }
 
-            // 2. Only preserve local offline draft products that don't yet exist in the database
-            for (const cl of currentList) {
-              if (DEMO_PRODUCT_IDS.has(cl.id) || deletedIds.includes(cl.id)) continue;
-              if (!mergedMap.has(cl.id)) {
-                mergedMap.set(cl.id, cl);
-              }
-            }
-
-            // 3. Also check STORAGE_CUSTOM_PRODUCTS_KEY for any unsynced offline additions
+            // 2. Only preserve unsynced offline custom additions that don't yet exist in the database
             try {
               const customStored = localStorage.getItem(STORAGE_CUSTOM_PRODUCTS_KEY);
               if (customStored) {
                 const parsed = JSON.parse(customStored);
                 if (Array.isArray(parsed)) {
                   for (const cp of parsed) {
-                    if (cp && cp.id && !deletedIds.includes(cp.id) && !mergedMap.has(cp.id)) {
-                      mergedMap.set(cp.id, normalizeProduct(cp));
+                    if (cp && cp.id && !deletedIds.includes(cp.id) && !isDemoProduct(cp) && !mergedMap.has(cp.id)) {
+                      const norm = normalizeProduct(cp);
+                      const rawImg = norm.image || norm.imageUrl || (norm as any).image_url || "";
+                      const imgKey = rawImg.replace(/v\d+\//, "").split("?")[0].split("/").pop() || "";
+                      const nameKey = (norm.name || "").trim().toLowerCase();
+                      const cardKey = `${nameKey}:::${imgKey}`;
+
+                      if (!imgKey || !seenCards.has(cardKey)) {
+                        mergedMap.set(norm.id, norm);
+                        if (imgKey) seenCards.add(cardKey);
+                      }
                     }
                   }
                 }
@@ -883,14 +924,36 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  // Active products visible on the storefront (strictly user-uploaded, non-demo products)
-  const activeProducts = productsList.filter(
-    (p) =>
-      p.status !== "inactive" &&
-      p.status !== "archived" &&
-      (p as any).isActive !== false &&
-      !isDemoProduct(p),
-  );
+  // Active products visible on the storefront (strictly user-uploaded, non-demo products, guaranteed deduplicated)
+  const activeProducts = useMemo(() => {
+    const seenIds = new Set<string>();
+    const seenCards = new Set<string>();
+    const result: Product[] = [];
+
+    for (const p of productsList) {
+      if (!p || !p.id) continue;
+      if (seenIds.has(p.id)) continue;
+      if (p.status === "inactive" || p.status === "archived" || (p as any).isActive === false) continue;
+      if (isDemoProduct(p) || DEMO_PRODUCT_IDS.has(p.id) || DUPLICATE_PRODUCT_IDS.has(p.id)) continue;
+
+      const rawImg = p.image || p.imageUrl || (p as any).image_url || "";
+      const imgKey = rawImg.replace(/v\d+\//, "").split("?")[0].split("/").pop() || "";
+      const nameKey = (p.name || "").trim().toLowerCase();
+      const cardKey = `${nameKey}:::${imgKey}`;
+
+      if (imgKey && seenCards.has(cardKey)) {
+        continue;
+      }
+
+      seenIds.add(p.id);
+      if (imgKey) {
+        seenCards.add(cardKey);
+      }
+      result.push(p);
+    }
+
+    return result;
+  }, [productsList]);
 
   const count = bag.reduce((n, item) => n + item.quantity, 0);
 

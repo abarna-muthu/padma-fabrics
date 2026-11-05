@@ -134,9 +134,11 @@ export async function getProducts(req: Request, res: Response) {
     }
 
     const DEMO_IDS_SET = new Set(DEFAULT_PRODUCT_IDS);
+    const DUPLICATE_PRODUCT_IDS = new Set(["pf-mvyzhdva", "pf-mvyze70t", "pf-mvz6utzp"]);
     products = products.filter(
       (p) =>
         !DEMO_IDS_SET.has(p.id) &&
+        !DUPLICATE_PRODUCT_IDS.has(p.id) &&
         !p.id.startsWith("test-") &&
         p.id !== "pf-mvtfhbti" &&
         p.name !== "The Royal Indigo Silk Saree",
@@ -190,10 +192,33 @@ export async function getProducts(req: Request, res: Response) {
       };
     });
 
+    // Deduplicate products to ensure identical products (same ID or same name + image) are never sent twice
+    const seenIds = new Set<string>();
+    const seenCards = new Set<string>();
+    const dedupedFormatted: typeof formatted = [];
+
+    for (const prod of formatted) {
+      if (!prod.id || seenIds.has(prod.id)) continue;
+      const rawImg = prod.image || prod.imageUrl || prod.image_url || "";
+      const imgKey = rawImg.replace(/v\d+\//, "").split("?")[0].split("/").pop() || "";
+      const nameKey = (prod.name || "").trim().toLowerCase();
+      const cardKey = `${nameKey}:::${imgKey}`;
+
+      if (imgKey && seenCards.has(cardKey)) {
+        continue;
+      }
+
+      seenIds.add(prod.id);
+      if (imgKey) {
+        seenCards.add(cardKey);
+      }
+      dedupedFormatted.push(prod);
+    }
+
     return res.status(200).json({
       success: true,
-      count: formatted.length,
-      products: formatted,
+      count: dedupedFormatted.length,
+      products: dedupedFormatted,
     });
   } catch (err: any) {
     console.error("[ProductController] getProducts error:", err);

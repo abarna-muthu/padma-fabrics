@@ -177,79 +177,105 @@ function ShopPage() {
 
   const patternItem = selectedPattern ? PATTERNS_DATA.find((p) => p.slug === selectedPattern) : null;
 
-  const visible = (activeProducts || []).filter((p) => {
-    if (!p) return false;
+  const visible = useMemo(() => {
+    const rawFiltered = (activeProducts || []).filter((p) => {
+      if (!p) return false;
 
-    // Filter by new arrivals
-    if (queryFilter === "new") {
-      const b = typeof p.badge === "string" ? p.badge.toLowerCase() : (p.badge ? String(p.badge).toLowerCase() : "");
-      const isNew = b.includes("new") || Boolean((p as any).isNew);
-      if (p.badge && !isNew) return false;
-    }
+      // Filter by new arrivals
+      if (queryFilter === "new") {
+        const b = typeof p.badge === "string" ? p.badge.toLowerCase() : (p.badge ? String(p.badge).toLowerCase() : "");
+        const isNew = b.includes("new") || Boolean((p as any).isNew);
+        if (p.badge && !isNew) return false;
+      }
 
-    // Filter by special offers / discounts
-    if (querySale) {
-      const hasDiscount = Boolean(
-        (p.originalPrice && Number(p.originalPrice) > Number(p.price)) ||
-        (p.discount && Number(p.discount) > 0) ||
-        (p.badge && /sale|offer|deal|discount|save/i.test(String(p.badge)))
-      );
-      // Only exclude if there are products with discounts in the catalog
-      const anyDiscountsExist = activeProducts.some(
-        (prod) =>
-          (prod.originalPrice && Number(prod.originalPrice) > Number(prod.price)) ||
-          (prod.discount && Number(prod.discount) > 0) ||
-          (prod.badge && /sale|offer|deal|discount|save/i.test(String(prod.badge)))
-      );
-      if (anyDiscountsExist && !hasDiscount) return false;
-    }
+      // Filter by special offers / discounts
+      if (querySale) {
+        const hasDiscount = Boolean(
+          (p.originalPrice && Number(p.originalPrice) > Number(p.price)) ||
+          (p.discount && Number(p.discount) > 0) ||
+          (p.badge && /sale|offer|deal|discount|save/i.test(String(p.badge)))
+        );
+        // Only exclude if there are products with discounts in the catalog
+        const anyDiscountsExist = activeProducts.some(
+          (prod) =>
+            (prod.originalPrice && Number(prod.originalPrice) > Number(prod.price)) ||
+            (prod.discount && Number(prod.discount) > 0) ||
+            (prod.badge && /sale|offer|deal|discount|save/i.test(String(prod.badge)))
+        );
+        if (anyDiscountsExist && !hasDiscount) return false;
+      }
 
-    // Category match - case-insensitive and partial-match resilient
-    const matchCategory =
-      filter === ALL ||
-      normalize(p.category) === normalize(filter) ||
-      normalize(p.category).includes(normalize(filter)) ||
-      normalize(filter).includes(normalize(p.category));
+      // Category match - case-insensitive and partial-match resilient
+      const matchCategory =
+        filter === ALL ||
+        normalize(p.category) === normalize(filter) ||
+        normalize(p.category).includes(normalize(filter)) ||
+        normalize(filter).includes(normalize(p.category));
 
-    if (!matchCategory) return false;
+      if (!matchCategory) return false;
 
-    // Search query match
-    if (querySearch && querySearch.trim()) {
-      const q = querySearch.trim().toLowerCase();
+      // Search query match
+      if (querySearch && querySearch.trim()) {
+        const q = querySearch.trim().toLowerCase();
+        const searchSpace = `${p.name || ""} ${p.description || ""} ${p.colour || ""} ${p.category || ""}`.toLowerCase();
+        if (!searchSpace.includes(q)) return false;
+      }
+
+      if (!selectedPattern || !patternItem) return true;
+
+      // Search keywords for pattern in name, description, colour, category
+      const query = patternItem.name ? patternItem.name.toLowerCase() : "";
       const searchSpace = `${p.name || ""} ${p.description || ""} ${p.colour || ""} ${p.category || ""}`.toLowerCase();
-      if (!searchSpace.includes(q)) return false;
+
+      if (selectedPattern === "solids") {
+        return searchSpace.includes("solid") || searchSpace.includes("plain") || searchSpace.includes("cotton") || searchSpace.includes("linen");
+      }
+      if (selectedPattern === "zari-brocade") {
+        return searchSpace.includes("zari") || searchSpace.includes("brocade") || searchSpace.includes("silk") || searchSpace.includes("kanjivaram");
+      }
+      if (selectedPattern === "embroidery") {
+        return searchSpace.includes("embroidery") || searchSpace.includes("embroidered") || searchSpace.includes("needlework") || searchSpace.includes("chudithar");
+      }
+      if (selectedPattern === "florals") {
+        return searchSpace.includes("floral") || searchSpace.includes("flower") || searchSpace.includes("botanical") || searchSpace.includes("print");
+      }
+      if (selectedPattern === "embellished") {
+        return searchSpace.includes("embellished") || searchSpace.includes("sequin") || searchSpace.includes("festive") || searchSpace.includes("lehenga");
+      }
+      if (selectedPattern === "prints") {
+        return searchSpace.includes("print") || searchSpace.includes("printed") || searchSpace.includes("block") || searchSpace.includes("pattern");
+      }
+      if (selectedPattern === "checks-stripes") {
+        return searchSpace.includes("check") || searchSpace.includes("stripe") || searchSpace.includes("textured") || searchSpace.includes("brocade");
+      }
+
+      return searchSpace.includes(query);
+    });
+
+    const seenIds = new Set<string>();
+    const seenCards = new Set<string>();
+    const deduped: typeof rawFiltered = [];
+
+    for (const p of rawFiltered) {
+      if (!p || !p.id || seenIds.has(p.id)) continue;
+      const rawImg = p.image || p.imageUrl || (p as any).image_url || "";
+      const imgKey = rawImg.replace(/v\d+\//, "").split("?")[0].split("/").pop() || "";
+      const nameKey = (p.name || "").trim().toLowerCase();
+      const cardKey = `${nameKey}:::${imgKey}`;
+
+      if (imgKey && seenCards.has(cardKey)) {
+        continue;
+      }
+
+      seenIds.add(p.id);
+      if (imgKey) {
+        seenCards.add(cardKey);
+      }
+      deduped.push(p);
     }
 
-    if (!selectedPattern || !patternItem) return true;
-
-    // Search keywords for pattern in name, description, colour, category
-    const query = patternItem.name ? patternItem.name.toLowerCase() : "";
-    const searchSpace = `${p.name || ""} ${p.description || ""} ${p.colour || ""} ${p.category || ""}`.toLowerCase();
-
-    if (selectedPattern === "solids") {
-      return searchSpace.includes("solid") || searchSpace.includes("plain") || searchSpace.includes("cotton") || searchSpace.includes("linen");
-    }
-    if (selectedPattern === "zari-brocade") {
-      return searchSpace.includes("zari") || searchSpace.includes("brocade") || searchSpace.includes("silk") || searchSpace.includes("kanjivaram");
-    }
-    if (selectedPattern === "embroidery") {
-      return searchSpace.includes("embroidery") || searchSpace.includes("embroidered") || searchSpace.includes("needlework") || searchSpace.includes("chudithar");
-    }
-    if (selectedPattern === "florals") {
-      return searchSpace.includes("floral") || searchSpace.includes("flower") || searchSpace.includes("botanical") || searchSpace.includes("print");
-    }
-    if (selectedPattern === "embellished") {
-      return searchSpace.includes("embellished") || searchSpace.includes("sequin") || searchSpace.includes("festive") || searchSpace.includes("lehenga");
-    }
-    if (selectedPattern === "prints") {
-      return searchSpace.includes("print") || searchSpace.includes("printed") || searchSpace.includes("block") || searchSpace.includes("pattern");
-    }
-    if (selectedPattern === "checks-stripes") {
-      return searchSpace.includes("check") || searchSpace.includes("stripe") || searchSpace.includes("textured") || searchSpace.includes("brocade");
-    }
-
-    return searchSpace.includes(query);
-  });
+    return deduped;
+  }, [activeProducts, queryFilter, querySale, filter, querySearch, selectedPattern, patternItem]);
 
   const clearPattern = () => {
     setSelectedPattern(null);

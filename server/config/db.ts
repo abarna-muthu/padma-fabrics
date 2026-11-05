@@ -381,6 +381,8 @@ async function runMigrations(pool: mysql.Pool) {
       await pool.query("DELETE FROM products WHERE id = 'pf-mvtfhbti' OR name = 'The Royal Indigo Silk Saree'").catch(() => {});
       await pool.query("DELETE FROM product_images WHERE product_id = 'pf-mvtfhbti'").catch(() => {});
       await pool.query("DELETE FROM inventory_logs WHERE product_id = 'pf-mvtfhbti'").catch(() => {});
+      await pool.query("DELETE FROM products WHERE id IN ('pf-mvyzhdva', 'pf-mvyze70t', 'pf-mvz6utzp')").catch(() => {});
+      await pool.query("DELETE FROM product_images WHERE product_id IN ('pf-mvyzhdva', 'pf-mvyze70t', 'pf-mvz6utzp')").catch(() => {});
       
       // Ensure shipping_rates table and orders shipping columns exist
       await pool.query(`

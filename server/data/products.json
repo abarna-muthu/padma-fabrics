@@ -942,35 +942,6 @@
     ]
   },
   {
-    "id": "pf-mvz6utzp",
-    "sku": "PF-401-uu1q",
-    "name": "leggings pant",
-    "slug": "leggings-pant-mvz6utxj",
-    "category_id": "combo-dresses",
-    "colour": "black,red,blue",
-    "price": "240.00",
-    "original_price": null,
-    "unit": "piece",
-    "stock_quantity": 10,
-    "low_stock_threshold": 5,
-    "badge": "New arrival",
-    "description": "These comfortable and stylish Leggings Pants from Padmanabha Fabrics are designed for versatile daily wear. Crafted from a soft, breathable, and lightweight cotton fabric, they offer effortless comfort throughout the day. Available as a special 3-piece set featuring classic colors, they are perfect for everyday routines. Grab this practical combo now for just ₹240 as part of a special 10-day Deepavali Mega Offer (Note: This offer is for direct store purchases only; courier charges apply extra for online orders). Online bookings and inquiries are open—simply WhatsApp your queries or purchases to 9940145700 or 9940135700. ",
-    "image_url": "https://res.cloudinary.com/ugzb1wup/image/upload/v1793619589/padma_products/j2uxwdi13z3xqdh5vqup.jpg",
-    "is_active": 1,
-    "is_featured": 0,
-    "sizes": [
-      "M",
-      "L",
-      "XL"
-    ],
-    "created_at": "2026-11-02T06:11:35.000Z",
-    "updated_at": "2026-11-03T23:46:03.000Z",
-    "variants": [],
-    "images": [
-      "https://res.cloudinary.com/ugzb1wup/image/upload/v1793619589/padma_products/j2uxwdi13z3xqdh5vqup.jpg"
-    ]
-  },
-  {
     "id": "pf-mvz6uqk6",
     "sku": "PF-401",
     "name": "leggings pant",
@@ -2524,36 +2495,6 @@
     ]
   },
   {
-    "id": "pf-mvyzhdva",
-    "sku": "PF-728-789",
-    "name": "short top",
-    "slug": "short-top-yzhdva-yzhdva",
-    "category_id": "short-top",
-    "colour": "olive green and white",
-    "price": "345.00",
-    "original_price": null,
-    "unit": "piece",
-    "stock_quantity": 10,
-    "low_stock_threshold": 5,
-    "badge": "New arrival",
-    "description": "This stunning olive green and white patterned leaf short top from Padmanabha Fabrics is part of their exclusive Short Top Collections, specially designed for daily wear. Crafted from soft and lightweight fabric, it ensures maximum comfort, breathability, and ease throughout the day. Featuring a trendy flared design with three-quarter sleeves and a notch neckline, it is available in sizes M, L, XL, and XXL. Grab this festive look now as part of the special Diwali offer for just ₹345. Online orders are available now—simply WhatsApp your queries or purchases to 9940145700 or 9940135700.",
-    "image_url": "https://res.cloudinary.com/ugzb1wup/image/upload/v1793607282/padma_products/o04lereprrgccswcfqjp.jpg",
-    "is_active": 1,
-    "is_featured": 0,
-    "sizes": [
-      "M",
-      "L",
-      "XL",
-      "2XL"
-    ],
-    "created_at": "2026-11-02T07:12:48.000Z",
-    "updated_at": "2026-11-03T23:45:39.000Z",
-    "variants": [],
-    "images": [
-      "https://res.cloudinary.com/ugzb1wup/image/upload/v1793607282/padma_products/o04lereprrgccswcfqjp.jpg"
-    ]
-  },
-  {
     "id": "pf-mvyzg9zy",
     "sku": "PF-916",
     "name": "short top",
@@ -2611,36 +2552,6 @@
     "variants": [],
     "images": [
       "https://res.cloudinary.com/ugzb1wup/image/upload/v1793607175/padma_products/wbdeq0zrminvjxwlujwb.jpg"
-    ]
-  },
-  {
-    "id": "pf-mvyze70t",
-    "sku": "PF-288",
-    "name": "short top",
-    "slug": "short-top-mvyze7nj-yze70t",
-    "category_id": "short-top",
-    "colour": "olive green",
-    "price": "345.00",
-    "original_price": null,
-    "unit": "piece",
-    "stock_quantity": 10,
-    "low_stock_threshold": 5,
-    "badge": "New arrival",
-    "description": "This stunning olive green and white leaf-printed short top from Padmanabha Fabrics is part of their exclusive Short Top Collections, specially designed for daily wear. Crafted from soft and lightweight fabric, it ensures maximum comfort, breathability, and ease throughout the day. Featuring a trendy flared design with three-quarter sleeves and a notch neckline, it is available in sizes M, L, XL, and XXL. Grab this festive look now as part of the special Diwali offer for just ₹345. Online orders are available now—simply WhatsApp your queries or purchases to 9940145700 or 9940135700.",
-    "image_url": "https://res.cloudinary.com/ugzb1wup/image/upload/v1793607106/padma_products/keykcjrkfrk3fv3kaelz.jpg",
-    "is_active": 1,
-    "is_featured": 0,
-    "sizes": [
-      "M",
-      "L",
-      "XL",
-      "2XL"
-    ],
-    "created_at": "2026-11-02T07:12:47.000Z",
-    "updated_at": "2026-11-03T23:45:37.000Z",
-    "variants": [],
-    "images": [
-      "https://res.cloudinary.com/ugzb1wup/image/upload/v1793607106/padma_products/keykcjrkfrk3fv3kaelz.jpg"
     ]
   },
   {
