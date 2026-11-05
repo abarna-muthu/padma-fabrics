@@ -766,7 +766,22 @@ export function StoreProvider({ children }: { children: ReactNode }) {
             } catch {}
 
             const merged = Array.from(mergedMap.values());
-            saveProducts(merged);
+            // Bail out if products haven't changed to avoid unnecessary re-render triggers
+            if (
+              prev.length === merged.length &&
+              prev.every(
+                (p, idx) =>
+                  p.id === merged[idx]?.id &&
+                  p.stock === merged[idx]?.stock &&
+                  p.price === merged[idx]?.price &&
+                  p.image === merged[idx]?.image,
+              )
+            ) {
+              return prev;
+            }
+            if (typeof window !== "undefined") {
+              idbSaveProducts(merged).catch(() => {});
+            }
             return merged;
           });
         }
