@@ -17,7 +17,7 @@ export const Route = createFileRoute("/admin/login")({
 });
 
 export function AdminLoginView({ onLoginSuccess }: { onLoginSuccess?: () => void }) {
-  const { isAuthenticated, login } = useAdminAuth();
+  const { isAuthenticated, login, activeCredentials } = useAdminAuth();
   const navigate = useNavigate();
 
   const [email, setEmail] = useState("");
@@ -113,12 +113,12 @@ export function AdminLoginView({ onLoginSuccess }: { onLoginSuccess?: () => void
               </label>
               <Input
                 id="email"
-                type="email"
+                type="text"
                 required
-                autoComplete="email"
+                autoComplete="username email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="admin@gmail.com"
+                placeholder={activeCredentials?.email || "admin@gmail.com"}
                 className="rounded-xl border-[rgba(14,14,14,0.15)] bg-[#FAF7F2]/50 focus-visible:ring-1 focus-visible:ring-[#D15608] focus-visible:border-[#D15608] text-xs h-10 font-mono"
               />
             </div>
