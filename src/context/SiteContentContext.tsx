@@ -120,55 +120,55 @@ export const DEFAULT_POPULAR_CATEGORIES: PopularCategoryItem[] = [
   {
     id: "saree",
     title: "SAREE",
-    image: "https://res.cloudinary.com/ugzb1wup/image/upload/v1793207105/padma_categories/p5pjfcwp74z22buj17zk.jpg",
+    image: "https://res.cloudinary.com/ugzb1wup/image/upload/v1793193144/padma_categories/h2rgzjwbgvbeax1g73wj.jpg",
     href: "/shop?category=Saree",
   },
   {
     id: "chudithar",
     title: "CHUDITHAR",
-    image: "https://res.cloudinary.com/ugzb1wup/image/upload/v1793207146/padma_categories/hldl0tzbrvgdb05mjmpl.jpg",
+    image: "https://res.cloudinary.com/ugzb1wup/image/upload/v1793598567/padma_categories/w1oqrtckuala2yotiwes.jpg",
     href: "/shop?category=Chudithar",
   },
   {
     id: "coordset",
     title: "COORDSET",
-    image: "https://res.cloudinary.com/ugzb1wup/image/upload/v1793207181/padma_categories/o41bdu5v3onqbxh0o1sh.jpg",
+    image: "https://res.cloudinary.com/ugzb1wup/image/upload/v1793193561/padma_categories/e6bjdubl2esoft73bdte.jpg",
     href: "/shop?category=Coordset",
   },
   {
     id: "maxi",
     title: "MAXI",
-    image: "https://res.cloudinary.com/ugzb1wup/image/upload/v1793207257/padma_categories/la5hitoxfylu0xevoeqv.jpg",
+    image: "https://res.cloudinary.com/ugzb1wup/image/upload/v1793193691/padma_categories/opvxrl5pd10gld0ijlgi.jpg",
     href: "/shop?category=Maxi",
   },
   {
     id: "nighty",
     title: "NIGHTY",
-    image: "https://res.cloudinary.com/ugzb1wup/image/upload/v1793207301/padma_categories/bi6ccssdb2b8gblqmo03.jpg",
+    image: "https://res.cloudinary.com/ugzb1wup/image/upload/v1793601217/padma_categories/kgyjuuufjgwjtmvmrfy3.jpg",
     href: "/shop?category=Nighty",
   },
   {
     id: "chudithar-top",
     title: "CHUDITHAR TOP",
-    image: "https://res.cloudinary.com/ugzb1wup/image/upload/v1793207330/padma_categories/kwupakpq240fuhjbxvbx.jpg",
+    image: "https://res.cloudinary.com/ugzb1wup/image/upload/v1793599986/padma_categories/s7gjfipsvicjrc9bdqk3.jpg",
     href: "/shop?category=Chudithar Top",
   },
   {
     id: "2piece",
     title: "2 PIECE",
-    image: "https://res.cloudinary.com/ugzb1wup/image/upload/v1793207410/padma_categories/yeavgte3wqqxiidrx921.jpg",
+    image: "https://res.cloudinary.com/ugzb1wup/image/upload/v1793194171/padma_categories/pj0efo2ggd9pqgsc3wvf.jpg",
     href: "/shop?category=2piece",
   },
   {
     id: "combo-dresses",
     title: "COMBO DRESSES",
-    image: "https://res.cloudinary.com/ugzb1wup/image/upload/v1793207440/padma_categories/tysvr2pz2dttrsnubnf7.jpg",
+    image: "https://res.cloudinary.com/ugzb1wup/image/upload/v1793194442/padma_categories/tgrcd657czfnhlu2tcfq.jpg",
     href: "/shop?category=Combo Dresses",
   },
   {
     id: "palazzo",
     title: "PALAZZO",
-    image: "https://res.cloudinary.com/ugzb1wup/image/upload/v1793207461/padma_categories/mdmtbankwfema3fcodrd.jpg",
+    image: "https://res.cloudinary.com/ugzb1wup/image/upload/v1793609595/padma_categories/wnkcygsgyybcjdjackhx.jpg",
     href: "/shop?category=palazzo",
   },
 ];
@@ -387,26 +387,20 @@ export function SiteContentProvider({ children }: { children: ReactNode }) {
     if (typeof window === "undefined") return;
 
     let localUpdatedAt = 0;
-
-    // 1. Initial immediate optimistic load from localStorage (instant rendering)
     try {
       const saved = localStorage.getItem(STORAGE_KEY);
       if (saved) {
         const parsed = JSON.parse(saved);
         localUpdatedAt = Number(parsed.updatedAt) || 0;
-        setContent({
-          home: mergeHomeContent(parsed.home),
-          about: { ...DEFAULT_ABOUT_CONTENT, ...(parsed.about || {}) },
-          contact: { ...DEFAULT_CONTACT_CONTENT, ...(parsed.contact || {}) },
-          updatedAt: localUpdatedAt,
-        });
       }
-    } catch (err) {
-      console.warn("Failed to load site content from localStorage:", err);
-    }
+    } catch {}
 
-    // 2. Fetch the latest content from the server API to ensure mobile & desktop stay synced
+    let isFetching = false;
+
+    // Fetch the latest content from the server API to ensure mobile & desktop stay synced
     const fetchLatestFromServer = async () => {
+      if (isFetching) return;
+      isFetching = true;
       try {
         const res = await contentApi.get();
         if (res && res.success && res.data) {
@@ -415,10 +409,11 @@ export function SiteContentProvider({ children }: { children: ReactNode }) {
           // Check current local saved timestamp
           let currentLocalTime = localUpdatedAt;
           let currentSavedObj: any = null;
+          let currentSavedStr: string | null = null;
           try {
-            const currentSaved = localStorage.getItem(STORAGE_KEY);
-            if (currentSaved) {
-              currentSavedObj = JSON.parse(currentSaved);
+            currentSavedStr = localStorage.getItem(STORAGE_KEY);
+            if (currentSavedStr) {
+              currentSavedObj = JSON.parse(currentSavedStr);
               currentLocalTime = Number(currentSavedObj.updatedAt) || 0;
             }
           } catch {}
@@ -430,21 +425,28 @@ export function SiteContentProvider({ children }: { children: ReactNode }) {
             } catch (syncErr) {
               console.warn("Failed to auto-sync local edits to server:", syncErr);
             }
-          } else if (serverUpdated >= currentLocalTime || !currentLocalTime) {
-            localUpdatedAt = serverUpdated;
-            setContent({
-              home: mergeHomeContent(res.data.home),
-              about: { ...DEFAULT_ABOUT_CONTENT, ...(res.data.about || {}) },
-              contact: { ...DEFAULT_CONTACT_CONTENT, ...(res.data.contact || {}) },
-              updatedAt: serverUpdated,
-            });
-            try {
-              localStorage.setItem(STORAGE_KEY, JSON.stringify(res.data));
-            } catch {}
+          } else {
+            const serverStr = JSON.stringify(res.data);
+            const isContentDifferent = !currentSavedStr || currentSavedStr !== serverStr;
+
+            if (isContentDifferent || !currentLocalTime) {
+              localUpdatedAt = serverUpdated;
+              setContent({
+                home: mergeHomeContent(res.data.home),
+                about: { ...DEFAULT_ABOUT_CONTENT, ...(res.data.about || {}) },
+                contact: { ...DEFAULT_CONTACT_CONTENT, ...(res.data.contact || {}) },
+                updatedAt: serverUpdated,
+              });
+              try {
+                localStorage.setItem(STORAGE_KEY, serverStr);
+              } catch {}
+            }
           }
         }
       } catch (err) {
         // Network unavailable or offline
+      } finally {
+        isFetching = false;
       }
     };
 
