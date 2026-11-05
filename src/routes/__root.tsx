@@ -26,6 +26,7 @@ import { ShopSheet } from "../components/ShopSheet";
 import { CheckoutModal } from "../components/CheckoutModal";
 import { CustomerPortalModal } from "../components/CustomerPortalModal";
 import { MobileBottomNav } from "../components/landing/MobileBottomNav";
+import { FloatingWhatsApp } from "../components/FloatingWhatsApp";
 import { Toaster } from "@/components/ui/sonner";
 
 function NotFoundComponent() {
@@ -199,6 +200,7 @@ function RootComponent() {
                         <GlobalCheckoutModal />
                         <CustomerPortalModal />
                         <MobileBottomNav />
+                        <FloatingWhatsApp />
                       </div>
                     )}
                     <Toaster position="top-right" richColors />
