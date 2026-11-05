@@ -283,7 +283,7 @@ export const orderApi = {
       customer_phone: payload.customerPhone,
       shipping_address: payload.shippingAddress,
       shipping_state: payload.shippingState || payload.state,
-      payment_method: payload.paymentMethod || "COD",
+      payment_method: payload.paymentMethod || "Online",
     };
     return apiRequest<{
       orderId: string;

@@ -277,7 +277,7 @@ export function CheckoutPage() {
               subtotal: checkoutSubtotal,
               shippingCharge: isFreeShipping ? 0 : shippingCharge,
               totalAmount: grandTotal,
-              paymentMethod: paymentMethod === "online" ? `Razorpay Online (${paymentRef || selectedUpiApp.toUpperCase()})` : "Cash on Delivery (COD)",
+              paymentMethod: `Razorpay Online (${paymentRef || selectedUpiApp.toUpperCase()})`,
               date: new Date().toLocaleDateString("en-IN", {
                 day: "numeric",
                 month: "short",
@@ -678,22 +678,18 @@ export function CheckoutPage() {
               <span>2. Choose Payment Mode</span>
             </h3>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="space-y-3">
               {/* Online UPI / Cards */}
-              <label
-                className={`p-4 rounded-xl border-2 flex flex-col justify-between gap-3 cursor-pointer transition-all ${
-                  paymentMethod === "online"
-                    ? "border-[#D15608] bg-[#FAF6EE] dark:bg-white/10"
-                    : "border-[#E5DAC4] dark:border-white/10 hover:border-[#D15608]/50"
-                }`}
+              <div
+                className="p-4 rounded-xl border-2 border-[#D15608] bg-[#FAF6EE] dark:bg-white/10 flex flex-col justify-between gap-3 transition-all"
               >
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <input
                       type="radio"
                       name="payment"
-                      checked={paymentMethod === "online"}
-                      onChange={() => setPaymentMethod("online")}
+                      checked={true}
+                      readOnly
                       className="accent-[#D15608]"
                     />
                     <span className="font-semibold text-xs text-[#0E0E0E] dark:text-[#FAF6EE]">
@@ -706,59 +702,26 @@ export function CheckoutPage() {
                   Google Pay, PhonePe, Paytm, QR, NetBanking & Cards with Instant Confirmation.
                 </p>
 
-                {paymentMethod === "online" && (
-                  <div className="flex items-center gap-1.5 pt-2 border-t border-[#E5DAC4] dark:border-white/10">
-                    {["gpay", "phonepe", "paytm"].map((app) => (
-                      <button
-                        key={app}
-                        type="button"
-                        onClick={(e) => {
-                          e.preventDefault();
-                          setSelectedUpiApp(app);
-                        }}
-                        className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase transition-all ${
-                          selectedUpiApp === app
-                            ? "bg-[#D15608] text-white"
-                            : "bg-white dark:bg-black/30 text-[#5C5549] dark:text-[#FAF6EE] border border-[#E5DAC4]"
-                        }`}
-                      >
-                        {app}
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </label>
-
-              {/* Cash on Delivery */}
-              <label
-                className={`p-4 rounded-xl border-2 flex flex-col justify-between gap-3 cursor-pointer transition-all ${
-                  paymentMethod === "cod"
-                    ? "border-[#D15608] bg-[#FAF6EE] dark:bg-white/10"
-                    : "border-[#E5DAC4] dark:border-white/10 hover:border-[#D15608]/50"
-                }`}
-              >
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="radio"
-                      name="payment"
-                      checked={paymentMethod === "cod"}
-                      onChange={() => setPaymentMethod("cod")}
-                      className="accent-[#D15608]"
-                    />
-                    <span className="font-semibold text-xs text-[#0E0E0E] dark:text-[#FAF6EE]">
-                      Cash on Delivery (COD)
-                    </span>
-                  </div>
-                  <Banknote className="size-4 text-[#D15608]" />
+                <div className="flex items-center gap-1.5 pt-2 border-t border-[#E5DAC4] dark:border-white/10">
+                  {["gpay", "phonepe", "paytm"].map((app) => (
+                    <button
+                      key={app}
+                      type="button"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        setSelectedUpiApp(app);
+                      }}
+                      className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase transition-all ${
+                        selectedUpiApp === app
+                          ? "bg-[#D15608] text-white"
+                          : "bg-white dark:bg-black/30 text-[#5C5549] dark:text-[#FAF6EE] border border-[#E5DAC4]"
+                      }`}
+                    >
+                      {app}
+                    </button>
+                  ))}
                 </div>
-                <p className="text-[11px] text-[#5C5549] dark:text-[#B5AC9E]">
-                  Pay cash at your doorstep when your authentic saree or handloom fabric arrives.
-                </p>
-                <span className="text-[10px] text-emerald-600 font-semibold">
-                  ✓ Available for all pincodes
-                </span>
-              </label>
+              </div>
             </div>
           </div>
         </div>

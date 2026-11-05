@@ -1640,7 +1640,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         customerPhone: details.customerPhone,
         ...(details.shippingAddress ? { shippingAddress: details.shippingAddress } : {}),
         shippingState: details.shippingState || details.state,
-        paymentMethod: details.paymentMethod || "cod",
+        paymentMethod: details.paymentMethod || "online",
         items,
       });
 

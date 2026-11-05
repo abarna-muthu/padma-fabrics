@@ -189,7 +189,7 @@ export function CheckoutModal({ isOpen, onClose, onOrderSuccess }: CheckoutModal
             customerPhone: phone,
             shippingAddress: fullAddress,
             shippingState: stateName.trim(),
-            paymentMethod: paymentMethod === "online" ? `Razorpay (${paymentRef || "Paid"})` : "COD",
+            paymentMethod: `Razorpay Online (${paymentRef || "Paid"})`,
           });
 
           const resolvedOrderNumber =
@@ -228,7 +228,7 @@ export function CheckoutModal({ isOpen, onClose, onOrderSuccess }: CheckoutModal
               customerEmail: email,
               address: fullAddress,
               totalAmount: grandTotal,
-              paymentMethod: paymentMethod === "online" ? "Razorpay Online (Paid)" : "Cash on Delivery (Pending)",
+              paymentMethod: "Razorpay Online (Paid)",
             };
             setConfirmedOrder(orderInfo);
             setStep("confirming");
@@ -502,23 +502,18 @@ export function CheckoutModal({ isOpen, onClose, onOrderSuccess }: CheckoutModal
                   <span className="text-[10px] text-muted-foreground">100% Encrypted & Safe</span>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                <div className="space-y-2.5">
                   {/* Option 1: Online Payment */}
-                  <label
-                    htmlFor="pay-online"
-                    className={`p-3.5 border rounded-sm flex items-start gap-3 cursor-pointer transition-all ${
-                      paymentMethod === "online"
-                        ? "border-primary bg-primary/5 ring-1 ring-primary shadow-xs"
-                        : "border-border hover:bg-secondary/40"
-                    }`}
+                  <div
+                    className="p-3.5 border rounded-sm flex items-start gap-3 border-primary bg-primary/5 ring-1 ring-primary shadow-xs"
                   >
                     <input
                       type="radio"
                       id="pay-online"
                       name="payment_method"
                       value="online"
-                      checked={paymentMethod === "online"}
-                      onChange={() => setPaymentMethod("online")}
+                      checked={true}
+                      readOnly
                       className="mt-0.5 accent-primary"
                     />
                     <div className="space-y-1">
@@ -530,36 +525,7 @@ export function CheckoutModal({ isOpen, onClose, onOrderSuccess }: CheckoutModal
                         Google Pay, PhonePe, Paytm, BHIM QR, Cards & Net Banking.
                       </p>
                     </div>
-                  </label>
-
-                  {/* Option 2: Cash on Delivery */}
-                  <label
-                    htmlFor="pay-cod"
-                    className={`p-3.5 border rounded-sm flex items-start gap-3 cursor-pointer transition-all ${
-                      paymentMethod === "cod"
-                        ? "border-primary bg-primary/5 ring-1 ring-primary shadow-xs"
-                        : "border-border hover:bg-secondary/40"
-                    }`}
-                  >
-                    <input
-                      type="radio"
-                      id="pay-cod"
-                      name="payment_method"
-                      value="cod"
-                      checked={paymentMethod === "cod"}
-                      onChange={() => setPaymentMethod("cod")}
-                      className="mt-0.5 accent-primary"
-                    />
-                    <div className="space-y-1">
-                      <div className="text-xs font-semibold text-foreground flex items-center gap-1.5">
-                        <Banknote className="size-3.5 text-gold" />
-                        <span>Cash on Delivery (COD)</span>
-                      </div>
-                      <p className="text-[11px] text-muted-foreground leading-snug">
-                        Pay cash directly to the courier when your order arrives.
-                      </p>
-                    </div>
-                  </label>
+                  </div>
                 </div>
 
                 {/* UPI App Selection if Online is chosen */}
@@ -641,17 +607,11 @@ export function CheckoutModal({ isOpen, onClose, onOrderSuccess }: CheckoutModal
                       <Loader2 className="size-4 shrink-0 animate-spin" />
                       <span>{paymentStatusText || "Placing Order…"}</span>
                     </span>
-                  ) : paymentMethod === "online" ? (
+                  ) : (
                     <>
                       <Zap className="size-4 shrink-0 fill-amber-300 text-amber-300" />
                       <span className="truncate sm:hidden">Pay & Confirm · {money(grandTotal)}</span>
                       <span className="hidden sm:inline">Proceed to Pay & Confirm · {money(grandTotal)}</span>
-                    </>
-                  ) : (
-                    <>
-                      <CheckCircle2 className="size-4 shrink-0 text-white" />
-                      <span className="truncate sm:hidden">Confirm COD Order · {money(grandTotal)}</span>
-                      <span className="hidden sm:inline">Confirm Cash on Delivery Order · {money(grandTotal)}</span>
                     </>
                   )}
                 </Button>

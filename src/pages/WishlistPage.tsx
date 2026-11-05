@@ -391,8 +391,8 @@ export function WishlistPage() {
             <div className="flex items-center justify-center gap-3">
               <Sparkles className="size-5 text-[#D15608]" />
               <div className="text-left">
-                <h5 className="font-semibold text-xs text-[#0E0E0E] dark:text-[#FAF6EE]">Cash on Delivery Available</h5>
-                <p className="text-[11px] text-[#5C5549] dark:text-[#B5AC9E]">Pay comfortably when parcel arrives</p>
+                <h5 className="font-semibold text-xs text-[#0E0E0E] dark:text-[#FAF6EE]">Instant Online & UPI</h5>
+                <p className="text-[11px] text-[#5C5549] dark:text-[#B5AC9E]">Fast & secure 100% encrypted checkout</p>
               </div>
             </div>
           </div>
