@@ -17,6 +17,8 @@ import {
   Edit,
   Eye,
   EyeOff,
+  ShieldCheck,
+  Lock,
   FileSpreadsheet,
   FileText,
   Filter,
@@ -160,7 +162,7 @@ type AdminTab =
   | "settings";
 
 function AdminDashboardPage() {
-  const { isAuthenticated, user, logout, updateCredentials } = useAdminAuth();
+  const { isAuthenticated, user, logout, updateCredentials, activeCredentials } = useAdminAuth();
   const navigate = useNavigate();
 
   const {
@@ -1075,6 +1077,7 @@ function AdminDashboardPage() {
   const [showCurrentPass, setShowCurrentPass] = useState(false);
   const [showNewPass, setShowNewPass] = useState(false);
   const [showConfirmPass, setShowConfirmPass] = useState(false);
+  const [showActivePass, setShowActivePass] = useState(false);
   const [settingsMessage, setSettingsMessage] = useState<{
     type: "success" | "error";
     text: string;
@@ -1777,6 +1780,7 @@ function AdminDashboardPage() {
           text: "Admin credentials successfully updated. Use your new password for subsequent logins.",
         });
         setCurrentPass("");
+        setNewEmail("");
         setNewPass("");
         setConfirmPass("");
       } else {
@@ -4299,6 +4303,54 @@ function AdminDashboardPage() {
                 Update your portal login email address and master password.
               </p>
 
+              {/* Current Active Credentials Display Card */}
+              <div className="mb-6 p-4 rounded-lg bg-primary/5 border border-primary/20 space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <ShieldCheck className="size-4 text-primary" />
+                    <span className="text-xs font-bold uppercase tracking-wider text-foreground">
+                      Current Login Credentials
+                    </span>
+                  </div>
+                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 font-semibold border border-emerald-500/20">
+                    Active
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                  {/* Username / Email */}
+                  <div className="p-3 rounded bg-background border border-border/70 space-y-1">
+                    <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider block">
+                      Admin Username / Email
+                    </span>
+                    <span className="text-xs font-mono font-bold text-foreground truncate block select-all">
+                      {activeCredentials?.email || user?.email || "admin@gmail.com"}
+                    </span>
+                  </div>
+
+                  {/* Password */}
+                  <div className="p-3 rounded bg-background border border-border/70 space-y-1">
+                    <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider block">
+                      Admin Password
+                    </span>
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-mono font-bold text-foreground select-all">
+                        {showActivePass ? (activeCredentials?.password || "admin123") : "••••••••••••"}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => setShowActivePass(!showActivePass)}
+                        className="text-muted-foreground hover:text-foreground transition-colors p-1"
+                        aria-label={showActivePass ? "Hide password" : "View password"}
+                        title={showActivePass ? "Hide password" : "View password"}
+                      >
+                        {showActivePass ? <EyeOff className="size-3.5" /> : <Eye className="size-3.5" />}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
               {settingsMessage && (
                 <div
                   className={`mb-6 p-3.5 text-xs flex items-start gap-2.5 ${
@@ -4356,12 +4408,12 @@ function AdminDashboardPage() {
                       type="email"
                       value={newEmail}
                       onChange={(e) => setNewEmail(e.target.value)}
-                      placeholder={user?.email || "admin@gmail.com"}
+                      placeholder={activeCredentials?.email || user?.email || "admin@gmail.com"}
                       className="rounded-none border-border text-xs h-9"
                     />
                     <p className="text-[10px] text-muted-foreground">
                       Current login email:{" "}
-                      <strong className="text-foreground">{user?.email}</strong>
+                      <strong className="text-foreground">{activeCredentials?.email || user?.email || "admin@gmail.com"}</strong>
                     </p>
                   </div>
 

@@ -8,9 +8,16 @@ export interface AdminUser {
   role: "admin";
 }
 
+export interface AdminCredentials {
+  email: string;
+  password: string;
+  name?: string;
+}
+
 interface AdminAuthContextType {
   isAuthenticated: boolean;
   user: AdminUser | null;
+  activeCredentials: AdminCredentials;
   login: (email: string, pass: string) => Promise<{ success: boolean; error?: string }>;
   logout: () => void;
   updateCredentials: (
@@ -37,6 +44,16 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const [user, setUser] = useState<AdminUser | null>(null);
   const [isReady, setIsReady] = useState(false);
+  const [activeCredentials, setActiveCredentials] = useState<AdminCredentials>(() => {
+    if (typeof window === "undefined") return INITIAL_CREDENTIALS;
+    try {
+      const stored = localStorage.getItem(STORAGE_CREDS_KEY) || sessionStorage.getItem(STORAGE_CREDS_KEY);
+      if (stored) {
+        return JSON.parse(stored);
+      }
+    } catch {}
+    return INITIAL_CREDENTIALS;
+  });
 
   // Initialize from session on mount and verify with backend if token exists
   useEffect(() => {
@@ -66,6 +83,11 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
               setIsAuthenticated(true);
               setUser(verifiedUser);
               sessionStorage.setItem(STORAGE_SESSION_KEY, JSON.stringify(verifiedUser));
+              setActiveCredentials((prev) => ({
+                ...prev,
+                email: verifiedUser.email,
+                name: verifiedUser.name,
+              }));
             }
           }
         } catch (err) {
@@ -82,7 +104,7 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
   const getActiveCredentials = () => {
     if (typeof window === "undefined") return INITIAL_CREDENTIALS;
     try {
-      const stored = sessionStorage.getItem(STORAGE_CREDS_KEY);
+      const stored = localStorage.getItem(STORAGE_CREDS_KEY) || sessionStorage.getItem(STORAGE_CREDS_KEY);
       if (stored) {
         return JSON.parse(stored);
       }
@@ -110,9 +132,17 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
         };
         setIsAuthenticated(true);
         setUser(adminUser);
+        const credsToStore: AdminCredentials = {
+          email: cleanEmail,
+          password: pass,
+          name: apiRes.data.user.name || "Padmanabha Administrator",
+        };
         if (typeof window !== "undefined") {
           sessionStorage.setItem(STORAGE_SESSION_KEY, JSON.stringify(adminUser));
+          localStorage.setItem(STORAGE_CREDS_KEY, JSON.stringify(credsToStore));
+          sessionStorage.setItem(STORAGE_CREDS_KEY, JSON.stringify(credsToStore));
         }
+        setActiveCredentials(credsToStore);
         return { success: true };
       } else if (
         apiRes.error &&
@@ -141,9 +171,17 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
       };
       setIsAuthenticated(true);
       setUser(adminUser);
+      const credsToStore: AdminCredentials = {
+        email: creds.email,
+        password: creds.password,
+        name: creds.name || "Padmanabha Administrator",
+      };
       if (typeof window !== "undefined") {
         sessionStorage.setItem(STORAGE_SESSION_KEY, JSON.stringify(adminUser));
+        localStorage.setItem(STORAGE_CREDS_KEY, JSON.stringify(credsToStore));
+        sessionStorage.setItem(STORAGE_CREDS_KEY, JSON.stringify(credsToStore));
       }
+      setActiveCredentials(credsToStore);
       return { success: true };
     }
 
@@ -186,18 +224,17 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
           role: "admin",
         };
         setUser(updatedUser);
+        const updatedCreds: AdminCredentials = {
+          email: cleanNewEmail,
+          password: newPass,
+          name: apiRes.data.user.name || "Padmanabha Administrator",
+        };
         if (typeof window !== "undefined") {
           sessionStorage.setItem(STORAGE_SESSION_KEY, JSON.stringify(updatedUser));
-          const creds = getActiveCredentials();
-          sessionStorage.setItem(
-            STORAGE_CREDS_KEY,
-            JSON.stringify({
-              ...creds,
-              email: cleanNewEmail,
-              password: newPass,
-            }),
-          );
+          sessionStorage.setItem(STORAGE_CREDS_KEY, JSON.stringify(updatedCreds));
+          localStorage.setItem(STORAGE_CREDS_KEY, JSON.stringify(updatedCreds));
         }
+        setActiveCredentials(updatedCreds);
         return { success: true };
       } else if (
         apiRes.error &&
@@ -216,7 +253,7 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
       return { success: false, error: "The current password you entered is incorrect." };
     }
 
-    const updatedCreds = {
+    const updatedCreds: AdminCredentials = {
       ...creds,
       email: cleanNewEmail,
       password: newPass,
@@ -224,6 +261,7 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
 
     if (typeof window !== "undefined") {
       sessionStorage.setItem(STORAGE_CREDS_KEY, JSON.stringify(updatedCreds));
+      localStorage.setItem(STORAGE_CREDS_KEY, JSON.stringify(updatedCreds));
       const updatedUser: AdminUser = {
         email: cleanNewEmail,
         name: creds.name || "Padmanabha Administrator",
@@ -232,6 +270,7 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
       setUser(updatedUser);
       sessionStorage.setItem(STORAGE_SESSION_KEY, JSON.stringify(updatedUser));
     }
+    setActiveCredentials(updatedCreds);
 
     return { success: true };
   };
@@ -241,6 +280,7 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
       value={{
         isAuthenticated,
         user,
+        activeCredentials,
         login,
         logout,
         updateCredentials,
