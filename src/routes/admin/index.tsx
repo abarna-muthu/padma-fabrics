@@ -348,16 +348,17 @@ function AdminDashboardPage() {
     }
   };
 
-  // Auto-refresh orders on page load, on Orders tab activation, and every 12 seconds via polling
+  // Auto-refresh orders on page load, on Orders/Sales tab activation, and every 6 seconds via polling
   useEffect(() => {
     refreshOrders().catch(() => {});
 
+    const pollInterval = activeTab === "sales" ? 6000 : 12000;
     const interval = setInterval(() => {
       refreshOrders().catch(() => {});
-    }, 12000);
+    }, pollInterval);
 
     return () => clearInterval(interval);
-  }, []);
+  }, [activeTab, refreshOrders]);
 
   // ----------------- SHIPPING CHARGES MANAGEMENT STATE -----------------
   const [shippingRatesList, setShippingRatesList] = useState<ShippingRateItem[]>([]);
@@ -1216,11 +1217,92 @@ function AdminDashboardPage() {
     }
   };
 
+  // Verified Paid/Confirmed Orders for Revenue Accounting (Strictly verified live orders)
+  const paidOrders = useMemo(() => {
+    return orders.filter(
+      (o) =>
+        o &&
+        o.status !== "Cancelled" &&
+        (o.paymentStatus === "Paid" || o.status === "Delivered"),
+    );
+  }, [orders]);
+
   // Metrics calculations
   const totalRevenue = useMemo(() => {
     // Only count completed paid orders as revenue
-    return orders.filter((o) => o.paymentStatus === "Paid").reduce((sum, o) => sum + o.total, 0);
-  }, [orders]);
+    return paidOrders.reduce((sum, o) => sum + (Number(o.total) || 0), 0);
+  }, [paidOrders]);
+
+  // Dynamic Category Sales Breakdown calculated from live confirmed orders
+  const categoryPerformance = useMemo(() => {
+    if (paidOrders.length === 0 || totalRevenue === 0) {
+      return [];
+    }
+
+    const prodCategoryMap = new Map<string, string>();
+    for (const p of productsList) {
+      if (p.id) prodCategoryMap.set(p.id.toLowerCase(), p.category || "General");
+      if (p.name) prodCategoryMap.set(p.name.trim().toLowerCase(), p.category || "General");
+    }
+
+    const categoryTotals: Record<string, number> = {};
+
+    for (const o of paidOrders) {
+      const items = Array.isArray(o.items) && o.items.length > 0 ? o.items : [];
+      if (items.length > 0) {
+        for (const item of items) {
+          const itemPid = (item.productId || "").toLowerCase();
+          const itemPname = (item.productName || (item as any).name || "").trim().toLowerCase();
+          const cat =
+            (item as any).category ||
+            prodCategoryMap.get(itemPid) ||
+            prodCategoryMap.get(itemPname) ||
+            "Saree";
+          const lineTotal = Number(item.price || 0) * Number(item.quantity || 1);
+          categoryTotals[cat] = (categoryTotals[cat] || 0) + (lineTotal > 0 ? lineTotal : Number(o.total) / items.length);
+        }
+      } else {
+        const cat = "General";
+        categoryTotals[cat] = (categoryTotals[cat] || 0) + (Number(o.total) || 0);
+      }
+    }
+
+    const totalCatRev = Object.values(categoryTotals).reduce((a, b) => a + b, 0) || totalRevenue || 1;
+
+    return Object.entries(categoryTotals)
+      .map(([name, rev]) => {
+        const pct = Math.max(1, Math.round((rev / totalCatRev) * 100));
+        return {
+          name,
+          revenue: Math.round(rev),
+          share: `${pct}%`,
+        };
+      })
+      .sort((a, b) => b.revenue - a.revenue);
+  }, [paidOrders, totalRevenue, productsList]);
+
+  // Product-wise live sales performance
+  const productPerformance = useMemo(() => {
+    if (paidOrders.length === 0) return [];
+    const map: Record<string, { name: string; quantity: number; revenue: number }> = {};
+
+    for (const o of paidOrders) {
+      for (const item of (o.items || [])) {
+        const pName = item.productName || (item as any).name || "Product";
+        const key = (item.productId || pName).toLowerCase();
+        const qty = Number(item.quantity) || 1;
+        const rev = (Number(item.price) || 0) * qty;
+
+        if (!map[key]) {
+          map[key] = { name: pName, quantity: 0, revenue: 0 };
+        }
+        map[key].quantity += qty;
+        map[key].revenue += rev;
+      }
+    }
+
+    return Object.values(map).sort((a, b) => b.revenue - a.revenue);
+  }, [paidOrders]);
 
   const lowStockProducts = useMemo(() => {
     return productsList.filter((p) => {
@@ -4094,7 +4176,7 @@ function AdminDashboardPage() {
               <div className="bg-card border border-border p-6">
                 <span className="text-sm font-medium text-muted-foreground">Paid Order Count</span>
                 <div className="font-sans font-bold text-3xl tracking-tight text-foreground mt-2 tabular-nums">
-                  {orders.filter((o) => o.paymentStatus === "Paid").length}
+                  {paidOrders.length}
                 </div>
                 <p className="text-xs text-muted-foreground mt-2 leading-relaxed">
                   Out of {orders.length} total orders recorded.
@@ -4105,9 +4187,9 @@ function AdminDashboardPage() {
                 <span className="text-sm font-medium text-muted-foreground">Average Order Value</span>
                 <div className="font-sans font-bold text-3xl tracking-tight text-gold mt-2 tabular-nums">
                   {money(
-                    Math.round(
-                      totalRevenue / (orders.filter((o) => o.paymentStatus === "Paid").length || 1),
-                    ),
+                    paidOrders.length > 0
+                      ? Math.round(totalRevenue / paidOrders.length)
+                      : 0,
                   )}
                 </div>
                 <p className="text-xs text-muted-foreground mt-2 leading-relaxed">
@@ -4118,45 +4200,88 @@ function AdminDashboardPage() {
 
             {/* Category sales contribution */}
             <div className="bg-card border border-border p-6">
-              <h2 className="font-display text-lg font-medium mb-1">
-                Product Category Performance
-              </h2>
+              <div className="flex items-center justify-between mb-1">
+                <h2 className="font-display text-lg font-medium">
+                  Product Category Performance
+                </h2>
+                {categoryPerformance.length > 0 && (
+                  <span className="text-xs text-emerald-600 dark:text-emerald-400 font-medium">
+                    Live Real-Time
+                  </span>
+                )}
+              </div>
               <p className="text-xs text-muted-foreground mb-6">
-                Overview of product performance across major textile categories
+                Dynamic revenue contribution calculated from confirmed orders across textile categories
               </p>
 
-              <div className="space-y-4">
-                {[
-                  { name: "Saree & Silk Edit", share: "40%", revenue: 9700 },
-                  { name: "Chudithar & Sets", share: "25%", revenue: 6540 },
-                  { name: "Coordset & 2piece", share: "20%", revenue: 5096 },
-                  { name: "Maxi, Nighty & Combo Dresses", share: "15%", revenue: 4198 },
-                ].map((cat) => (
-                  <div key={cat.name} className="space-y-1.5">
-                    <div className="flex justify-between text-sm">
-                      <span className="font-medium text-foreground">{cat.name}</span>
-                      <span className="font-sans tabular-nums text-muted-foreground">
-                        {money(cat.revenue)} ({cat.share})
-                      </span>
+              {categoryPerformance.length === 0 ? (
+                <div className="py-12 px-4 text-center border border-dashed border-border rounded-xl">
+                  <ShoppingBag className="size-8 mx-auto text-muted-foreground/40 mb-2" />
+                  <p className="text-sm font-medium text-foreground">No sales recorded yet</p>
+                  <p className="text-xs text-muted-foreground mt-1 max-w-sm mx-auto">
+                    Category performance metrics will calculate automatically here in real time as soon as verified paid orders are placed on the live site.
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {categoryPerformance.map((cat) => (
+                    <div key={cat.name} className="space-y-1.5">
+                      <div className="flex justify-between text-sm">
+                        <span className="font-medium text-foreground">{cat.name}</span>
+                        <span className="font-sans tabular-nums text-muted-foreground">
+                          {money(cat.revenue)} ({cat.share})
+                        </span>
+                      </div>
+                      <div className="w-full bg-secondary h-2.5 rounded-full overflow-hidden">
+                        <div
+                          className="bg-primary h-full rounded-full transition-all duration-500"
+                          style={{ width: cat.share }}
+                        />
+                      </div>
                     </div>
-                    <div className="w-full bg-secondary h-2.5 rounded-full overflow-hidden">
-                      <div
-                        className="bg-primary h-full rounded-full"
-                        style={{ width: cat.share }}
-                      />
-                    </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              )}
             </div>
 
-            <div className="p-4 bg-secondary/60 border border-border text-xs text-muted-foreground space-y-1">
-              <div className="font-medium text-foreground">Stage A Analytics Notice:</div>
-              <p>
-                Sales metrics above reflect active development sample orders. When Stage B connects
-                to the server-side commerce service, real-time Stripe/Razorpay webhook updates and
-                SQL date-aggregations will feed directly into these reports.
-              </p>
+            {/* Product-wise Sales Performance */}
+            {productPerformance.length > 0 && (
+              <div className="bg-card border border-border p-6">
+                <h2 className="font-display text-lg font-medium mb-1">
+                  Product Sales Breakdown
+                </h2>
+                <p className="text-xs text-muted-foreground mb-4">
+                  Actual units sold and revenue per item from verified customer transactions
+                </p>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-sm border-collapse">
+                    <thead>
+                      <tr className="border-b border-border text-xs uppercase tracking-wider text-muted-foreground">
+                        <th className="py-2.5 px-3">Product Name</th>
+                        <th className="py-2.5 px-3 text-center">Units Sold</th>
+                        <th className="py-2.5 px-3 text-right">Total Revenue</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-border">
+                      {productPerformance.map((p) => (
+                        <tr key={p.name} className="hover:bg-muted/30">
+                          <td className="py-2.5 px-3 font-medium text-foreground">{p.name}</td>
+                          <td className="py-2.5 px-3 text-center tabular-nums text-muted-foreground">{p.quantity}</td>
+                          <td className="py-2.5 px-3 text-right tabular-nums font-semibold text-primary">{money(p.revenue)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+
+            <div className="p-4 bg-secondary/40 border border-border text-xs text-muted-foreground flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <div className="flex items-center gap-2">
+                <span className="size-2 rounded-full bg-emerald-500 animate-pulse" />
+                <span className="font-medium text-foreground">Live Database Sync Active</span>
+              </div>
+              <span>Real-time polling active · Updates automatically without page refresh</span>
             </div>
           </div>
         )}
