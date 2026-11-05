@@ -1222,9 +1222,17 @@ function AdminDashboardPage() {
     return orders.filter((o) => o.paymentStatus === "Paid").reduce((sum, o) => sum + o.total, 0);
   }, [orders]);
 
-  const lowStockCount = useMemo(() => {
-    return productsList.filter((p) => p.stock < 5).length;
+  const lowStockProducts = useMemo(() => {
+    return productsList.filter((p) => {
+      const currentStock = Number(p.stock !== undefined ? p.stock : (p as any).stock_quantity ?? 10);
+      const threshold = Number((p as any).lowStockThreshold || (p as any).low_stock_threshold || 5);
+      return currentStock <= threshold;
+    });
   }, [productsList]);
+
+  const lowStockCount = useMemo(() => {
+    return lowStockProducts.length;
+  }, [lowStockProducts]);
 
   const activeProductsCount = useMemo(() => {
     return productsList.filter((p) => p.status === "active").length;
@@ -2285,22 +2293,99 @@ function AdminDashboardPage() {
 
             {/* Quick Actions & Low-stock alert */}
             {lowStockCount > 0 && (
-              <div className="p-4 bg-amber-500/10 border border-amber-500/20 text-amber-900 dark:text-amber-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-sm">
-                <div className="flex items-center gap-2.5">
-                  <AlertTriangle className="size-5 text-amber-600 shrink-0" />
-                  <span>
-                    <strong>Low Stock Warning:</strong> {lowStockCount} product(s) have fallen below
-                    the inventory reorder threshold.
-                  </span>
+              <div className="space-y-4">
+                <div className="p-4 bg-amber-500/10 border border-amber-500/20 text-amber-900 dark:text-amber-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-sm rounded-xl">
+                  <div className="flex items-center gap-2.5">
+                    <AlertTriangle className="size-5 text-amber-600 shrink-0" />
+                    <span>
+                      <strong>Low Stock Warning:</strong> {lowStockCount} product(s) have fallen below
+                      the inventory reorder threshold (≤ 5 pieces).
+                    </span>
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="text-xs font-medium border-amber-600/40 text-amber-800 dark:text-amber-200 h-9"
+                    onClick={() => setActiveTab("inventory")}
+                  >
+                    Manage Stock
+                  </Button>
                 </div>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="text-xs font-medium border-amber-600/40 text-amber-800 dark:text-amber-200 h-9"
-                  onClick={() => setActiveTab("inventory")}
-                >
-                  Manage Stock
-                </Button>
+
+                {/* Low-stock products list on Dashboard */}
+                <div className="bg-white border border-amber-500/30 rounded-2xl p-5 sm:p-6 shadow-xs space-y-4">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-border/60">
+                    <div className="flex items-center gap-2.5">
+                      <div className="p-2 bg-amber-500/10 text-amber-600 rounded-xl">
+                        <AlertTriangle className="size-4 shrink-0" />
+                      </div>
+                      <div>
+                        <h2 className="font-display text-base sm:text-lg font-semibold text-foreground">
+                          Low Stock Products Alert ({lowStockCount})
+                        </h2>
+                        <p className="text-xs text-muted-foreground">
+                          Products with 5 or fewer pieces remaining. Reorder or update stock to avoid stockouts.
+                        </p>
+                      </div>
+                    </div>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="text-xs font-semibold border-amber-600/40 text-amber-800 dark:text-amber-200 hover:bg-amber-500/10 h-8 self-start sm:self-auto cursor-pointer"
+                      onClick={() => setActiveTab("inventory")}
+                    >
+                      View in Inventory &rarr;
+                    </Button>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                    {lowStockProducts.slice(0, 6).map((lp) => (
+                      <div
+                        key={lp.id}
+                        className="p-3 rounded-xl border border-border bg-[#FAF7F2]/60 hover:bg-[#FAF7F2] flex items-center justify-between gap-3 transition-colors"
+                      >
+                        <div className="flex items-center gap-3 min-w-0">
+                          <img
+                            src={lp.image}
+                            alt={lp.name}
+                            className="size-12 rounded-lg object-cover border border-border shrink-0 bg-white"
+                            onError={(e) => {
+                              (e.currentTarget as HTMLImageElement).src = "/placeholder.svg";
+                            }}
+                          />
+                          <div className="min-w-0 flex-1">
+                            <h4 className="text-xs font-semibold text-foreground truncate" title={lp.name}>
+                              {lp.name}
+                            </h4>
+                            <p className="text-[11px] text-muted-foreground truncate">
+                              {lp.category} · {money(lp.price)}
+                            </p>
+                            <span
+                              className={`inline-block mt-1 px-2 py-0.5 rounded text-[10px] font-bold ${
+                                Number(lp.stock) === 0
+                                  ? "bg-destructive/15 text-destructive border border-destructive/25"
+                                  : "bg-amber-500/15 text-amber-800 dark:text-amber-300 border border-amber-500/30"
+                              }`}
+                            >
+                              {Number(lp.stock) === 0 ? "Out of Stock (0)" : `Low Stock: ${lp.stock} ${lp.unit}s left`}
+                            </span>
+                          </div>
+                        </div>
+
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleOpenAddStock(lp)}
+                          className="text-[11px] h-8 px-2.5 font-medium shrink-0 bg-white hover:bg-amber-50 hover:border-amber-400 text-amber-900 border-border cursor-pointer"
+                        >
+                          Adjust Stock
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
               </div>
             )}
 

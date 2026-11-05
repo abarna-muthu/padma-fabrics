@@ -390,7 +390,8 @@ export async function createCheckoutOrder(req: Request, res: Response) {
             ],
           );
 
-          const currentStock = Number(vItem.product.stock_quantity) || 10;
+          const rawStockVal = vItem.product.stock_quantity !== undefined ? vItem.product.stock_quantity : vItem.product.stock;
+          const currentStock = rawStockVal !== undefined && rawStockVal !== null && !isNaN(Number(rawStockVal)) ? Number(rawStockVal) : 10;
           const newStock = Math.max(0, currentStock - vItem.quantity);
           let updatedVariantsJson = null;
           if (vItem.matchedVariant && Array.isArray(vItem.parsedVariants)) {
@@ -488,6 +489,30 @@ export async function createCheckoutOrder(req: Request, res: Response) {
             vItem.lineTotal,
           ],
         );
+
+        // Deduct product stock & record inventory log
+        const rawStockVal = vItem.product.stock_quantity !== undefined ? vItem.product.stock_quantity : vItem.product.stock;
+        const currentStock = rawStockVal !== undefined && rawStockVal !== null && !isNaN(Number(rawStockVal)) ? Number(rawStockVal) : 10;
+        const newStock = Math.max(0, currentStock - vItem.quantity);
+
+        await db.execute("UPDATE products SET stock_quantity = ? WHERE id = ?", [
+          newStock,
+          vItem.product.id,
+        ]).catch(() => {});
+
+        const logId = `LOG-${Date.now().toString(36)}-${Math.random().toString(36).substring(2, 5)}`;
+        await db.execute(
+          `INSERT INTO inventory_logs (id, product_id, previous_stock, new_stock, change_amount, reason)
+           VALUES (?, ?, ?, ?, ?, ?)`,
+          [
+            logId,
+            vItem.product.id,
+            currentStock,
+            newStock,
+            -vItem.quantity,
+            `Order ${orderNumber} customer fulfillment deduction`,
+          ],
+        ).catch(() => {});
       }
     }
 

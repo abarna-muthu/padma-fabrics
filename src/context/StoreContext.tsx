@@ -222,6 +222,8 @@ export function normalizeProduct(p: any): Product {
     : (typeof p.variants === "string" ? (() => { try { return JSON.parse(p.variants); } catch { return []; } })() : []);
 
   const sanitizedSizes = cleanSizes(p.sizes, cat, desc);
+  const rawStock = p.stock !== undefined ? p.stock : (p.stockQuantity !== undefined ? p.stockQuantity : p.stock_quantity);
+  const stock = rawStock !== undefined && rawStock !== null && !isNaN(Number(rawStock)) ? Number(rawStock) : 10;
 
   return {
     ...p,
@@ -234,6 +236,9 @@ export function normalizeProduct(p: any): Product {
     variants,
     sizes: sanitizedSizes,
     description: desc || "",
+    stock,
+    stockQuantity: stock,
+    stock_quantity: stock,
     isActive,
     status: isActive ? "active" : "inactive",
   };
@@ -1583,6 +1588,79 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
         const resolvedOrderId = orderPayload.orderId || orderPayload.id || `PF-${Date.now().toString().slice(-4)}`;
         const resolvedOrderNumber = orderPayload.orderNumber || orderPayload.id || resolvedOrderId;
+
+        // 1. Immediately deduct stock from productsList and persist
+        setProductsList((currentList) => {
+          const updated = currentList.map((p) => {
+            const matched = items.find(
+              (it) =>
+                it.productId === p.id ||
+                String(it.productId).toLowerCase() === String(p.id).toLowerCase() ||
+                (it.name && it.name.trim().toLowerCase() === p.name.trim().toLowerCase()),
+            );
+            if (matched) {
+              const deductQty = Math.max(1, Number(matched.quantity) || 1);
+              const currentStock = Number(p.stock !== undefined ? p.stock : (p as any).stock_quantity ?? 10);
+              const newStock = Math.max(0, currentStock - deductQty);
+
+              let updatedVariants = p.variants;
+              if (matched.colour && Array.isArray(p.variants)) {
+                updatedVariants = p.variants.map((v) => {
+                  if (v.colour && v.colour.toLowerCase() === matched.colour?.toLowerCase()) {
+                    const vStock = Number(v.stock !== undefined ? v.stock : currentStock);
+                    return { ...v, stock: Math.max(0, vStock - deductQty) };
+                  }
+                  return v;
+                });
+              }
+
+              return {
+                ...p,
+                stock: newStock,
+                stock_quantity: newStock,
+                stockQuantity: newStock,
+                variants: updatedVariants,
+              };
+            }
+            return p;
+          });
+
+          saveProducts(updated);
+          return updated;
+        });
+
+        // 2. Immediately record inventory deduction logs
+        const newLogs: StockLog[] = [];
+        for (const item of items) {
+          const targetProd = productsList.find(
+            (p) =>
+              p.id === item.productId ||
+              String(p.id).toLowerCase() === String(item.productId).toLowerCase() ||
+              (item.name && item.name.trim().toLowerCase() === p.name.trim().toLowerCase()),
+          );
+          if (targetProd) {
+            const deductQty = Math.max(1, Number(item.quantity) || 1);
+            const currentStock = Number(targetProd.stock !== undefined ? targetProd.stock : (targetProd as any).stock_quantity ?? 10);
+            const newStock = Math.max(0, currentStock - deductQty);
+            newLogs.push({
+              id: `LOG-${Date.now().toString(36)}-${Math.random().toString(36).substring(2, 5)}`,
+              productId: targetProd.id,
+              productName: targetProd.name,
+              previousStock: currentStock,
+              newStock,
+              change: -deductQty,
+              reason: `Order #${resolvedOrderNumber} customer sale deduction`,
+              date: new Date().toISOString().split("T")[0] || "",
+            });
+          }
+        }
+        if (newLogs.length > 0) {
+          setStockLogs((currentLogs) => {
+            const updated = [...newLogs, ...currentLogs];
+            saveStockLogs(updated);
+            return updated;
+          });
+        }
 
         // Refresh orders list from backend immediately so admin and user portal see it
         await refreshOrders().catch(() => {});

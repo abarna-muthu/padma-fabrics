@@ -175,7 +175,10 @@ const realCatalogProducts: Item[] = (fallbackProductsRaw as any[]).map((p) => ({
   badge: p.badge || "New arrival",
   description: p.description || "",
   unit: p.unit || "piece",
-  stock: Number(p.stock !== undefined ? p.stock : p.stockQuantity || p.stock_quantity) || 10,
+  stock: (() => {
+    const val = p.stock !== undefined ? p.stock : (p.stockQuantity !== undefined ? p.stockQuantity : p.stock_quantity);
+    return val !== undefined && val !== null && !isNaN(Number(val)) ? Number(val) : 10;
+  })(),
   status: (p.status === "inactive" || p.isActive === false ? "inactive" : "active") as "active" | "inactive",
   sku: p.sku || `PF-${p.id}`,
   sizes: cleanSizes(p.sizes, p.category, p.description),
