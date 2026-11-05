@@ -717,7 +717,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
             .filter((sp: any) => !deletedIds.includes(sp.id) && !isDemoProduct(sp))
             .map(normalizeProduct);
 
-          setProductsList(() => {
+          setProductsList((prev = []) => {
             const mergedMap = new Map<string, Product>();
             const seenCards = new Set<string>();
 
@@ -768,6 +768,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
             const merged = Array.from(mergedMap.values());
             // Bail out if products haven't changed to avoid unnecessary re-render triggers
             if (
+              Array.isArray(prev) &&
               prev.length === merged.length &&
               prev.every(
                 (p, idx) =>
