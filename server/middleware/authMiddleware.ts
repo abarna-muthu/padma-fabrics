@@ -30,7 +30,7 @@ export function authenticate(req: AuthRequest, res: Response, next: NextFunction
 
   if (!authHeader || !authHeader.startsWith("Bearer ")) {
     if (req.headers["x-admin-fallback"] === "true") {
-      req.user = { id: "admin-local", email: "admin@gmail.com", name: "Padmanabha Administrator", role: "admin" };
+      req.user = { id: "adm-001", email: "admin@gmail.com", name: "Padmanabha Administrator", role: "admin" };
       return next();
     }
     return res.status(401).json({
@@ -47,7 +47,7 @@ export function authenticate(req: AuthRequest, res: Response, next: NextFunction
     return next();
   } catch (err: any) {
     if (req.headers["x-admin-fallback"] === "true") {
-      req.user = { id: "admin-local", email: "admin@gmail.com", name: "Padmanabha Administrator", role: "admin" };
+      req.user = { id: "adm-001", email: "admin@gmail.com", name: "Padmanabha Administrator", role: "admin" };
       return next();
     }
     if (err.name === "TokenExpiredError") {

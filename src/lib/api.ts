@@ -114,8 +114,11 @@ export const authApi = {
         method: "PUT",
         body: JSON.stringify({
           currentPassword,
+          current_password: currentPassword,
           newEmail,
+          new_email: newEmail,
           newPassword,
+          new_password: newPassword,
         }),
       },
     );

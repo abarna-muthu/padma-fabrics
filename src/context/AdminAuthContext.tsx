@@ -188,6 +188,15 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
         setUser(updatedUser);
         if (typeof window !== "undefined") {
           sessionStorage.setItem(STORAGE_SESSION_KEY, JSON.stringify(updatedUser));
+          const creds = getActiveCredentials();
+          sessionStorage.setItem(
+            STORAGE_CREDS_KEY,
+            JSON.stringify({
+              ...creds,
+              email: cleanNewEmail,
+              password: newPass,
+            }),
+          );
         }
         return { success: true };
       } else if (

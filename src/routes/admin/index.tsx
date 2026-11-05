@@ -16,6 +16,7 @@ import {
   Download,
   Edit,
   Eye,
+  EyeOff,
   FileSpreadsheet,
   FileText,
   Filter,
@@ -1071,6 +1072,9 @@ function AdminDashboardPage() {
   const [newEmail, setNewEmail] = useState("");
   const [newPass, setNewPass] = useState("");
   const [confirmPass, setConfirmPass] = useState("");
+  const [showCurrentPass, setShowCurrentPass] = useState(false);
+  const [showNewPass, setShowNewPass] = useState(false);
+  const [showConfirmPass, setShowConfirmPass] = useState(false);
   const [settingsMessage, setSettingsMessage] = useState<{
     type: "success" | "error";
     text: string;
@@ -4317,15 +4321,26 @@ function AdminDashboardPage() {
                   <label htmlFor="curr-pass" className="text-xs font-medium text-foreground">
                     Current Password *
                   </label>
-                  <Input
-                    id="curr-pass"
-                    type="password"
-                    required
-                    value={currentPass}
-                    onChange={(e) => setCurrentPass(e.target.value)}
-                    placeholder="Enter current password to authorize changes"
-                    className="rounded-none border-border text-xs h-9"
-                  />
+                  <div className="relative">
+                    <Input
+                      id="curr-pass"
+                      type={showCurrentPass ? "text" : "password"}
+                      required
+                      value={currentPass}
+                      onChange={(e) => setCurrentPass(e.target.value)}
+                      placeholder="Enter current password to authorize changes"
+                      className="rounded-none border-border text-xs h-9 pr-9"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowCurrentPass(!showCurrentPass)}
+                      className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors p-1"
+                      aria-label={showCurrentPass ? "Hide current password" : "Show current password"}
+                      tabIndex={-1}
+                    >
+                      {showCurrentPass ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+                    </button>
+                  </div>
                   <p className="text-[10px] text-muted-foreground">
                     Required before any security modifications can be made.
                   </p>
@@ -4355,29 +4370,51 @@ function AdminDashboardPage() {
                       <label htmlFor="new-pass" className="text-xs font-medium text-foreground">
                         New Password *
                       </label>
-                      <Input
-                        id="new-pass"
-                        type="password"
-                        required
-                        value={newPass}
-                        onChange={(e) => setNewPass(e.target.value)}
-                        placeholder="Minimum 6 characters"
-                        className="rounded-none border-border text-xs h-9"
-                      />
+                      <div className="relative">
+                        <Input
+                          id="new-pass"
+                          type={showNewPass ? "text" : "password"}
+                          required
+                          value={newPass}
+                          onChange={(e) => setNewPass(e.target.value)}
+                          placeholder="Minimum 6 characters"
+                          className="rounded-none border-border text-xs h-9 pr-9"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowNewPass(!showNewPass)}
+                          className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors p-1"
+                          aria-label={showNewPass ? "Hide new password" : "Show new password"}
+                          tabIndex={-1}
+                        >
+                          {showNewPass ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+                        </button>
+                      </div>
                     </div>
                     <div className="space-y-2">
                       <label htmlFor="confirm-pass" className="text-xs font-medium text-foreground">
                         Confirm New Password *
                       </label>
-                      <Input
-                        id="confirm-pass"
-                        type="password"
-                        required
-                        value={confirmPass}
-                        onChange={(e) => setConfirmPass(e.target.value)}
-                        placeholder="Re-enter new password"
-                        className="rounded-none border-border text-xs h-9"
-                      />
+                      <div className="relative">
+                        <Input
+                          id="confirm-pass"
+                          type={showConfirmPass ? "text" : "password"}
+                          required
+                          value={confirmPass}
+                          onChange={(e) => setConfirmPass(e.target.value)}
+                          placeholder="Re-enter new password"
+                          className="rounded-none border-border text-xs h-9 pr-9"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowConfirmPass(!showConfirmPass)}
+                          className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors p-1"
+                          aria-label={showConfirmPass ? "Hide confirm password" : "Show confirm password"}
+                          tabIndex={-1}
+                        >
+                          {showConfirmPass ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+                        </button>
+                      </div>
                     </div>
                   </div>
                 </div>
